@@ -33,6 +33,37 @@ import { prefersReducedMotion, useAsciiTextBulge } from '../lib/useAsciiTextBulg
 
 const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
 
+/* --------------------------------- contact --------------------------------- */
+
+// Sales enquiries land in the same Gmail mailbox as legal mail, but the `+sales`
+// sub-address and the `[Demo Request]` subject prefix give Gmail filters two handles to
+// label/skip-inbox on, so cold sales traffic never buries real mail.
+const SALES_CONTACT_EMAIL = 'biz.johncrm+sales@gmail.com';
+const SALES_SUBJECT = '[Demo Request] JOHN CRM';
+
+// Web3Forms has no recipient field — it delivers only to the address that
+// registered the access key. So this key MUST be created while signed up as
+// SALES_CONTACT_EMAIL, or submissions go somewhere nobody reads.
+//
+// Hardcoded on purpose: Vite inlines VITE_* into the bundle, so a CI secret would
+// end up equally readable in the deployed JS. Web3Forms keys are public by design.
+// VITE_WEB3FORMS_ACCESS_KEY still overrides it for local testing.
+const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+const WEB3FORMS_ACCESS_KEY =
+  import.meta.env.VITE_WEB3FORMS_ACCESS_KEY || 'a1e730f0-6039-4164-af79-2a33a4bee574';
+
+const SALES_MAILTO = `mailto:${SALES_CONTACT_EMAIL}?subject=${encodeURIComponent(
+  SALES_SUBJECT,
+)}&body=${encodeURIComponent(
+  [
+    'Company:',
+    'Team size:',
+    'What you want to automate:',
+    '',
+    '— sent from johncrm.com',
+  ].join('\n'),
+)}`;
+
 /* ---------------------------------- hooks --------------------------------- */
 
 function useInView<T extends HTMLElement>(threshold = 0.1) {
@@ -484,7 +515,7 @@ function Nav({
             onChange={onCurrencyChange}
           />
           <a
-            href="#contact"
+            href={SALES_MAILTO}
             className="font-mono text-[11px] tracking-[0.25em] uppercase text-black/60 transition-colors hover:text-black"
           >
             {copy.actions.contactSales}
@@ -546,7 +577,7 @@ function Nav({
               />
             </div>
             <a
-              href="#contact"
+              href={SALES_MAILTO}
               onClick={() => setOpen(false)}
               className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
             >
@@ -1116,6 +1147,7 @@ type Plan = {
   blurb: string;
   features: string[];
   cta: string;
+  ctaHref?: string;
   inverted?: boolean;
 };
 
@@ -1162,6 +1194,7 @@ const PLANS: Plan[] = [
       '99.9% uptime SLA',
     ],
     cta: 'Contact Sales',
+    ctaHref: SALES_MAILTO,
   },
 ];
 
@@ -1269,7 +1302,7 @@ function Pricing({ currency }: { currency: CurrencyCode }) {
                     ))}
                   </ul>
                   <a
-                    href="#contact"
+                    href={p.ctaHref ?? '#contact'}
                     className={`mt-auto block py-4 text-center font-mono text-[10px] tracking-[0.25em] uppercase transition-opacity hover:opacity-80 ${
                       inv
                         ? 'bg-white text-black'
@@ -1422,8 +1455,38 @@ function TeamSizeCombobox() {
   );
 }
 
+type ContactStatus = 'idle' | 'sending' | 'sent' | 'error';
+
 function Contact() {
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<ContactStatus>('idle');
+  const [devError, setDevError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setStatus('sending');
+    setDevError(null);
+
+    try {
+      // JSON is the client-side format Web3Forms documents. Their API rejects
+      // non-browser user agents, so this has to run from the browser.
+      const res = await fetch(WEB3FORMS_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(Object.fromEntries(new FormData(form))),
+      });
+      const data = (await res.json()) as { success?: boolean; message?: string };
+      if (!res.ok || !data.success) throw new Error(data.message || `Request failed (${res.status})`);
+      setStatus('sent');
+      form.reset();
+    } catch (err) {
+      // Raw messages ("Failed to fetch") mean nothing to a visitor — the UI shows
+      // generic copy plus the mailto fallback, and the detail goes to the console.
+      console.error('Contact form submission failed:', err);
+      setStatus('error');
+      if (import.meta.env.DEV) setDevError(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   return (
     <section id="contact" className="bg-white py-32">
@@ -1460,7 +1523,7 @@ function Contact() {
 
           <Reveal delay={150}>
             <div className="border border-black/8 bg-[#FAFAF8] p-10">
-              {submitted ? (
+              {status === 'sent' ? (
                 <div className="flex min-h-[28rem] flex-col items-center justify-center text-center">
                   <div className="flex h-12 w-12 items-center justify-center border border-black/15">
                     <Check size={18} strokeWidth={2.5} />
@@ -1472,13 +1535,19 @@ function Contact() {
                   </p>
                 </div>
               ) : (
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setSubmitted(true);
-                  }}
-                  className="flex flex-col gap-7"
-                >
+                <form onSubmit={handleSubmit} className="flex flex-col gap-7">
+                  <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
+                  <input type="hidden" name="subject" value={SALES_SUBJECT} />
+                  <input type="hidden" name="from_name" value="JOHN CRM Website" />
+                  {/* Honeypot — real people never see it, so a filled value means a bot. */}
+                  <input
+                    type="checkbox"
+                    name="botcheck"
+                    className="hidden"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                  />
                   {(
                     [
                       { id: 'name', label: 'Full Name', placeholder: 'Jane Analyst', type: 'text', required: true },
@@ -1492,6 +1561,7 @@ function Contact() {
                       </span>
                       <input
                         type={f.type}
+                        name={f.id}
                         required={f.required}
                         placeholder={f.placeholder}
                         className="mt-2 w-full border-b border-black/6 bg-transparent pb-4 text-[14px] outline-none transition-colors placeholder:text-black/15 focus:border-black/30"
@@ -1513,15 +1583,37 @@ function Contact() {
                     </span>
                     <textarea
                       rows={3}
+                      name="message"
                       placeholder="What does your current pipeline look like?"
                       className="mt-2 w-full resize-none border-b border-black/6 bg-transparent pb-4 text-[14px] outline-none transition-colors placeholder:text-black/15 focus:border-black/30"
                     />
                   </label>
+                  {status === 'error' && (
+                    <p
+                      role="alert"
+                      className="border border-black/15 bg-white px-4 py-3 text-[12px] leading-relaxed text-black/60"
+                    >
+                      We couldn&apos;t send that. Try again, or email us directly at{' '}
+                      <a
+                        href={SALES_MAILTO}
+                        className="underline decoration-black/20 underline-offset-2 hover:text-black"
+                      >
+                        {SALES_CONTACT_EMAIL}
+                      </a>
+                      .
+                      {devError && (
+                        <span className="mt-2 block font-mono text-[11px] text-black/45">
+                          dev only — API said: {devError}
+                        </span>
+                      )}
+                    </p>
+                  )}
                   <button
                     type="submit"
-                    className="mt-2 w-full bg-black py-5 font-mono text-[10px] tracking-[0.3em] uppercase text-white transition-opacity hover:opacity-80"
+                    disabled={status === 'sending'}
+                    className="mt-2 w-full bg-black py-5 font-mono text-[10px] tracking-[0.3em] uppercase text-white transition-opacity hover:opacity-80 disabled:opacity-40"
                   >
-                    Book a Demo
+                    {status === 'sending' ? 'Sending…' : 'Book a Demo'}
                   </button>
                   <p className="text-center font-mono text-[8px] tracking-[0.15em] uppercase text-black/25">
                     By submitting you agree to our{' '}
