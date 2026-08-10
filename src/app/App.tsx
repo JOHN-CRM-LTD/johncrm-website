@@ -627,7 +627,7 @@ function HeroMockup() {
           aria-label="ASCII art salesman holding a briefcase"
           aria-description="Move your cursor over the artwork or focus it to magnify it with a lens effect."
           tabIndex={0}
-          className="m-0 w-max max-w-none cursor-crosshair whitespace-pre text-left text-[clamp(5.5px,1.6vw,6.5px)] leading-none tracking-normal text-[#2A88AA] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#2A88AA]/50 focus-visible:outline-offset-4 lg:text-[clamp(7px,0.75vw,10px)]"
+          className="m-0 w-max max-w-none cursor-default whitespace-pre text-left text-[clamp(5.5px,1.6vw,6.5px)] leading-none tracking-normal text-[#2A88AA] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#2A88AA]/50 focus-visible:outline-offset-4 lg:text-[clamp(7px,0.75vw,10px)]"
           style={{
             fontFamily: asciiFont,
           }}

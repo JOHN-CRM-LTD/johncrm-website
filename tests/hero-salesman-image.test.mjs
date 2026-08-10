@@ -70,7 +70,7 @@ test('hero ASCII art magnifies under the cursor as a per-character text lens', a
   );
   assert.match(heroVisual, /data-radius="0\.18"/);
   assert.match(heroVisual, /data-strength="0\.45"/);
-  assert.match(heroVisual, /cursor-crosshair/);
+  assert.match(heroVisual, /cursor-default/);
   assert.match(heroVisual, /tabIndex=\{0\}/);
 
   // The lens mechanics: per-glyph spans, cubic falloff, eased motion, gates.

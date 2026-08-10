@@ -105,6 +105,11 @@ export function useAsciiTextBulge(text: string) {
     // Lens state, in pre-local px.
     const mouse = { x: 0, y: 0 };
     const target = { x: 0, y: 0 };
+    // Last pointer position in viewport px. Scrolling moves the art under a
+    // stationary cursor without firing any pointer event, so the scroll
+    // handler needs the cursor's location to re-aim the lens itself.
+    const client = { x: 0, y: 0 };
+    let hasPointer = false;
     let strength = 0;
     // Per-frame bookkeeping: which glyphs currently carry a transform, and a
     // frame stamp so glyphs the lens left get cleared even on fast jumps.
@@ -232,6 +237,32 @@ export function useAsciiTextBulge(text: string) {
       pointerInside = false;
     };
 
+    // Window-level: tracks the cursor even before it ever enters the artwork,
+    // so scrolling the art underneath a stationary cursor still works.
+    const onWindowPointerMove = (e: PointerEvent) => {
+      client.x = e.clientX;
+      client.y = e.clientY;
+      hasPointer = true;
+    };
+
+    // On scroll the cached rect is stale and no pointer event will fire:
+    // re-read the rect, re-aim the lens at the cursor's new pre-local
+    // position, and re-derive inside/outside from geometry.
+    const onScroll = () => {
+      if (!hasPointer) return;
+      const next = pre.getBoundingClientRect();
+      if (next.width < 1 || next.height < 1) return;
+      rect = next;
+      target.x = client.x - rect.left;
+      target.y = client.y - rect.top;
+      pointerInside =
+        client.x >= rect.left &&
+        client.x <= rect.right &&
+        client.y >= rect.top &&
+        client.y <= rect.bottom;
+      if (pointerInside) startLoop();
+    };
+
     // Keyboard affordance: focusing the artwork blooms the lens at centre.
     const onFocus = () => {
       if (!rect) measure();
@@ -250,6 +281,9 @@ export function useAsciiTextBulge(text: string) {
     container.addEventListener('pointerleave', onPointerLeave);
     pre.addEventListener('focus', onFocus);
     pre.addEventListener('blur', onBlur);
+    window.addEventListener('pointermove', onWindowPointerMove, { passive: true });
+    // Capture so scrolls inside ancestor scroll containers are caught too.
+    window.addEventListener('scroll', onScroll, { passive: true, capture: true });
 
     /* ----- re-measure triggers (never inside the frame loop) ----- */
 
@@ -287,6 +321,8 @@ export function useAsciiTextBulge(text: string) {
       container.removeEventListener('pointerleave', onPointerLeave);
       pre.removeEventListener('focus', onFocus);
       pre.removeEventListener('blur', onBlur);
+      window.removeEventListener('pointermove', onWindowPointerMove);
+      window.removeEventListener('scroll', onScroll, { capture: true });
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
       clearAll();
