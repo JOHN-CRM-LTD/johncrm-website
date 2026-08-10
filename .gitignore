@@ -1,0 +1,11 @@
+node_modules/
+
+# Local env files — VITE_* values are baked into the public bundle at build time,
+# so these hold build config, never secrets.
+.env
+.env.*
+!.env.example
+
+*.local
+*.log
+.DS_Store
