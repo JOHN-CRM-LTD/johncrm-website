@@ -9,5 +9,13 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <!-- JOHN CRM website chat widget (served by the CRM itself). Self-contained
+         Shadow-DOM bubble, bottom-right; makes one config GET on load and no
+         further API calls until a visitor actually starts a chat. -->
+    <script
+      src="https://app.johncrm.com/widget/chat.js"
+      data-site-key="wc_c2093c59a0881ba9ac60b3f8"
+      async
+    ></script>
   </body>
 </html>
