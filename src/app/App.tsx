@@ -1547,8 +1547,6 @@ function Contact() {
 const FOOTER_LINKS = [
   { label: 'Privacy', ariaLabel: 'Privacy Policy', href: '/privacy-policy' },
   { label: 'Terms', ariaLabel: 'Terms of Service', href: '/terms-of-service' },
-  { label: 'Security', ariaLabel: 'Security', href: '#top' },
-  { label: 'Status', ariaLabel: 'Status', href: '#top' },
   { label: 'Documentation', ariaLabel: 'Documentation', href: '#top' },
 ] as const;
 
