@@ -198,7 +198,8 @@ type HeaderSelectorOption<Code extends string = string> = { code: Code; label: s
 
 const NAV_LINKS = [
   { key: 'features', href: '#features' },
-  { key: 'clients', href: '#clients' },
+  // Reviews section is hidden until we have real testimonials.
+  // { key: 'clients', href: '#clients' },
   { key: 'pricing', href: '#pricing' },
   { key: 'contact', href: '#contact' },
 ] as const;
@@ -283,7 +284,7 @@ type SiteCopy = {
 const SITE_COPY: Record<LanguageCode, SiteCopy> = {
   EN: {
     selectors: { language: 'Language', currency: 'Currency' },
-    navigation: { features: 'Features', clients: 'Clients', pricing: 'Pricing', contact: 'Contact' },
+    navigation: { features: 'Features', pricing: 'Pricing', contact: 'Contact' },
     actions: { contactSales: 'Contact Sales', login: 'Login', tryForFree: 'Try for Free' },
     hero: {
       title: ['THE', 'Assistant', 'That Never', 'Sleeps'],
@@ -296,7 +297,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
   },
   CN: {
     selectors: { language: '语言', currency: '货币' },
-    navigation: { features: '功能', clients: '客户', pricing: '定价', contact: '联系' },
+    navigation: { features: '功能', pricing: '定价', contact: '联系' },
     actions: { contactSales: '联系销售', login: '登录', tryForFree: '免费试用' },
     hero: {
       title: ['永不休眠的', '智能助手'],
@@ -2212,7 +2213,8 @@ function LandingPage() {
           <Features />
           <Poster />
           {SHOWCASE_ENABLED && <Showcase />}
-          <Reviews />
+          {/* Hidden until we have real testimonials — the current quotes are placeholders. */}
+          {/* <Reviews /> */}
           <Pricing currency={currency} />
           <Contact />
         </main>
