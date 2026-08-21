@@ -11,10 +11,15 @@
     <script type="module" src="/src/main.tsx"></script>
     <!-- JOHN CRM website chat widget (served by the CRM itself). Self-contained
          Shadow-DOM bubble, bottom-right; makes one config GET on load and no
-         further API calls until a visitor actually starts a chat. -->
+         further API calls until a visitor actually starts a chat.
+         NOTE: deliberately pointed at the DEV CRM (dev.johncrm.com), which
+         serves the multi-chat/history widget build; prod still serves the old
+         one. Visitor chats therefore land in the dev workspace inbox. Revert
+         to app.johncrm.com + site key wc_c2093c59a0881ba9ac60b3f8 once the
+         widget ships to production. -->
     <script
-      src="https://app.johncrm.com/widget/chat.js"
-      data-site-key="wc_c2093c59a0881ba9ac60b3f8"
+      src="https://dev.johncrm.com/widget/chat.js"
+      data-site-key="wc_5ea51dbb733c5ce9e9fe3d38"
       async
     ></script>
   </body>
