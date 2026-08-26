@@ -194,7 +194,7 @@ function LoadingScreen({ onDone }: { onDone: () => void }) {
 
 /* ----------------------------------- nav ----------------------------------- */
 
-type LanguageCode = 'EN' | 'CN';
+type LanguageCode = 'EN' | 'CN' | 'TW';
 type HeaderSelectorOption<Code extends string = string> = { code: Code; label: string };
 
 const NAV_LINKS = [
@@ -208,6 +208,7 @@ const NAV_LINKS = [
 const LANGUAGE_OPTIONS = [
   { code: 'EN', label: 'English' },
   { code: 'CN', label: '简体中文' },
+  { code: 'TW', label: '繁體中文' },
 ] as const satisfies readonly HeaderSelectorOption<LanguageCode>[];
 
 const CURRENCY_OPTIONS = [
@@ -306,6 +307,18 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       primaryAction: '立即开始',
       secondaryAction: '观看演示',
       supportNote: '无需信用卡 · 30 天免费试用 · 随时取消',
+    },
+  },
+  TW: {
+    selectors: { language: '語言', currency: '貨幣' },
+    navigation: { features: '功能', pricing: '定價', contact: '聯繫' },
+    actions: { contactSales: '聯絡銷售', login: '登入', tryForFree: '免費試用' },
+    hero: {
+      title: ['永不休眠的', '智慧助手'],
+      description: '領先的 AI 智慧助手平台，自動處理訊息。在一個地方管理您的網站、WhatsApp、微信、電子郵件等渠道。',
+      primaryAction: '立即開始',
+      secondaryAction: '觀看示範',
+      supportNote: '無需信用卡 · 30 天免費試用 · 隨時取消',
     },
   },
 };
@@ -658,6 +671,13 @@ const HERO_STATS_BY_LANGUAGE: Record<LanguageCode, readonly { value: string; lab
     { value: '自定义 API', label: '接口端点' },
     { value: 'Google 集成', label: '日历与会议' },
   ],
+  TW: [
+    { value: '隨處嵌入', label: '網站與應用均可使用' },
+    { value: '< 0 分鐘', label: '平均回應' },
+    { value: '自動化', label: '預約安排' },
+    { value: '自訂 API', label: '介面端點' },
+    { value: 'Google 整合', label: '日曆與會議' },
+  ],
 };
 
 function HeroStat({ stat }: { stat: { value: string; label: string } }) {
@@ -686,8 +706,10 @@ function Hero({ language }: { language: LanguageCode }) {
           <div>
             <Reveal delay={100}>
               <h1
-                className="font-display font-extrabold uppercase leading-[0.88] tracking-tight"
-                style={{ fontSize: language === 'CN' ? 'clamp(3.5rem, 6vw, 6.25rem)' : 'clamp(3.75rem, 8.5vw, 7rem)' }}
+                className={`font-display font-extrabold uppercase tracking-tight ${
+                  language === 'EN' ? 'leading-[0.88]' : 'leading-[1.15]'
+                }`}
+                style={{ fontSize: language === 'EN' ? 'clamp(3.75rem, 8.5vw, 7rem)' : 'clamp(3.5rem, 6vw, 6.25rem)' }}
               >
                 {copy.hero.title.map((line, index) => (
                   <span key={line}>
@@ -2198,7 +2220,8 @@ function LandingPage() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.lang = language === 'CN' ? 'zh-CN' : 'en';
+    document.documentElement.lang =
+      language === 'CN' ? 'zh-CN' : language === 'TW' ? 'zh-Hant' : 'en';
   }, [language]);
 
   return (
