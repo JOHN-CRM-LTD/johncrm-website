@@ -38,6 +38,7 @@ const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
 // Sales enquiries land in the same Gmail mailbox as legal mail, but the `+sales`
 // sub-address and the `[Demo Request]` subject prefix give Gmail filters two handles to
 // label/skip-inbox on, so cold sales traffic never buries real mail.
+const APP_LOGIN_URL = 'https://app.johncrm.com/g/login';
 const SALES_CONTACT_EMAIL = 'biz.johncrm+sales@gmail.com';
 const SALES_SUBJECT = '[Demo Request] JOHN CRM';
 
@@ -528,7 +529,7 @@ function Nav({
             {copy.actions.login}
           </a>
           <a
-            href="#pricing"
+            href={APP_LOGIN_URL}
             className="bg-black px-5 py-2.5 font-mono text-[11px] tracking-[0.25em] uppercase text-white transition-opacity hover:opacity-80"
           >
             {copy.actions.tryForFree}
@@ -592,7 +593,7 @@ function Nav({
               {copy.actions.login}
             </a>
             <a
-              href="#pricing"
+              href={APP_LOGIN_URL}
               onClick={() => setOpen(false)}
               className="mt-6 bg-black px-5 py-4 text-center font-mono text-[11px] tracking-[0.25em] uppercase text-white"
             >
@@ -862,7 +863,7 @@ function Poster() {
           conversations while your team stays close to every customer.
         </p>
         <a
-          href="#pricing"
+          href={APP_LOGIN_URL}
           className="mt-10 inline-flex items-center gap-3 bg-white px-10 py-4 font-mono text-[10px] tracking-[0.25em] uppercase text-black transition-opacity hover:opacity-80"
         >
           Start Free Trial <ArrowRight size={12} />
@@ -1166,6 +1167,7 @@ const PLANS: Plan[] = [
       'Standard support',
     ],
     cta: 'Start Free Trial',
+    ctaHref: APP_LOGIN_URL,
   },
   {
     name: 'Growth',
@@ -1181,6 +1183,7 @@ const PLANS: Plan[] = [
       'Priority support',
     ],
     cta: 'Start Free Trial',
+    ctaHref: APP_LOGIN_URL,
     inverted: true,
   },
   {
