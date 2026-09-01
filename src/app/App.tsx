@@ -224,6 +224,125 @@ type BillingCycle = 'monthly' | 'annual';
 type PricedPlanKey = 'starter' | 'growth';
 type CurrencyPriceBook = Record<PricedPlanKey, Record<BillingCycle, number>>;
 
+const CURRENCY_PREFERENCE_STORAGE_KEY = 'johncrm:currency:v1';
+
+const REGION_CURRENCY: Partial<Record<string, CurrencyCode>> = {
+  HK: 'HKD',
+  AU: 'AUD',
+  CN: 'CNY',
+  AD: 'EUR',
+  AT: 'EUR',
+  BE: 'EUR',
+  BG: 'EUR',
+  CY: 'EUR',
+  DE: 'EUR',
+  EE: 'EUR',
+  ES: 'EUR',
+  FI: 'EUR',
+  FR: 'EUR',
+  GR: 'EUR',
+  HR: 'EUR',
+  IE: 'EUR',
+  IT: 'EUR',
+  LT: 'EUR',
+  LU: 'EUR',
+  LV: 'EUR',
+  MC: 'EUR',
+  ME: 'EUR',
+  MT: 'EUR',
+  NL: 'EUR',
+  PT: 'EUR',
+  SI: 'EUR',
+  SK: 'EUR',
+  SM: 'EUR',
+  VA: 'EUR',
+  XK: 'EUR',
+};
+
+const TIME_ZONE_CURRENCY: Partial<Record<string, CurrencyCode>> = {
+  'Asia/Hong_Kong': 'HKD',
+  'Asia/Shanghai': 'CNY',
+  'Asia/Urumqi': 'CNY',
+  'Antarctica/Macquarie': 'AUD',
+  'Pacific/Norfolk': 'AUD',
+  'Atlantic/Azores': 'EUR',
+  'Atlantic/Canary': 'EUR',
+  'Atlantic/Madeira': 'EUR',
+  'Europe/Amsterdam': 'EUR',
+  'Europe/Andorra': 'EUR',
+  'Europe/Athens': 'EUR',
+  'Europe/Berlin': 'EUR',
+  'Europe/Bratislava': 'EUR',
+  'Europe/Brussels': 'EUR',
+  'Europe/Dublin': 'EUR',
+  'Europe/Helsinki': 'EUR',
+  'Europe/Lisbon': 'EUR',
+  'Europe/Ljubljana': 'EUR',
+  'Europe/Luxembourg': 'EUR',
+  'Europe/Madrid': 'EUR',
+  'Europe/Malta': 'EUR',
+  'Europe/Mariehamn': 'EUR',
+  'Europe/Monaco': 'EUR',
+  'Europe/Nicosia': 'EUR',
+  'Europe/Paris': 'EUR',
+  'Europe/Podgorica': 'EUR',
+  'Europe/Riga': 'EUR',
+  'Europe/Rome': 'EUR',
+  'Europe/San_Marino': 'EUR',
+  'Europe/Sofia': 'EUR',
+  'Europe/Tallinn': 'EUR',
+  'Europe/Vatican': 'EUR',
+  'Europe/Vienna': 'EUR',
+  'Europe/Vilnius': 'EUR',
+  'Europe/Zagreb': 'EUR',
+};
+
+function isCurrencyCode(value: string | null): value is CurrencyCode {
+  return CURRENCY_OPTIONS.some((option) => option.code === value);
+}
+
+function currencyForTimeZone(timeZone: string | undefined): CurrencyCode | null {
+  if (!timeZone) return null;
+  if (timeZone.startsWith('Australia/')) return 'AUD';
+  return TIME_ZONE_CURRENCY[timeZone] ?? null;
+}
+
+function currencyForRegion(region: string | undefined): CurrencyCode | null {
+  if (!region) return null;
+  return REGION_CURRENCY[region.toUpperCase()] ?? null;
+}
+
+function detectInitialCurrency(): CurrencyCode {
+  if (typeof window === 'undefined') return 'USD';
+
+  try {
+    const savedCurrency = window.localStorage.getItem(CURRENCY_PREFERENCE_STORAGE_KEY);
+    if (isCurrencyCode(savedCurrency)) return savedCurrency;
+  } catch {
+    // Storage can be unavailable in privacy modes; location detection still works.
+  }
+
+  // Timezone is a useful location signal and does not send the visitor's IP to a third party.
+  try {
+    const timezoneCurrency = currencyForTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    if (timezoneCurrency) return timezoneCurrency;
+  } catch {
+    // Fall through to the browser locale when Intl timezone data is unavailable.
+  }
+
+  const locales = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const locale of locales) {
+    try {
+      const localeCurrency = currencyForRegion(new Intl.Locale(locale).region);
+      if (localeCurrency) return localeCurrency;
+    } catch {
+      // Ignore malformed or unsupported locale values.
+    }
+  }
+
+  return 'USD';
+}
+
 const CURRENCY_PRICING: Record<
   CurrencyCode,
   { symbol: string; prices: CurrencyPriceBook }
@@ -982,7 +1101,7 @@ function Nav({
             onChange={onCurrencyChange}
           />
           <a
-            href={SALES_MAILTO}
+            href="#contact"
             className="font-mono text-[11px] tracking-[0.25em] uppercase text-black/60 transition-colors hover:text-black"
           >
             {copy.actions.contactSales}
@@ -1044,7 +1163,7 @@ function Nav({
               />
             </div>
             <a
-              href={SALES_MAILTO}
+              href="#contact"
               onClick={() => setOpen(false)}
               className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
             >
@@ -1892,7 +2011,7 @@ function Contact({ language }: { language: LanguageCode }) {
   };
 
   return (
-    <section id="contact" className="bg-white py-32">
+    <section id="contact" className="scroll-mt-16 bg-white py-32">
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <div className="grid gap-16 lg:grid-cols-[2fr_3fr] lg:gap-14">
           <Reveal>
@@ -2583,10 +2702,18 @@ function LandingPage() {
     () => !prefersReducedMotion() && sessionStorage.getItem('johncrm-visited') !== '1',
   );
   const [language, setLanguage] = useState<LanguageCode>('EN');
-  const [currency, setCurrency] = useState<CurrencyCode>('USD');
+  const [currency, setCurrency] = useState<CurrencyCode>(detectInitialCurrency);
   const handleDone = useCallback(() => {
     sessionStorage.setItem('johncrm-visited', '1');
     setLoading(false);
+  }, []);
+  const handleCurrencyChange = useCallback((nextCurrency: CurrencyCode) => {
+    try {
+      window.localStorage.setItem(CURRENCY_PREFERENCE_STORAGE_KEY, nextCurrency);
+    } catch {
+      // The selection still applies for this visit if storage is unavailable.
+    }
+    setCurrency(nextCurrency);
   }, []);
 
   useEffect(() => {
@@ -2602,7 +2729,7 @@ function LandingPage() {
           language={language}
           onLanguageChange={setLanguage}
           currency={currency}
-          onCurrencyChange={setCurrency}
+          onCurrencyChange={handleCurrencyChange}
         />
         <main>
           <Hero language={language} />
