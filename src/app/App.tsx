@@ -38,6 +38,7 @@ const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
 // Sales enquiries land in the same Gmail mailbox as legal mail, but the `+sales`
 // sub-address and the `[Demo Request]` subject prefix give Gmail filters two handles to
 // label/skip-inbox on, so cold sales traffic never buries real mail.
+const APP_LOGIN_URL = 'https://app.johncrm.com/g/login';
 const SALES_CONTACT_EMAIL = 'biz.johncrm+sales@gmail.com';
 const SALES_SUBJECT = '[Demo Request] JOHN CRM';
 
@@ -193,7 +194,7 @@ function LoadingScreen({ onDone }: { onDone: () => void }) {
 
 /* ----------------------------------- nav ----------------------------------- */
 
-type LanguageCode = 'EN' | 'CN';
+type LanguageCode = 'EN' | 'CN' | 'HK';
 type HeaderSelectorOption<Code extends string = string> = { code: Code; label: string };
 
 const NAV_LINKS = [
@@ -207,6 +208,7 @@ const NAV_LINKS = [
 const LANGUAGE_OPTIONS = [
   { code: 'EN', label: 'English' },
   { code: 'CN', label: '简体中文' },
+  { code: 'HK', label: '繁體中文' },
 ] as const satisfies readonly HeaderSelectorOption<LanguageCode>[];
 
 const CURRENCY_OPTIONS = [
@@ -268,6 +270,8 @@ function formatCurrencyPrice(currency: CurrencyCode, price: number | null) {
   return `${CURRENCY_PRICING[currency].symbol}${price.toLocaleString('en-US')}`;
 }
 
+type ContactFormField = { id: 'name' | 'company' | 'email'; label: string; placeholder: string };
+
 type SiteCopy = {
   selectors: { language: string; currency: string };
   navigation: Record<(typeof NAV_LINKS)[number]['key'], string>;
@@ -278,6 +282,59 @@ type SiteCopy = {
     primaryAction: string;
     secondaryAction: string;
     supportNote: string;
+  };
+  features: {
+    label: string;
+    heading: readonly string[];
+    items: readonly { title: string; body: string }[];
+  };
+  poster: {
+    kicker: string;
+    heading: readonly string[];
+    body: string;
+    cta: string;
+  };
+  pricing: {
+    label: string;
+    heading: readonly string[];
+    monthly: string;
+    annual: string;
+    mostPopular: string;
+    perMonth: string;
+    enterprise: string;
+    plans: readonly {
+      name: string;
+      priceKey?: PricedPlanKey;
+      blurb: string;
+      features: readonly string[];
+      cta: string;
+      ctaHref: string;
+      inverted?: boolean;
+    }[];
+  };
+  contact: {
+    label: string;
+    heading: readonly string[];
+    intro: string;
+    info: readonly { label: string; value: string }[];
+    form: {
+      fields: readonly ContactFormField[];
+      teamSize: string;
+      teamSizePlaceholder: string;
+      message: string;
+      messagePlaceholder: string;
+      submit: string;
+      sending: string;
+      sentTitle: string;
+      sentBody: string;
+      errorBefore: string;
+      errorAfter: string;
+      privacyBefore: string;
+      privacyLink: string;
+    };
+  };
+  footer: {
+    links: readonly { label: string; ariaLabel: string }[];
   };
 };
 
@@ -294,6 +351,139 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       secondaryAction: 'Watch Demo',
       supportNote: 'No credit card required · 30-day free trial · Cancel anytime',
     },
+    features: {
+      label: '01 — Capabilities',
+      heading: ['Built for', 'Performance'],
+      items: [
+        {
+          title: 'AI-Powered Outreach',
+          body: 'AI drafts every reply and follow-up, grounded in your own playbooks and policy documents. Nothing sends until you approve — or flip low-risk replies to full autopilot.',
+        },
+        {
+          title: 'Revenue Intelligence',
+          body: 'Deal scoring, forecast rollups, and win-probability signals surfaced in real time — so you commit numbers you can actually hit.',
+        },
+        {
+          title: 'Team Alignment',
+          body: 'Shared pipelines, task routing, and activity timelines keep sales, marketing, and success working the same book of business.',
+        },
+        {
+          title: 'Enterprise Security',
+          body: 'SSO, role-based access, and a full audit trail of every AI draft, approval, and send. Blacklisted phrases and mandatory disclaimers enforced automatically.',
+        },
+        {
+          title: 'Multi-Channel Reach',
+          body: 'WhatsApp, WeChat, Telegram, Messenger, Instagram, email, and web chat — every conversation in one inbox, answered in the client’s language: English, Cantonese, or Mandarin.',
+        },
+        {
+          title: 'Pipeline Analytics',
+          body: 'Stage conversion, cycle time, and rep performance broken down to the deal. No spreadsheet exports required.',
+        },
+      ],
+    },
+    poster: {
+      kicker: 'Smarter Service. More Human.',
+      heading: ['Close More.', 'Work Less.', 'Grow Fast.'],
+      body: 'Automated customer service that still feels human. AI handles routine conversations while your team stays close to every customer.',
+      cta: 'Start Free Trial',
+    },
+    pricing: {
+      label: '04 — Pricing',
+      heading: ['Transparent', 'Pricing'],
+      monthly: 'Monthly',
+      annual: 'Annual –17%',
+      mostPopular: 'Most Popular',
+      perMonth: '/ mo',
+      enterprise: 'Enterprise',
+      plans: [
+        {
+          name: 'Starter',
+          priceKey: 'starter',
+          blurb: 'For small teams getting their first pipeline in order.',
+          features: [
+            'Up to 1,000 contacts',
+            'Shared inbox — email & web chat',
+            'Pipeline board',
+            'Basic analytics',
+            '2 team seats',
+            'Standard support',
+          ],
+          cta: 'Start Free Trial',
+          ctaHref: APP_LOGIN_URL,
+        },
+        {
+          name: 'Growth',
+          priceKey: 'growth',
+          blurb: 'For teams ready to put follow-up on autopilot.',
+          features: [
+            'Everything in Starter',
+            'All channels — WhatsApp, WeChat, Telegram & more',
+            'AI drafts with approval queue',
+            'Knowledge-base answers (RAG)',
+            'Bulk campaigns & templates',
+            '10 team seats',
+            'Priority support',
+          ],
+          cta: 'Start Free Trial',
+          ctaHref: APP_LOGIN_URL,
+          inverted: true,
+        },
+        {
+          name: 'Custom',
+          blurb: 'For organizations with security and scale requirements.',
+          features: [
+            'Everything in Growth',
+            'SSO / SAML',
+            'Custom integrations',
+            'Unlimited seats',
+            'Dedicated CSM',
+            '99.9% uptime SLA',
+          ],
+          cta: 'Contact Sales',
+          ctaHref: SALES_MAILTO,
+        },
+      ],
+    },
+    contact: {
+      label: '05 — Contact',
+      heading: ['Let’s', 'Talk', 'Revenue'],
+      intro:
+        'Tell us about your team and we’ll show you exactly how JOHN CRM fits your pipeline. No slide decks — a live walkthrough on your own data.',
+      info: [
+        { label: 'Response Time', value: '< 2 hours' },
+        { label: 'Demo Duration', value: '30 minutes' },
+        { label: 'Setup Time', value: 'Same day' },
+        { label: 'Free Trial', value: '30 days' },
+        { label: 'Channels Supported', value: '8+' },
+      ],
+      form: {
+        fields: [
+          { id: 'name', label: 'Full Name', placeholder: 'Jane Analyst' },
+          { id: 'company', label: 'Company', placeholder: 'Acme Industries' },
+          { id: 'email', label: 'Work Email', placeholder: 'jane@acme.com' },
+        ],
+        teamSize: 'Team Size',
+        teamSizePlaceholder: 'Select team size',
+        message: 'Message (Optional)',
+        messagePlaceholder: 'What does your current pipeline look like?',
+        submit: 'Book a Demo',
+        sending: 'Sending…',
+        sentTitle: 'Received',
+        sentBody:
+          'We’ll get back to you within two hours during business days. Check your inbox for a confirmation.',
+        errorBefore: 'We couldn’t send that. Try again, or email us directly at ',
+        errorAfter: '.',
+        privacyBefore: 'By submitting you agree to our ',
+        privacyLink: 'privacy policy',
+      },
+    },
+    footer: {
+      links: [
+        { label: 'Privacy', ariaLabel: 'Privacy Policy' },
+        { label: 'Terms', ariaLabel: 'Terms of Service' },
+        { label: 'Documentation', ariaLabel: 'Documentation' },
+      ],
+    },
   },
   CN: {
     selectors: { language: '语言', currency: '货币' },
@@ -305,6 +495,282 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       primaryAction: '立即开始',
       secondaryAction: '观看演示',
       supportNote: '无需信用卡 · 30 天免费试用 · 随时取消',
+    },
+    features: {
+      label: '01 — 核心能力',
+      heading: ['为效能', '而生'],
+      items: [
+        {
+          title: 'AI 智能外联',
+          body: 'AI 基于您自己的销售手册和策略文件起草每条回复与跟进内容，经您批准后才会发送——低风险回复也可切换为全自动发送。',
+        },
+        {
+          title: '收入智能',
+          body: '实时呈现交易评分、业绩预测汇总与赢单概率信号，让您承诺的数字真正能够达成。',
+        },
+        {
+          title: '团队协同',
+          body: '共享销售管道、任务路由与活动时间线，让销售、市场与客户成功团队围绕同一份业务开展协作。',
+        },
+        {
+          title: '企业级安全',
+          body: 'SSO 单点登录、基于角色的权限控制，以及对每条 AI 草稿、审批与发送的完整审计记录。违禁词句与必备免责声明自动强制执行。',
+        },
+        {
+          title: '全渠道触达',
+          body: 'WhatsApp、微信、Telegram、Messenger、Instagram、电子邮件与网页聊天——所有对话汇聚于同一个收件箱，并以客户的语言（英文、粤语或普通话）回复。',
+        },
+        {
+          title: '管道分析',
+          body: '阶段转化、周期时长与销售表现逐笔细分，无需导出表格。',
+        },
+      ],
+    },
+    poster: {
+      kicker: '更智能的服务，更人性化的体验',
+      heading: ['成交更多。', '工作更少。', '增长更快。'],
+      body: '自动化的客户服务依然保持人情味。AI 处理日常对话，让您的团队与每位客户保持紧密联系。',
+      cta: '开始免费试用',
+    },
+    pricing: {
+      label: '04 — 定价',
+      heading: ['透明', '定价'],
+      monthly: '月付',
+      annual: '年付 –17%',
+      mostPopular: '最受欢迎',
+      perMonth: '/ 月',
+      enterprise: '企业版',
+      plans: [
+        {
+          name: '起步版',
+          priceKey: 'starter',
+          blurb: '适合初次搭建销售管道的小团队。',
+          features: [
+            '最多 1,000 位联系人',
+            '共享收件箱——电子邮件与网页聊天',
+            '管道看板',
+            '基础分析',
+            '2 个团队席位',
+            '标准支持',
+          ],
+          cta: '开始免费试用',
+          ctaHref: APP_LOGIN_URL,
+        },
+        {
+          name: '成长版',
+          priceKey: 'growth',
+          blurb: '为准备将跟进工作全自动化的团队而设。',
+          features: [
+            '包含起步版全部功能',
+            '全渠道——WhatsApp、微信、Telegram 等',
+            'AI 草稿与审批队列',
+            '知识库问答（RAG）',
+            '批量营销与模板',
+            '10 个团队席位',
+            '优先支持',
+          ],
+          cta: '开始免费试用',
+          ctaHref: APP_LOGIN_URL,
+          inverted: true,
+        },
+        {
+          name: '定制版',
+          blurb: '为有安全与规模化需求的组织而设。',
+          features: [
+            '包含成长版全部功能',
+            'SSO / SAML',
+            '定制集成',
+            '无限席位',
+            '专属客户成功经理',
+            '99.9% 在线率 SLA',
+          ],
+          cta: '联系销售',
+          ctaHref: SALES_MAILTO,
+        },
+      ],
+    },
+    contact: {
+      label: '05 — 联系',
+      heading: ['让我们', '谈谈', '业绩'],
+      intro:
+        '告诉我们您的团队情况，我们将展示 JOHN CRM 如何契合您的销售流程。没有幻灯片——只用您自己的数据做实时演示。',
+      info: [
+        { label: '响应时间', value: '2 小时内' },
+        { label: '演示时长', value: '30 分钟' },
+        { label: '部署时间', value: '当天完成' },
+        { label: '免费试用', value: '30 天' },
+        { label: '支持渠道', value: '8+ 个' },
+      ],
+      form: {
+        fields: [
+          { id: 'name', label: '姓名', placeholder: '张大明' },
+          { id: 'company', label: '公司名称', placeholder: '示例科技有限公司' },
+          { id: 'email', label: '工作邮箱', placeholder: 'zhang@company.com' },
+        ],
+        teamSize: '团队规模',
+        teamSizePlaceholder: '请选择团队规模',
+        message: '留言（可选）',
+        messagePlaceholder: '您目前的销售管道是什么样的？',
+        submit: '预约演示',
+        sending: '发送中…',
+        sentTitle: '已收到',
+        sentBody: '我们将在工作日 2 小时内回复您，请查收确认邮件。',
+        errorBefore: '发送失败，请重试，或直接发邮件至 ',
+        errorAfter: '。',
+        privacyBefore: '提交即表示您同意我们的',
+        privacyLink: '隐私政策',
+      },
+    },
+    footer: {
+      links: [
+        { label: '隐私', ariaLabel: '隐私政策' },
+        { label: '条款', ariaLabel: '服务条款' },
+        { label: '文档', ariaLabel: '文档' },
+      ],
+    },
+  },
+  HK: {
+    selectors: { language: '語言', currency: '貨幣' },
+    navigation: { features: '功能', pricing: '定價', contact: '聯繫' },
+    actions: { contactSales: '聯絡銷售', login: '登入', tryForFree: '免費試用' },
+    hero: {
+      title: ['永不休眠的', '智慧助手'],
+      description: '領先的 AI 智慧助手平台，自動處理訊息。在一個地方管理您的網站、WhatsApp、微信、電子郵件等渠道。',
+      primaryAction: '立即開始',
+      secondaryAction: '觀看示範',
+      supportNote: '無需信用卡 · 30 天免費試用 · 隨時取消',
+    },
+    features: {
+      label: '01 — 核心能力',
+      heading: ['為效能', '而生'],
+      items: [
+        {
+          title: 'AI 智能外聯',
+          body: 'AI 基於您自己的銷售手冊和策略文件起草每條回覆與跟進內容，經您批准後才會發送——低風險回覆也可切換為全自動發送。',
+        },
+        {
+          title: '收入智能',
+          body: '即時呈現交易評分、業績預測匯總與贏單概率信號，讓您承諾的數字真正能夠達成。',
+        },
+        {
+          title: '團隊協同',
+          body: '共享銷售管道、任務路由與活動時間線，讓銷售、市場與客戶成功團隊圍繞同一份業務開展協作。',
+        },
+        {
+          title: '企業級安全',
+          body: 'SSO 單一登入、基於角色的權限控制，以及對每條 AI 草稿、審批與發送的完整審計記錄。違禁詞句與必備免責聲明自動強制執行。',
+        },
+        {
+          title: '全渠道觸達',
+          body: 'WhatsApp、微信、Telegram、Messenger、Instagram、電子郵件與網頁聊天——所有對話匯聚於同一個收件箱，並以客戶的語言（英文、粵語或普通話）回覆。',
+        },
+        {
+          title: '管道分析',
+          body: '階段轉化、週期時長與銷售表現逐筆細分，無需匯出表格。',
+        },
+      ],
+    },
+    poster: {
+      kicker: '更智能的服務，更人性化的體驗',
+      heading: ['成交更多。', '工作更少。', '增長更快。'],
+      body: '自動化的客戶服務依然保持人情味。AI 處理日常對話，讓您的團隊與每位客戶保持緊密聯繫。',
+      cta: '開始免費試用',
+    },
+    pricing: {
+      label: '04 — 定價',
+      heading: ['透明', '定價'],
+      monthly: '月付',
+      annual: '年付 –17%',
+      mostPopular: '最受歡迎',
+      perMonth: '/ 月',
+      enterprise: '企業版',
+      plans: [
+        {
+          name: '入門版',
+          priceKey: 'starter',
+          blurb: '適合初次搭建銷售管道的小團隊。',
+          features: [
+            '最多 1,000 位聯絡人',
+            '共享收件箱——電子郵件與網頁聊天',
+            '管道看板',
+            '基礎分析',
+            '2 個團隊席位',
+            '標準支援',
+          ],
+          cta: '開始免費試用',
+          ctaHref: APP_LOGIN_URL,
+        },
+        {
+          name: '成長版',
+          priceKey: 'growth',
+          blurb: '為準備將跟進工作全自動化的團隊而設。',
+          features: [
+            '包含入門版全部功能',
+            '全渠道——WhatsApp、微信、Telegram 等',
+            'AI 草稿與審批隊列',
+            '知識庫問答（RAG）',
+            '批量行銷與模板',
+            '10 個團隊席位',
+            '優先支援',
+          ],
+          cta: '開始免費試用',
+          ctaHref: APP_LOGIN_URL,
+          inverted: true,
+        },
+        {
+          name: '定製版',
+          blurb: '為有安全與規模化需求的組織而設。',
+          features: [
+            '包含成長版全部功能',
+            'SSO / SAML',
+            '定製整合',
+            '無限席位',
+            '專屬客戶成功經理',
+            '99.9% 在線率 SLA',
+          ],
+          cta: '聯絡銷售',
+          ctaHref: SALES_MAILTO,
+        },
+      ],
+    },
+    contact: {
+      label: '05 — 聯繫',
+      heading: ['讓我們', '談談', '業績'],
+      intro:
+        '告訴我們您的團隊情況，我們將展示 JOHN CRM 如何契合您的銷售流程。沒有投影片——只用您自己的數據做實時示範。',
+      info: [
+        { label: '回應時間', value: '2 小時內' },
+        { label: '示範時長', value: '30 分鐘' },
+        { label: '部署時間', value: '當天完成' },
+        { label: '免費試用', value: '30 天' },
+        { label: '支援渠道', value: '8+ 個' },
+      ],
+      form: {
+        fields: [
+          { id: 'name', label: '姓名', placeholder: '張大明' },
+          { id: 'company', label: '公司名稱', placeholder: '示例科技有限公司' },
+          { id: 'email', label: '工作電郵', placeholder: 'cheung@company.com' },
+        ],
+        teamSize: '團隊規模',
+        teamSizePlaceholder: '請選擇團隊規模',
+        message: '留言（可選）',
+        messagePlaceholder: '您目前的銷售管道是怎樣的？',
+        submit: '預約示範',
+        sending: '發送中…',
+        sentTitle: '已收到',
+        sentBody: '我們將在工作日 2 小時內回覆您，請查收確認郵件。',
+        errorBefore: '發送失敗，請重試，或直接發電郵至 ',
+        errorAfter: '。',
+        privacyBefore: '提交即表示您同意我們的',
+        privacyLink: '私隱政策',
+      },
+    },
+    footer: {
+      links: [
+        { label: '私隱', ariaLabel: '私隱政策' },
+        { label: '條款', ariaLabel: '服務條款' },
+        { label: '文件', ariaLabel: '文件' },
+      ],
     },
   },
 };
@@ -528,7 +994,7 @@ function Nav({
             {copy.actions.login}
           </a>
           <a
-            href="#pricing"
+            href={APP_LOGIN_URL}
             className="bg-black px-5 py-2.5 font-mono text-[11px] tracking-[0.25em] uppercase text-white transition-opacity hover:opacity-80"
           >
             {copy.actions.tryForFree}
@@ -592,7 +1058,7 @@ function Nav({
               {copy.actions.login}
             </a>
             <a
-              href="#pricing"
+              href={APP_LOGIN_URL}
               onClick={() => setOpen(false)}
               className="mt-6 bg-black px-5 py-4 text-center font-mono text-[11px] tracking-[0.25em] uppercase text-white"
             >
@@ -657,6 +1123,13 @@ const HERO_STATS_BY_LANGUAGE: Record<LanguageCode, readonly { value: string; lab
     { value: '自定义 API', label: '接口端点' },
     { value: 'Google 集成', label: '日历与会议' },
   ],
+  HK: [
+    { value: '隨處嵌入', label: '網站與應用均可使用' },
+    { value: '< 0 分鐘', label: '平均回應' },
+    { value: '自動化', label: '預約安排' },
+    { value: '自訂 API', label: '介面端點' },
+    { value: 'Google 整合', label: '日曆與會議' },
+  ],
 };
 
 function HeroStat({ stat }: { stat: { value: string; label: string } }) {
@@ -685,8 +1158,10 @@ function Hero({ language }: { language: LanguageCode }) {
           <div>
             <Reveal delay={100}>
               <h1
-                className="font-display font-extrabold uppercase leading-[0.88] tracking-tight"
-                style={{ fontSize: language === 'CN' ? 'clamp(3.5rem, 6vw, 6.25rem)' : 'clamp(3.75rem, 8.5vw, 7rem)' }}
+                className={`font-display font-extrabold uppercase tracking-tight ${
+                  language === 'EN' ? 'leading-[0.88]' : 'leading-[1.15]'
+                }`}
+                style={{ fontSize: language === 'EN' ? 'clamp(3.75rem, 8.5vw, 7rem)' : 'clamp(3.5rem, 6vw, 6.25rem)' }}
               >
                 {copy.hero.title.map((line, index) => (
                   <span key={line}>
@@ -753,51 +1228,28 @@ function Hero({ language }: { language: LanguageCode }) {
 
 /* --------------------------------- features -------------------------------- */
 
-const FEATURES = [
-  {
-    icon: Zap,
-    title: 'AI-Powered Outreach',
-    body: 'AI drafts every reply and follow-up, grounded in your own playbooks and policy documents. Nothing sends until you approve — or flip low-risk replies to full autopilot.',
-  },
-  {
-    icon: TrendingUp,
-    title: 'Revenue Intelligence',
-    body: 'Deal scoring, forecast rollups, and win-probability signals surfaced in real time — so you commit numbers you can actually hit.',
-  },
-  {
-    icon: Users,
-    title: 'Team Alignment',
-    body: 'Shared pipelines, task routing, and activity timelines keep sales, marketing, and success working the same book of business.',
-  },
-  {
-    icon: Shield,
-    title: 'Enterprise Security',
-    body: 'SSO, role-based access, and a full audit trail of every AI draft, approval, and send. Blacklisted phrases and mandatory disclaimers enforced automatically.',
-  },
-  {
-    icon: Globe,
-    title: 'Multi-Channel Reach',
-    body: 'WhatsApp, WeChat, Telegram, Messenger, Instagram, email, and web chat — every conversation in one inbox, answered in the client’s language: English, Cantonese, or Mandarin.',
-  },
-  {
-    icon: BarChart3,
-    title: 'Pipeline Analytics',
-    body: 'Stage conversion, cycle time, and rep performance broken down to the deal. No spreadsheet exports required.',
-  },
-];
+const FEATURE_ICONS = [Zap, TrendingUp, Users, Shield, Globe, BarChart3];
 
-function Features() {
+function Features({ language }: { language: LanguageCode }) {
+  const copy = SITE_COPY[language].features;
   return (
     <section id="features" className="bg-white py-32">
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <Reveal>
           <div className="flex flex-wrap items-end justify-between gap-8">
             <div>
-              <SectionLabel>01 — Capabilities</SectionLabel>
-              <h2 className="mt-4 font-display text-6xl font-black uppercase leading-[0.9] lg:text-7xl">
-                Built for
-                <br />
-                Performance
+              <SectionLabel>{copy.label}</SectionLabel>
+              <h2
+                className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
+                  language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
+                }`}
+              >
+                {copy.heading.map((line, index) => (
+                  <span key={line}>
+                    {line}
+                    {index < copy.heading.length - 1 && <br />}
+                  </span>
+                ))}
               </h2>
             </div>
           </div>
@@ -805,20 +1257,23 @@ function Features() {
 
         <Reveal delay={150} className="mt-16">
           <div className="grid gap-px bg-black/5 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
+            {copy.items.map((f, i) => {
+              const Icon = FEATURE_ICONS[i];
+              return (
               <div
                 key={f.title}
                 className="group bg-white p-10 transition-colors duration-300 hover:bg-[#F8F8F6]"
               >
                 <div className="flex h-9 w-9 items-center justify-center border border-black/15 transition-colors duration-300 group-hover:border-black/40">
-                  <f.icon size={15} strokeWidth={1.5} />
+                  <Icon size={15} strokeWidth={1.5} />
                 </div>
                 <h3 className="mt-6 font-display text-xl font-bold uppercase tracking-wide">
                   {f.title}
                 </h3>
                 <p className="mt-3 text-[13px] leading-relaxed text-black/50">{f.body}</p>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Reveal>
       </div>
@@ -833,7 +1288,8 @@ const POSTER_GRID: React.CSSProperties = {
     'repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 60px), repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 60px)',
 };
 
-function Poster() {
+function Poster({ language }: { language: LanguageCode }) {
+  const copy = SITE_COPY[language].poster;
   return (
     <section
       className="relative flex min-h-screen flex-col items-center justify-center bg-black px-6 py-32 text-center"
@@ -841,31 +1297,33 @@ function Poster() {
     >
       <Reveal>
         <div className="font-mono text-[10px] tracking-[0.4em] uppercase text-white/28">
-          Smarter Service. More Human.
+          {copy.kicker}
         </div>
       </Reveal>
       <Reveal delay={150}>
         <h2
-          className="mt-10 font-display font-black uppercase leading-[0.85] text-white"
+          className={`mt-10 font-display font-black uppercase text-white ${
+            language === 'EN' ? 'leading-[0.85]' : 'leading-[1.15]'
+          }`}
           style={{ fontSize: 'clamp(3.5rem, 13vw, 11rem)' }}
         >
-          Close More.
-          <br />
-          Work Less.
-          <br />
-          Grow Fast.
+          {copy.heading.map((line, index) => (
+            <span key={line}>
+              {line}
+              {index < copy.heading.length - 1 && <br />}
+            </span>
+          ))}
         </h2>
       </Reveal>
       <Reveal delay={300}>
         <p className="mx-auto mt-10 max-w-md text-[15px] leading-relaxed text-white/50">
-          Automated customer service that still feels human. AI handles routine
-          conversations while your team stays close to every customer.
+          {copy.body}
         </p>
         <a
-          href="#pricing"
+          href={APP_LOGIN_URL}
           className="mt-10 inline-flex items-center gap-3 bg-white px-10 py-4 font-mono text-[10px] tracking-[0.25em] uppercase text-black transition-opacity hover:opacity-80"
         >
-          Start Free Trial <ArrowRight size={12} />
+          {copy.cta} <ArrowRight size={12} />
         </a>
       </Reveal>
       <ChevronDown
@@ -1142,76 +1600,27 @@ function Reviews() {
 
 /* --------------------------------- pricing --------------------------------- */
 
-type Plan = {
-  name: string;
-  priceKey?: PricedPlanKey;
-  blurb: string;
-  features: string[];
-  cta: string;
-  ctaHref?: string;
-  inverted?: boolean;
-};
-
-const PLANS: Plan[] = [
-  {
-    name: 'Starter',
-    priceKey: 'starter',
-    blurb: 'For small teams getting their first pipeline in order.',
-    features: [
-      'Up to 1,000 contacts',
-      'Shared inbox — email & web chat',
-      'Pipeline board',
-      'Basic analytics',
-      '2 team seats',
-      'Standard support',
-    ],
-    cta: 'Start Free Trial',
-  },
-  {
-    name: 'Growth',
-    priceKey: 'growth',
-    blurb: 'For teams ready to put follow-up on autopilot.',
-    features: [
-      'Everything in Starter',
-      'All channels — WhatsApp, WeChat, Telegram & more',
-      'AI drafts with approval queue',
-      'Knowledge-base answers (RAG)',
-      'Bulk campaigns & templates',
-      '10 team seats',
-      'Priority support',
-    ],
-    cta: 'Start Free Trial',
-    inverted: true,
-  },
-  {
-    name: 'Custom',
-    blurb: 'For organizations with security and scale requirements.',
-    features: [
-      'Everything in Growth',
-      'SSO / SAML',
-      'Custom integrations',
-      'Unlimited seats',
-      'Dedicated CSM',
-      '99.9% uptime SLA',
-    ],
-    cta: 'Contact Sales',
-    ctaHref: SALES_MAILTO,
-  },
-];
-
-function Pricing({ currency }: { currency: CurrencyCode }) {
+function Pricing({ currency, language }: { currency: CurrencyCode; language: LanguageCode }) {
   const [annual, setAnnual] = useState(true);
   const pricing = CURRENCY_PRICING[currency];
+  const copy = SITE_COPY[language].pricing;
 
   return (
     <section id="pricing" className="bg-[#F8F8F6] py-32">
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <Reveal>
-          <SectionLabel>04 — Pricing</SectionLabel>
-          <h2 className="mt-4 font-display text-6xl font-black uppercase leading-[0.9] lg:text-7xl">
-            Transparent
-            <br />
-            Pricing
+          <SectionLabel>{copy.label}</SectionLabel>
+          <h2
+            className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
+              language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
+            }`}
+          >
+            {copy.heading.map((line, index) => (
+              <span key={line}>
+                {line}
+                {index < copy.heading.length - 1 && <br />}
+              </span>
+            ))}
           </h2>
         </Reveal>
 
@@ -1219,8 +1628,8 @@ function Pricing({ currency }: { currency: CurrencyCode }) {
           <div className="mt-10 inline-flex border border-black/10 bg-white p-1">
             {(
               [
-                { key: false, label: 'Monthly' },
-                { key: true, label: 'Annual –17%' },
+                { key: false, label: copy.monthly },
+                { key: true, label: copy.annual },
               ] as const
             ).map((t) => (
               <button
@@ -1238,7 +1647,7 @@ function Pricing({ currency }: { currency: CurrencyCode }) {
 
         <Reveal delay={200} className="mt-12">
           <div className="grid gap-px bg-black/6 lg:grid-cols-3">
-            {PLANS.map((p) => {
+            {copy.plans.map((p) => {
               const price = p.priceKey ? pricing.prices[p.priceKey][annual ? 'annual' : 'monthly'] : null;
               const formattedPrice = formatCurrencyPrice(currency, price);
               const inv = p.inverted;
@@ -1251,8 +1660,8 @@ function Pricing({ currency }: { currency: CurrencyCode }) {
                 >
                   {inv && (
                     <span className="absolute -top-3.5 left-8 border border-white/20 bg-black px-3 py-1.5 font-mono text-[8px] tracking-[0.25em] uppercase text-white">
-                      Most Popular
-                    </span>
+                      {copy.mostPopular}
+                      </span>
                   )}
                   <div
                     className={`font-mono text-[9px] tracking-[0.3em] uppercase ${
@@ -1272,11 +1681,11 @@ function Pricing({ currency }: { currency: CurrencyCode }) {
                             inv ? 'text-white/35' : 'text-black/30'
                           }`}
                         >
-                          / mo
+                          {copy.perMonth}
                         </span>
                       </>
                     ) : (
-                      <span className="font-display text-6xl font-black uppercase leading-none">Enterprise</span>
+                      <span className="font-display text-6xl font-black uppercase leading-none">{copy.enterprise}</span>
                     )}
                   </div>
                   <p
@@ -1324,17 +1733,9 @@ function Pricing({ currency }: { currency: CurrencyCode }) {
 
 /* --------------------------------- contact --------------------------------- */
 
-const CONTACT_INFO = [
-  { label: 'Response Time', value: '< 2 hours' },
-  { label: 'Demo Duration', value: '30 minutes' },
-  { label: 'Setup Time', value: 'Same day' },
-  { label: 'Free Trial', value: '30 days' },
-  { label: 'Channels Supported', value: '8+' },
-];
-
 const TEAM_SIZE_OPTIONS = ['1–5', '6–20', '21–100', '100+'] as const;
 
-function TeamSizeCombobox() {
+function TeamSizeCombobox({ placeholder }: { placeholder: string }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -1413,7 +1814,7 @@ function TeamSizeCombobox() {
         }`}
       >
         <span className={value ? 'text-black/75' : 'text-black/35'}>
-          {value || 'Select team size'}
+          {value || placeholder}
         </span>
         <ChevronDown
           size={15}
@@ -1458,9 +1859,10 @@ function TeamSizeCombobox() {
 
 type ContactStatus = 'idle' | 'sending' | 'sent' | 'error';
 
-function Contact() {
+function Contact({ language }: { language: LanguageCode }) {
   const [status, setStatus] = useState<ContactStatus>('idle');
   const [devError, setDevError] = useState<string | null>(null);
+  const copy = SITE_COPY[language].contact;
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1494,21 +1896,24 @@ function Contact() {
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <div className="grid gap-16 lg:grid-cols-[2fr_3fr] lg:gap-14">
           <Reveal>
-            <SectionLabel>05 — Contact</SectionLabel>
-            <h2 className="mt-4 font-display text-6xl font-black uppercase leading-[0.9] lg:text-7xl">
-              Let&apos;s
-              <br />
-              Talk
-              <br />
-              Revenue
+            <SectionLabel>{copy.label}</SectionLabel>
+            <h2
+              className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
+                language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
+              }`}
+            >
+              {copy.heading.map((line, index) => (
+                <span key={line}>
+                  {line}
+                  {index < copy.heading.length - 1 && <br />}
+                </span>
+              ))}
             </h2>
             <p className="mt-8 max-w-sm text-[14px] leading-relaxed text-black/55">
-              Tell us about your team and we&apos;ll show you exactly how JOHN CRM
-              fits your pipeline. No slide decks — a live walkthrough on your
-              own data.
+              {copy.intro}
             </p>
             <div className="mt-12 max-w-sm">
-              {CONTACT_INFO.map((row) => (
+              {copy.info.map((row) => (
                 <div
                   key={row.label}
                   className="flex items-center justify-between border-b border-black/6 py-4"
@@ -1529,10 +1934,9 @@ function Contact() {
                   <div className="flex h-12 w-12 items-center justify-center border border-black/15">
                     <Check size={18} strokeWidth={2.5} />
                   </div>
-                  <div className="mt-6 font-display text-4xl font-black uppercase">Received</div>
+                  <div className="mt-6 font-display text-4xl font-black uppercase">{copy.form.sentTitle}</div>
                   <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-black/40">
-                    We&apos;ll get back to you within two hours during business
-                    days. Check your inbox for a confirmation.
+                    {copy.form.sentBody}
                   </p>
                 </div>
               ) : (
@@ -1549,21 +1953,15 @@ function Contact() {
                     autoComplete="off"
                     aria-hidden="true"
                   />
-                  {(
-                    [
-                      { id: 'name', label: 'Full Name', placeholder: 'Jane Analyst', type: 'text', required: true },
-                      { id: 'company', label: 'Company', placeholder: 'Acme Industries', type: 'text', required: true },
-                      { id: 'email', label: 'Work Email', placeholder: 'jane@acme.com', type: 'email', required: true },
-                    ] as const
-                  ).map((f) => (
+                  {copy.form.fields.map((f) => (
                     <label key={f.id} className="block">
                       <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30">
                         {f.label}
                       </span>
                       <input
-                        type={f.type}
+                        type={f.id === 'email' ? 'email' : 'text'}
                         name={f.id}
-                        required={f.required}
+                        required
                         placeholder={f.placeholder}
                         className="mt-2 w-full border-b border-black/6 bg-transparent pb-4 text-[14px] outline-none transition-colors placeholder:text-black/15 focus:border-black/30"
                       />
@@ -1574,18 +1972,18 @@ function Contact() {
                       id="team-size-label"
                       className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30"
                     >
-                      Team Size
+                      {copy.form.teamSize}
                     </span>
-                    <TeamSizeCombobox />
+                    <TeamSizeCombobox placeholder={copy.form.teamSizePlaceholder} />
                   </div>
                   <label className="block">
                     <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30">
-                      Message (Optional)
+                      {copy.form.message}
                     </span>
                     <textarea
                       rows={3}
                       name="message"
-                      placeholder="What does your current pipeline look like?"
+                      placeholder={copy.form.messagePlaceholder}
                       className="mt-2 w-full resize-none border-b border-black/6 bg-transparent pb-4 text-[14px] outline-none transition-colors placeholder:text-black/15 focus:border-black/30"
                     />
                   </label>
@@ -1594,14 +1992,14 @@ function Contact() {
                       role="alert"
                       className="border border-black/15 bg-white px-4 py-3 text-[12px] leading-relaxed text-black/60"
                     >
-                      We couldn&apos;t send that. Try again, or email us directly at{' '}
+                      {copy.form.errorBefore}
                       <a
                         href={SALES_MAILTO}
                         className="underline decoration-black/20 underline-offset-2 hover:text-black"
                       >
                         {SALES_CONTACT_EMAIL}
                       </a>
-                      .
+                      {copy.form.errorAfter}
                       {devError && (
                         <span className="mt-2 block font-mono text-[11px] text-black/45">
                           dev only — API said: {devError}
@@ -1614,15 +2012,15 @@ function Contact() {
                     disabled={status === 'sending'}
                     className="mt-2 w-full bg-black py-5 font-mono text-[10px] tracking-[0.3em] uppercase text-white transition-opacity hover:opacity-80 disabled:opacity-40"
                   >
-                    {status === 'sending' ? 'Sending…' : 'Book a Demo'}
+                    {status === 'sending' ? copy.form.sending : copy.form.submit}
                   </button>
                   <p className="text-center font-mono text-[8px] tracking-[0.15em] uppercase text-black/25">
-                    By submitting you agree to our{' '}
+                    {copy.form.privacyBefore}{' '}
                     <a
                       href="/privacy-policy"
                       className="underline decoration-black/20 underline-offset-2 transition-colors hover:text-black"
                     >
-                      privacy policy
+                      {copy.form.privacyLink}
                     </a>
                   </p>
                 </form>
@@ -1637,22 +2035,19 @@ function Contact() {
 
 /* ---------------------------------- footer --------------------------------- */
 
-const FOOTER_LINKS = [
-  { label: 'Privacy', ariaLabel: 'Privacy Policy', href: '/privacy-policy' },
-  { label: 'Terms', ariaLabel: 'Terms of Service', href: '/terms-of-service' },
-  { label: 'Documentation', ariaLabel: 'Documentation', href: '#top' },
-] as const;
+const FOOTER_LINK_HREFS = ['/privacy-policy', '/terms-of-service', '#top'] as const;
 
-function Footer() {
+function Footer({ language = 'EN' }: { language?: LanguageCode }) {
+  const links = SITE_COPY[language].footer.links;
   return (
     <footer className="border-t border-black/6 bg-[#F8F8F6]">
       <div className="mx-auto flex max-w-[85rem] flex-col items-start justify-between gap-8 px-6 py-14 md:flex-row md:items-center lg:px-10">
         <img src={johnCrmLogo} alt="JOHN CRM" className="h-5 w-auto" />
         <nav className="flex flex-wrap gap-x-8 gap-y-3">
-          {FOOTER_LINKS.map((l) => (
+          {links.map((l, i) => (
             <a
               key={l.label}
-              href={l.href}
+              href={FOOTER_LINK_HREFS[i]}
               aria-label={l.ariaLabel}
               className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/35 transition-colors hover:text-black"
             >
@@ -2195,7 +2590,8 @@ function LandingPage() {
   }, []);
 
   useEffect(() => {
-    document.documentElement.lang = language === 'CN' ? 'zh-CN' : 'en';
+    document.documentElement.lang =
+      language === 'CN' ? 'zh-CN' : language === 'HK' ? 'zh-HK' : 'en';
   }, [language]);
 
   return (
@@ -2210,15 +2606,15 @@ function LandingPage() {
         />
         <main>
           <Hero language={language} />
-          <Features />
-          <Poster />
+          <Features language={language} />
+          <Poster language={language} />
           {SHOWCASE_ENABLED && <Showcase />}
           {/* Hidden until we have real testimonials — the current quotes are placeholders. */}
           {/* <Reviews /> */}
-          <Pricing currency={currency} />
-          <Contact />
+          <Pricing currency={currency} language={language} />
+          <Contact language={language} />
         </main>
-        <Footer />
+        <Footer language={language} />
       </div>
     </>
   );
