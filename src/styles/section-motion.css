@@ -1,0 +1,277 @@
+.motion-page {
+  --motion-ease: cubic-bezier(.16, 1, .3, 1);
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+}
+.motion-page > [data-motion-section] { position: relative; scroll-margin-top: 64px; }
+.motion-backdrop { display: none; }
+.motion-page .chat-demo { border-top: 0; }
+
+/* Match the Seamless Delivery heading gutter; the feature grid stays full width. */
+.feature-layout { width: 100%; padding-inline: 40px; }
+@media (max-width: 899px) { .feature-layout { padding-inline: 24px; } }
+@media (max-width: 359px) { .feature-layout { padding-inline: 18px; } }
+
+/* Masks do not change the original line boxes or typography. */
+.motion-line { display: block; overflow: clip; overflow-clip-margin: .14em; }
+.motion-line br { display: none; }
+.motion-line-inner { display: block; position: relative; width: fit-content; max-width: 100%; transform-origin: left bottom; }
+.motion-wipe-text { display: block; }
+.text-center .motion-line-inner { margin-inline: auto; }
+
+/* Match every font metric to the actual portrait without adding layout boxes. */
+.hero-ascii-intro { display: none; }
+[data-ascii-intro] { position: relative; }
+[data-ascii-intro='pending'] > pre[role='img'],
+[data-ascii-intro='running'] > pre[role='img'] { opacity: 0; }
+[data-ascii-intro='pending'] > .hero-ascii-intro,
+[data-ascii-intro='running'] > .hero-ascii-intro {
+  display: block;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  pointer-events: none;
+  font: inherit;
+  letter-spacing: normal;
+  white-space: pre;
+  color: #2a88aa;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Draw only the dividers; opaque grid/cell fills would leave a stationary
+     rectangle behind the curved content as the page background changes. */
+  [data-motion-ready] .feature-grid,
+  [data-motion-ready] .feature-grid > .group {
+    background-color: transparent;
+  }
+  [data-motion-ready] .feature-grid > .group {
+    position: relative;
+  }
+  [data-motion-ready] .feature-grid > .group::before {
+    content: '';
+    position: absolute;
+    inset: 0 -1px -1px 0;
+    border: 0 solid rgb(0 0 0 / 5%);
+    pointer-events: none;
+    opacity: var(--feature-lines-opacity, 1);
+  }
+  [data-motion-ready] .feature-grid > .group:not(:last-child)::before {
+    border-bottom-width: 1px;
+  }
+  @media (min-width: 640px) {
+    [data-motion-ready] .feature-grid > .group:nth-child(n)::before {
+      border-bottom-width: 0;
+      border-right-width: 0;
+    }
+    [data-motion-ready] .feature-grid > .group:nth-child(-n+4)::before { border-bottom-width: 1px; }
+    [data-motion-ready] .feature-grid > .group:nth-child(odd)::before { border-right-width: 1px; }
+  }
+  @media (min-width: 1024px) {
+    [data-motion-ready] .feature-grid > .group:nth-child(n)::before {
+      border-bottom-width: 0;
+      border-right-width: 0;
+    }
+    [data-motion-ready] .feature-grid > .group:nth-child(-n+3)::before { border-bottom-width: 1px; }
+    [data-motion-ready] .feature-grid > .group:not(:nth-child(3n))::before { border-right-width: 1px; }
+  }
+  /* One solid color covers the whole page. It is interpolated by scroll position.
+     Transparent sections cannot expose a seam or a gradient band. */
+  .motion-page[data-motion-ready] { background-color: var(--page-background, #f8f8f6); }
+  [data-motion-ready] > section { background-color: transparent; }
+  [data-motion-ready] > #top,
+  [data-motion-ready] > [data-motion-section='dark'] { background-image: none !important; }
+  [data-motion-ready] .chat-demo-stage::before { display: none; }
+
+  [data-motion-ready] > .motion-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--page-grid, 1);
+    background-image:
+      linear-gradient(color-mix(in srgb, var(--page-ink) 2.5%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--page-ink) 2.5%, transparent) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+
+  /* Adapt the exposed headings as the background crosses between light and dark.
+     Product windows and pricing cards retain their own local colors. */
+  [data-motion-ready] h1,
+  [data-motion-ready] h2,
+  [data-motion-ready] [data-motion-section='dark'] > svg { color: var(--page-ink); }
+  [data-motion-ready] .motion-label,
+  [data-motion-ready] [data-motion-section='dark'] .poster-kicker {
+    color: color-mix(in srgb, var(--page-ink) 45%, transparent);
+  }
+  [data-motion-ready] [data-motion-section='dark'] p {
+    color: color-mix(in srgb, var(--page-ink) 65%, transparent);
+  }
+  [data-motion-ready] [data-motion-section='dark'] a {
+    background-color: var(--page-ink);
+    color: var(--page-background);
+  }
+
+  /* Values update in both directions; there is no one-shot observer or playback delay. */
+  [data-motion-ready] [data-motion-reveal='lift'],
+  [data-motion-ready] [data-motion-reveal='artwork'] {
+    opacity: var(--reveal-opacity, 1);
+    transform: translate3d(0, var(--reveal-y, 0px), 0);
+    transform-origin: center top;
+  }
+  [data-motion-ready] [data-motion-reveal='artwork'] {
+    transform: translate3d(0, var(--reveal-y, 0px), 0) scale(calc(.96 + var(--reveal-enter, 1) * .04));
+  }
+  [data-motion-ready] [data-motion-reveal='heading'] .motion-line-inner {
+    opacity: var(--line-opacity, 1);
+  }
+  [data-motion-ready] [data-motion-reveal='heading'] .motion-wipe-text {
+    clip-path: inset(-.14em calc(100% - var(--line-wipe, 100%)) -.14em 0);
+  }
+  [data-motion-ready] [data-motion-reveal='heading'] .motion-line-inner:has(.motion-wipe-text)::after {
+    content: '';
+    position: absolute;
+    inset: .14em 0 .04em;
+    background: #000;
+    pointer-events: none;
+    clip-path: inset(0 0 0 var(--line-wipe, 100%));
+  }
+  /* Measure the stationary outer wrapper, and move only its contents along the arc. */
+  [data-motion-ready] [data-motion-curve] {
+    opacity: 1;
+    transform: none;
+  }
+  [data-motion-ready] .motion-curve-content {
+    position: relative;
+    z-index: 1;
+    opacity: var(--reveal-opacity, 1);
+    transform: perspective(var(--curve-perspective, 3600px)) translate3d(var(--reveal-x, 0px), 0, var(--reveal-z, 0px)) rotateY(var(--reveal-rotate-y, 0deg));
+    transform-origin: center;
+  }
+  [data-motion-ready] [data-motion-reveal='heading'] > .motion-curve-content {
+    opacity: 1;
+  }
+  [data-motion-ready] [data-motion-reveal='heading'][data-motion-curve] .motion-label {
+    transform: none;
+    opacity: var(--reveal-opacity, 1);
+  }
+  [data-motion-ready] [data-motion-reveal='heading'] .motion-label {
+    opacity: var(--reveal-opacity, 1);
+    transform: translateY(calc(var(--reveal-y, 0px) * .3));
+  }
+  [data-motion-ready] [data-motion-state='moving'],
+  [data-motion-ready] [data-motion-state='moving'] > .motion-curve-content,
+  [data-motion-ready] [data-motion-state='moving'] .motion-line-inner {
+    will-change: transform, opacity;
+  }
+  [data-motion-ready] [data-motion-parallax] { transform: translateY(var(--hero-drift, 0px)); }
+
+  /* Entrance and final outward exit share a transform, with scroll as the clock. */
+  [data-motion-ready] .chat-demo-column {
+    --panel-direction: -1;
+    --panel-exit-distance: calc(50vw + 32px);
+    --panel-exit: 0;
+    --panel-opacity: 1;
+    opacity: calc(var(--reveal-opacity, 1) * var(--panel-opacity));
+    transform: translate3d(calc(((1 - var(--reveal-enter, 1)) * 48px + var(--panel-exit) * var(--panel-exit-distance)) * var(--panel-direction)), var(--reveal-y, 0px), 0)
+      scale(calc(.96 + var(--reveal-enter, 1) * .04));
+    transform-origin: center top;
+  }
+  [data-motion-ready] .chat-demo-john { --panel-direction: 1; }
+  [data-motion-ready] .is-pinned .chat-demo-column,
+  [data-motion-ready] .chat-demo-flow-scene:last-child .chat-demo-column {
+    --panel-exit: var(--chat-exit-travel, 0);
+    --panel-opacity: var(--chat-exit-opacity, 1);
+  }
+
+  /* The opening scene also has a timed entrance after the loader finishes. */
+  [data-motion-ready] #top [data-motion-reveal='heading'] .motion-line-inner {
+    position: relative;
+    width: fit-content;
+    animation: motion-opening-text 850ms var(--motion-ease) backwards;
+    animation-delay: calc(300ms + var(--line-index, 0) * 95ms);
+  }
+  [data-motion-ready] #top [data-motion-reveal='heading'] .motion-line-inner:has(.motion-wipe-text)::after {
+    content: '';
+    position: absolute;
+    inset: .14em 0 .04em;
+    background: #000;
+    pointer-events: none;
+    /* Release the mask after entry so the scroll exit can draw the bar back. */
+    animation: motion-opening-bar 850ms var(--motion-ease) backwards;
+    animation-delay: calc(300ms + var(--line-index, 0) * 95ms);
+  }
+  [data-motion-ready] #top [data-motion-reveal='heading'] .motion-wipe-text {
+    display: block;
+    clip-path: inset(-.14em 0 -.14em 0);
+    animation: motion-opening-letters 850ms var(--motion-ease) backwards;
+    animation-delay: calc(300ms + var(--line-index, 0) * 95ms);
+  }
+  [data-motion-ready] #top [data-motion-reveal='lift'] > * {
+    animation: motion-opening-content 1s var(--motion-ease) backwards;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+}
+
+@keyframes motion-opening-text {
+  from { clip-path: inset(0 0 0 0); opacity: 1; transform: none; }
+  to { clip-path: inset(-.14em); opacity: 1; transform: none; }
+}
+@keyframes motion-opening-bar {
+  from { clip-path: inset(0); }
+  to { clip-path: inset(0 0 0 100%); }
+}
+@keyframes motion-opening-letters {
+  from { clip-path: inset(-.14em 100% -.14em 0); }
+  to { clip-path: inset(-.14em 0 -.14em 0); }
+}
+@keyframes motion-opening-content {
+  from { opacity: 0; transform: translateY(36px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 767px) {
+  [data-motion-ready] .chat-demo-column {
+    transform: translate3d(calc(var(--panel-exit, 0) * var(--panel-exit-distance) * var(--panel-direction, -1)), var(--reveal-y, 0px), 0);
+  }
+}
+
+@media (max-width: 599px) {
+  [data-motion-ready] .chat-demo-column { --panel-exit-distance: calc(100vw + 32px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-ascii-intro] > pre[role='img'] { opacity: 1; }
+  .hero-ascii-intro { display: none !important; }
+  .motion-page [data-motion-reveal],
+  .motion-page .motion-line-inner,
+  .motion-page .motion-curve-content,
+  .motion-page .motion-wipe-text,
+  .motion-page .motion-label,
+  .motion-page [data-motion-parallax],
+  .motion-page .chat-demo-heading,
+  .motion-page .chat-demo-column {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+    clip-path: none !important;
+  }
+  .motion-page .motion-line-inner::after { display: none !important; }
+}
+
+/* Keyboard users can focus any control immediately, at any scroll position. */
+.motion-page [data-motion-reveal]:focus-within,
+.motion-page [data-motion-reveal]:focus-within .motion-line-inner,
+.motion-page [data-motion-reveal]:focus-within .motion-curve-content,
+.motion-page [data-motion-reveal]:focus-within .motion-wipe-text,
+.motion-page [data-motion-reveal]:focus-within .chat-demo-heading,
+.motion-page [data-motion-reveal]:focus-within .chat-demo-column {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+  clip-path: none !important;
+}
+.motion-page [data-motion-reveal]:focus-within .motion-line-inner::after { display: none !important; }
+.motion-page [data-motion-reveal]:focus-within > * { animation: none !important; }

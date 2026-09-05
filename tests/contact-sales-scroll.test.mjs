@@ -17,5 +17,5 @@ test('desktop and mobile Contact Sales actions target the contact section', () =
 });
 
 test('contact section offsets anchor scrolling for the fixed header', () => {
-  assert.match(appSource, /<section id="contact" className="scroll-mt-16 bg-white py-32">/);
+  assert.match(appSource, /<section id="contact"[^>]*className="[^"]*\bscroll-mt-16\b[^"]*"/);
 });

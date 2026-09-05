@@ -12,7 +12,7 @@ test('hero renders a larger blue ASCII salesman without the dot-field background
   const source = await readFile(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
   const heroVisual = source.slice(
     source.indexOf('function HeroMockup()'),
-    source.indexOf('const HERO_STATS'),
+    source.indexOf('function Hero('),
   );
 
   assert.equal(assetExists, true, 'expected the supplied ASCII art asset');
@@ -27,7 +27,7 @@ test('hero renders a larger blue ASCII salesman without the dot-field background
   assert.match(heroVisual, /aria-label="ASCII art salesman holding a briefcase"/);
   assert.match(
     heroVisual,
-    /useAsciiTextBulge\(\s*heroAsciiWithoutBackgroundDots,?\s*\)/,
+    /useAsciiTextRipple\(\s*heroAsciiWithoutBackgroundDots,?\s*\)/,
     'expected the hook to receive the ASCII source',
   );
   assert.match(heroVisual, /\{children\}/, 'expected the pre to render the hook-built glyph spans');
@@ -45,14 +45,14 @@ test('hero renders a larger blue ASCII salesman without the dot-field background
   assert.doesNotMatch(heroVisual, /heroSalesman/);
 });
 
-test('hero ASCII art magnifies under the cursor as a per-character text lens', async () => {
+test('hero ASCII art animates circular character ripples without magnification', async () => {
   const source = await readFile(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
   const heroVisual = source.slice(
     source.indexOf('function HeroMockup()'),
-    source.indexOf('const HERO_STATS'),
+    source.indexOf('function Hero('),
   );
   const hook = await readFile(
-    new URL('../src/lib/useAsciiTextBulge.ts', import.meta.url),
+    new URL('../src/lib/useAsciiTextRipple.ts', import.meta.url),
     'utf8',
   );
   const webglFilesGone = await Promise.all(
@@ -66,21 +66,23 @@ test('hero ASCII art magnifies under the cursor as a per-character text lens', a
 
   assert.match(
     source,
-    /import \{ prefersReducedMotion, useAsciiTextBulge \} from '\.\.\/lib\/useAsciiTextBulge';/,
+    /import \{ prefersReducedMotion, useAsciiTextRipple \} from '\.\.\/lib\/useAsciiTextRipple';/,
   );
-  assert.match(heroVisual, /data-radius="0\.18"/);
-  assert.match(heroVisual, /data-strength="0\.45"/);
+  assert.match(heroVisual, /data-radius="0\.085"/);
+  assert.doesNotMatch(heroVisual, /data-strength/);
   assert.match(heroVisual, /cursor-default/);
   assert.match(heroVisual, /tabIndex=\{0\}/);
 
-  // The lens mechanics: per-glyph spans, cubic falloff, eased motion, gates.
+  // Keep real glyph text, circular character changes, and motion gates.
   assert.match(hook, /className: 'inline-block'/, 'expected one inline-block span per glyph');
-  assert.match(hook, /mask \* mask \* mask/, 'expected the cubic falloff from the spec');
+  assert.match(hook, /Math\.hypot\(dx, dy\)/, 'expected a circular distance mask');
   assert.match(hook, /const MOUSE_LERP = 0\.08;/);
   assert.match(hook, /const STRENGTH_LERP_IN = 0\.06;/);
   assert.match(hook, /prefers-reduced-motion/, 'expected the reduced-motion gate');
   assert.match(hook, /hover: hover/, 'expected the touch-device gate');
-  assert.match(hook, /style\.transform = ''/, 'expected transforms to clear on decay');
+  assert.doesNotMatch(hook, /style\.transform/, 'hover must never magnify or displace glyphs');
+  assert.match(hook, /textContent = originals\[gi\]/, 'expected exact text restoration');
+  assert.match(heroVisual, /circular ripple/);
 
   // Scramble-era and WebGL-era implementations must be fully gone.
   assert.doesNotMatch(source, /HERO_ASCII_HOVER_GLYPHS/);

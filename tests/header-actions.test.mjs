@@ -9,17 +9,17 @@ const navSource = appSource.slice(
   appSource.indexOf('/* ----------------------------- hero + dashboard'),
 );
 
-test('header offers contact sales, a free trial, and external login', () => {
+test('header offers one contact sales action per layout and external login', () => {
   assert.match(appSource, /contactSales: 'Contact Sales'/);
-  assert.match(appSource, /tryForFree: 'Try for Free'/);
   assert.match(navSource, /href="https:\/\/app\.johncrm\.com\/"/);
   assert.match(appSource, /login: 'Login'/);
   assert.match(navSource, /\{copy\.actions\.contactSales\}/);
   assert.match(navSource, /\{copy\.actions\.login\}/);
-  assert.match(navSource, /\{copy\.actions\.tryForFree\}/);
+  assert.doesNotMatch(navSource, /\{copy\.actions\.tryForFree\}/);
+  assert.equal((navSource.match(/\{copy\.actions\.contactSales\}/g) ?? []).length, 2);
 });
 
-test('desktop header places login before the far-right free trial action', () => {
+test('desktop header places login before the far-right contact sales button', () => {
   const desktopActions = navSource.slice(
     navSource.indexOf('<div className="hidden items-center gap-6 md:flex">'),
     navSource.indexOf('<button'),
@@ -27,7 +27,7 @@ test('desktop header places login before the far-right free trial action', () =>
 
   assert.match(
     desktopActions,
-    /\{copy\.actions\.contactSales\}[\s\S]*?<\/a>\s*<a\s+href="https:\/\/app\.johncrm\.com\/"[\s\S]*?>\s*\{copy\.actions\.login\}[\s\S]*?<\/a>\s*<a\s+href="#pricing"[\s\S]*?>\s*\{copy\.actions\.tryForFree\}/,
+    /href="https:\/\/app\.johncrm\.com\/"[\s\S]*?>\s*\{copy\.actions\.login\}[\s\S]*?<\/a>\s*<a\s+href="#contact"\s+className="bg-black[^"]*"\s*>\s*\{copy\.actions\.contactSales\}/,
   );
 });
 

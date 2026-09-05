@@ -1,0 +1,33 @@
+@media (prefers-reduced-motion: no-preference) {
+  /* One content transform keeps the headline, description and action together.
+     Stationary outer wrappers remain the scroll anchors for both columns. */
+  [data-motion-ready] [data-hero-exit] {
+    --hero-exit-distance: calc(50vw + 32px);
+  }
+  [data-motion-ready] [data-hero-exit='content'] {
+    transform: translate3d(calc(var(--hero-exit, 0) * var(--hero-exit-distance) * -1), 0, 0);
+  }
+  [data-motion-ready] [data-hero-exit='portrait'] {
+    transform: translate3d(calc(var(--hero-exit, 0) * var(--hero-exit-distance)), 0, 0);
+  }
+
+  /* Reuse the intro's exact black rectangle and complementary text mask.
+     Scrolling out draws the bar back from right to left over the lettering. */
+  [data-motion-ready] [data-hero-exit='content'] .motion-line-inner {
+    --hero-wipe: min(var(--line-wipe, 100%), calc(100% - var(--hero-exit, 0) * 100%));
+  }
+  [data-motion-ready] #top [data-hero-exit='content'] .motion-wipe-text {
+    clip-path: inset(-.14em calc(100% - var(--hero-wipe)) -.14em 0);
+  }
+  [data-motion-ready] #top [data-hero-exit='content'] .motion-line-inner:has(.motion-wipe-text)::after {
+    clip-path: inset(0 0 0 var(--hero-wipe));
+  }
+  [data-motion-ready] [data-hero-exit]:focus-within {
+    --hero-exit: 0 !important;
+  }
+  @media (max-width: 1023px) {
+    [data-motion-ready] [data-hero-exit] {
+      --hero-exit-distance: calc(100vw + 32px);
+    }
+  }
+}

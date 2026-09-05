@@ -28,8 +28,11 @@ import shotClients from '../assets/crm-clients.png';
 import shotChat from '../assets/crm-chat.png';
 import shotAiContent from '../assets/crm-ai-content.png';
 import heroAscii from '../assets/hero-ascii.txt?raw';
+import { useAsciiIntro } from '../lib/useAsciiIntro';
 import johnCrmLogo from '../assets/johncrm.svg';
-import { prefersReducedMotion, useAsciiTextBulge } from '../lib/useAsciiTextBulge';
+import { prefersReducedMotion, useAsciiTextRipple } from '../lib/useAsciiTextRipple';
+import ChatDemo from './components/ChatDemo';
+import { MotionLines, MotionPage, Reveal } from './components/SectionMotion';
 
 const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
 
@@ -65,35 +68,6 @@ const SALES_MAILTO = `mailto:${SALES_CONTACT_EMAIL}?subject=${encodeURIComponent
   ].join('\n'),
 )}`;
 
-/* ---------------------------------- hooks --------------------------------- */
-
-function useInView<T extends HTMLElement>(threshold = 0.1) {
-  const ref = useRef<T | null>(null);
-  const [inView, setInView] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (prefersReducedMotion()) {
-      setInView(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          obs.disconnect();
-        }
-      },
-      { threshold },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [threshold]);
-
-  return [ref, inView] as const;
-}
-
 /* ------------------------------- primitives ------------------------------- */
 
 const GRID_BG: React.CSSProperties = {
@@ -101,35 +75,10 @@ const GRID_BG: React.CSSProperties = {
     'repeating-linear-gradient(0deg, rgba(0,0,0,0.025) 0, rgba(0,0,0,0.025) 1px, transparent 1px, transparent 80px), repeating-linear-gradient(90deg, rgba(0,0,0,0.025) 0, rgba(0,0,0,0.025) 1px, transparent 1px, transparent 80px)',
 };
 
-function Reveal({
-  children,
-  delay = 0,
-  className = '',
-  threshold = 0.1,
-}: {
-  children: ReactNode;
-  delay?: number;
-  className?: string;
-  threshold?: number;
-}) {
-  const [ref, inView] = useInView<HTMLDivElement>(threshold);
-  return (
-    <div
-      ref={ref}
-      className={`transition-all duration-700 ease-out will-change-transform ${
-        inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-      } ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function SectionLabel({ children, light = false }: { children: ReactNode; light?: boolean }) {
   return (
     <div
-      className={`font-mono text-[10px] tracking-[0.3em] uppercase ${
+      className={`motion-label font-mono text-[10px] tracking-[0.3em] uppercase ${
         light ? 'text-white/35' : 'text-black/35'
       }`}
     >
@@ -516,7 +465,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       enterprise: 'Enterprise',
       plans: [
         {
-          name: 'Starter',
+          name: 'PLUS',
           priceKey: 'starter',
           blurb: 'For small teams getting their first pipeline in order.',
           features: [
@@ -531,11 +480,11 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           ctaHref: APP_LOGIN_URL,
         },
         {
-          name: 'Growth',
+          name: 'PRO',
           priceKey: 'growth',
           blurb: 'For teams ready to put follow-up on autopilot.',
           features: [
-            'Everything in Starter',
+            'Everything in PLUS',
             'All channels — WhatsApp, WeChat, Telegram & more',
             'AI drafts with approval queue',
             'Knowledge-base answers (RAG)',
@@ -551,7 +500,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           name: 'Custom',
           blurb: 'For organizations with security and scale requirements.',
           features: [
-            'Everything in Growth',
+            'Everything in PRO',
             'SSO / SAML',
             'Custom integrations',
             'Unlimited seats',
@@ -661,7 +610,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       enterprise: '企业版',
       plans: [
         {
-          name: '起步版',
+          name: 'PLUS',
           priceKey: 'starter',
           blurb: '适合初次搭建销售管道的小团队。',
           features: [
@@ -676,11 +625,11 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           ctaHref: APP_LOGIN_URL,
         },
         {
-          name: '成长版',
+          name: 'PRO',
           priceKey: 'growth',
           blurb: '为准备将跟进工作全自动化的团队而设。',
           features: [
-            '包含起步版全部功能',
+            '包含 PLUS 全部功能',
             '全渠道——WhatsApp、微信、Telegram 等',
             'AI 草稿与审批队列',
             '知识库问答（RAG）',
@@ -696,7 +645,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           name: '定制版',
           blurb: '为有安全与规模化需求的组织而设。',
           features: [
-            '包含成长版全部功能',
+            '包含 PRO 全部功能',
             'SSO / SAML',
             '定制集成',
             '无限席位',
@@ -805,7 +754,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       enterprise: '企業版',
       plans: [
         {
-          name: '入門版',
+          name: 'PLUS',
           priceKey: 'starter',
           blurb: '適合初次搭建銷售管道的小團隊。',
           features: [
@@ -820,11 +769,11 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           ctaHref: APP_LOGIN_URL,
         },
         {
-          name: '成長版',
+          name: 'PRO',
           priceKey: 'growth',
           blurb: '為準備將跟進工作全自動化的團隊而設。',
           features: [
-            '包含入門版全部功能',
+            '包含 PLUS 全部功能',
             '全渠道——WhatsApp、微信、Telegram 等',
             'AI 草稿與審批隊列',
             '知識庫問答（RAG）',
@@ -840,7 +789,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           name: '定製版',
           blurb: '為有安全與規模化需求的組織而設。',
           features: [
-            '包含成長版全部功能',
+            '包含 PRO 全部功能',
             'SSO / SAML',
             '定製整合',
             '無限席位',
@@ -1060,11 +1009,9 @@ function Nav({
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 h-16 transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/97 backdrop-blur border-b border-black/6'
-          : 'bg-transparent border-b border-transparent'
-      }`}
+      className="site-header"
+      data-floating={scrolled && !open}
+      data-menu-open={open}
     >
       <div className="mx-auto flex h-full max-w-[85rem] items-center justify-between px-6 lg:px-10">
         <a href="#top" className="flex items-center" aria-label="JOHN CRM home">
@@ -1101,22 +1048,16 @@ function Nav({
             onChange={onCurrencyChange}
           />
           <a
-            href="#contact"
-            className="font-mono text-[11px] tracking-[0.25em] uppercase text-black/60 transition-colors hover:text-black"
-          >
-            {copy.actions.contactSales}
-          </a>
-          <a
             href="https://app.johncrm.com/"
             className="font-mono text-[11px] tracking-[0.25em] uppercase text-black/60 transition-colors hover:text-black"
           >
             {copy.actions.login}
           </a>
           <a
-            href={APP_LOGIN_URL}
+            href="#contact"
             className="bg-black px-5 py-2.5 font-mono text-[11px] tracking-[0.25em] uppercase text-white transition-opacity hover:opacity-80"
           >
-            {copy.actions.tryForFree}
+            {copy.actions.contactSales}
           </a>
         </div>
 
@@ -1163,13 +1104,6 @@ function Nav({
               />
             </div>
             <a
-              href="#contact"
-              onClick={() => setOpen(false)}
-              className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
-            >
-              {copy.actions.contactSales}
-            </a>
-            <a
               href="https://app.johncrm.com/"
               onClick={() => setOpen(false)}
               className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
@@ -1177,11 +1111,11 @@ function Nav({
               {copy.actions.login}
             </a>
             <a
-              href={APP_LOGIN_URL}
+              href="#contact"
               onClick={() => setOpen(false)}
               className="mt-6 bg-black px-5 py-4 text-center font-mono text-[11px] tracking-[0.25em] uppercase text-white"
             >
-              {copy.actions.tryForFree}
+              {copy.actions.contactSales}
             </a>
           </div>
         </div>
@@ -1193,9 +1127,10 @@ function Nav({
 /* ----------------------------- hero + dashboard ---------------------------- */
 
 function HeroMockup() {
-  const { containerRef, preRef, children } = useAsciiTextBulge(
+  const { containerRef, preRef, children } = useAsciiTextRipple(
     heroAsciiWithoutBackgroundDots,
   );
+  const introRef = useAsciiIntro(heroAsciiWithoutBackgroundDots, containerRef);
   const asciiFont =
     'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
 
@@ -1203,15 +1138,15 @@ function HeroMockup() {
     <div className="relative mx-auto flex max-w-full justify-center overflow-hidden">
       <div
         ref={containerRef}
-        data-radius="0.18"
-        data-strength="0.45"
-        className="relative -translate-y-10 w-max max-w-none lg:-translate-y-14"
+        data-radius="0.085"
+        className="relative -translate-y-10 w-max max-w-none text-[clamp(5.5px,1.6vw,6.5px)] leading-none lg:-translate-y-14 lg:text-[clamp(7px,0.75vw,10px)]"
+        style={{ fontFamily: asciiFont }}
       >
         <pre
           ref={preRef}
           role="img"
           aria-label="ASCII art salesman holding a briefcase"
-          aria-description="Move your cursor over the artwork or focus it to magnify it with a lens effect."
+          aria-description="Move your cursor over the artwork or focus it to animate the ASCII characters in a circular ripple."
           tabIndex={0}
           className="m-0 w-max max-w-none cursor-default whitespace-pre text-left text-[clamp(5.5px,1.6vw,6.5px)] leading-none tracking-normal text-[#2A88AA] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[#2A88AA]/50 focus-visible:outline-offset-4 lg:text-[clamp(7px,0.75vw,10px)]"
           style={{
@@ -1220,54 +1155,14 @@ function HeroMockup() {
         >
           {children}
         </pre>
-      </div>
-    </div>
-  );
-}
-
-const HERO_STATS = [
-  { value: 'Embed Anywhere', label: 'WEBSITE & APP READY' },
-  { value: '< 0 min', label: 'Avg Response' },
-  { value: 'Automate', label: 'Appointments' },
-  { value: 'Custom API', label: 'Endpoints' },
-  { value: 'Google Integrations', label: 'Calendar & Meets' },
-];
-
-const HERO_STATS_BY_LANGUAGE: Record<LanguageCode, readonly { value: string; label: string }[]> = {
-  EN: HERO_STATS,
-  CN: [
-    { value: '随处嵌入', label: '网站与应用均可使用' },
-    { value: '< 0 分钟', label: '平均响应' },
-    { value: '自动化', label: '预约安排' },
-    { value: '自定义 API', label: '接口端点' },
-    { value: 'Google 集成', label: '日历与会议' },
-  ],
-  HK: [
-    { value: '隨處嵌入', label: '網站與應用均可使用' },
-    { value: '< 0 分鐘', label: '平均回應' },
-    { value: '自動化', label: '預約安排' },
-    { value: '自訂 API', label: '介面端點' },
-    { value: 'Google 整合', label: '日曆與會議' },
-  ],
-};
-
-function HeroStat({ stat }: { stat: { value: string; label: string } }) {
-  return (
-    <div>
-      <div className="font-display text-[clamp(1.75rem,2.35vw,3rem)] font-black leading-none">
-        {stat.value}
-      </div>
-      <div className="mt-2 font-mono text-xs tracking-[0.12em] uppercase text-black/55 lg:text-sm">
-        {stat.label}
+        <pre ref={introRef} aria-hidden="true" className="hero-ascii-intro" />
       </div>
     </div>
   );
 }
 
 function Hero({ language }: { language: LanguageCode }) {
-  const [statsRef, statsInView] = useInView<HTMLDivElement>(0.15);
   const copy = SITE_COPY[language];
-  const stats = HERO_STATS_BY_LANGUAGE[language];
 
   return (
     <section id="top" className="relative min-h-screen bg-[#F8F8F6] pt-16" style={GRID_BG}>
@@ -1275,19 +1170,15 @@ function Hero({ language }: { language: LanguageCode }) {
         <div className="grid items-center gap-14 lg:grid-cols-2 lg:gap-10">
           {/* left */}
           <div>
-            <Reveal delay={100}>
+            <div data-hero-exit="content">
+            <Reveal delay={100} kind="heading">
               <h1
                 className={`font-display font-extrabold uppercase tracking-tight ${
                   language === 'EN' ? 'leading-[0.88]' : 'leading-[1.15]'
                 }`}
                 style={{ fontSize: language === 'EN' ? 'clamp(3.75rem, 8.5vw, 7rem)' : 'clamp(3.5rem, 6vw, 6.25rem)' }}
               >
-                {copy.hero.title.map((line, index) => (
-                  <span key={line}>
-                    {line}
-                    {index < copy.hero.title.length - 1 && <br />}
-                  </span>
-                ))}
+                <MotionLines lines={copy.hero.title} wipe />
               </h1>
             </Reveal>
 
@@ -1297,7 +1188,7 @@ function Hero({ language }: { language: LanguageCode }) {
               </p>
             </Reveal>
 
-            <Reveal delay={300}>
+            <Reveal kind="action">
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <a
                   href="#pricing"
@@ -1321,25 +1212,17 @@ function Hero({ language }: { language: LanguageCode }) {
                 {copy.hero.supportNote}
               </div>
             </Reveal>
+            </div>
           </div>
 
           {/* right */}
-          <Reveal delay={250} className="lg:pl-4">
-            <HeroMockup />
+          <Reveal delay={250} className="lg:pl-4" kind="artwork">
+            <div data-hero-exit="portrait">
+              <HeroMockup />
+            </div>
           </Reveal>
         </div>
 
-        {/* stats bar */}
-        <div
-          ref={statsRef}
-          className={`mt-24 grid grid-cols-2 gap-10 border-t border-black/6 pt-12 transition-all duration-700 lg:grid-cols-5 ${
-            statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-        >
-          {stats.map((s) => (
-            <HeroStat key={s.label} stat={s} />
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -1352,9 +1235,9 @@ const FEATURE_ICONS = [Zap, TrendingUp, Users, Shield, Globe, BarChart3];
 function Features({ language }: { language: LanguageCode }) {
   const copy = SITE_COPY[language].features;
   return (
-    <section id="features" className="bg-white py-32">
-      <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
-        <Reveal>
+    <section id="features" data-motion-section className="bg-white pt-24 pb-32">
+      <div className="feature-layout">
+        <div className="mx-auto max-w-[1100px]">
           <div className="flex flex-wrap items-end justify-between gap-8">
             <div>
               <SectionLabel>{copy.label}</SectionLabel>
@@ -1363,19 +1246,14 @@ function Features({ language }: { language: LanguageCode }) {
                   language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
                 }`}
               >
-                {copy.heading.map((line, index) => (
-                  <span key={line}>
-                    {line}
-                    {index < copy.heading.length - 1 && <br />}
-                  </span>
-                ))}
+                <MotionLines lines={copy.heading} wipe={false} />
               </h2>
             </div>
           </div>
-        </Reveal>
+        </div>
 
-        <Reveal delay={150} className="mt-16">
-          <div className="grid gap-px bg-black/5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-16">
+          <div data-motion-dividers className="feature-grid grid gap-px bg-black/5 sm:grid-cols-2 lg:grid-cols-3">
             {copy.items.map((f, i) => {
               const Icon = FEATURE_ICONS[i];
               return (
@@ -1383,6 +1261,7 @@ function Features({ language }: { language: LanguageCode }) {
                 key={f.title}
                 className="group bg-white p-10 transition-colors duration-300 hover:bg-[#F8F8F6]"
               >
+                <Reveal curve={i < 3 ? 'left' : 'right'}>
                 <div className="flex h-9 w-9 items-center justify-center border border-black/15 transition-colors duration-300 group-hover:border-black/40">
                   <Icon size={15} strokeWidth={1.5} />
                 </div>
@@ -1390,11 +1269,12 @@ function Features({ language }: { language: LanguageCode }) {
                   {f.title}
                 </h3>
                 <p className="mt-3 text-[13px] leading-relaxed text-black/50">{f.body}</p>
+                </Reveal>
               </div>
               );
             })}
           </div>
-        </Reveal>
+        </div>
       </div>
     </section>
   );
@@ -1411,33 +1291,31 @@ function Poster({ language }: { language: LanguageCode }) {
   const copy = SITE_COPY[language].poster;
   return (
     <section
+      data-motion-section="dark"
       className="relative flex min-h-screen flex-col items-center justify-center bg-black px-6 py-32 text-center"
       style={POSTER_GRID}
     >
       <Reveal>
-        <div className="font-mono text-[10px] tracking-[0.4em] uppercase text-white/28">
+        <div className="poster-kicker font-mono text-[10px] tracking-[0.4em] uppercase text-white/28">
           {copy.kicker}
         </div>
       </Reveal>
-      <Reveal delay={150}>
+      <Reveal delay={150} kind="heading">
         <h2
           className={`mt-10 font-display font-black uppercase text-white ${
             language === 'EN' ? 'leading-[0.85]' : 'leading-[1.15]'
           }`}
           style={{ fontSize: 'clamp(3.5rem, 13vw, 11rem)' }}
         >
-          {copy.heading.map((line, index) => (
-            <span key={line}>
-              {line}
-              {index < copy.heading.length - 1 && <br />}
-            </span>
-          ))}
+          <MotionLines lines={copy.heading} />
         </h2>
       </Reveal>
       <Reveal delay={300}>
         <p className="mx-auto mt-10 max-w-md text-[15px] leading-relaxed text-white/50">
           {copy.body}
         </p>
+      </Reveal>
+      <Reveal kind="action">
         <a
           href={APP_LOGIN_URL}
           className="mt-10 inline-flex items-center gap-3 bg-white px-10 py-4 font-mono text-[10px] tracking-[0.25em] uppercase text-black transition-opacity hover:opacity-80"
@@ -1725,21 +1603,16 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
   const copy = SITE_COPY[language].pricing;
 
   return (
-    <section id="pricing" className="bg-[#F8F8F6] py-32">
+    <section id="pricing" data-motion-section className="bg-[#F8F8F6] py-32">
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
-        <Reveal>
+        <Reveal kind="heading">
           <SectionLabel>{copy.label}</SectionLabel>
           <h2
             className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
               language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
             }`}
           >
-            {copy.heading.map((line, index) => (
-              <span key={line}>
-                {line}
-                {index < copy.heading.length - 1 && <br />}
-              </span>
-            ))}
+            <MotionLines lines={copy.heading} />
           </h2>
         </Reveal>
 
@@ -1764,15 +1637,17 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
           </div>
         </Reveal>
 
-        <Reveal delay={200} className="mt-12">
-          <div className="grid gap-px bg-black/6 lg:grid-cols-3">
-            {copy.plans.map((p) => {
+        <div className="mt-12">
+          <div className="grid gap-px lg:grid-cols-3">
+            {copy.plans.map((p, index) => {
               const price = p.priceKey ? pricing.prices[p.priceKey][annual ? 'annual' : 'monthly'] : null;
               const formattedPrice = formatCurrencyPrice(currency, price);
               const inv = p.inverted;
               return (
-                <div
+                <Reveal
                   key={p.name}
+                  delay={index * 320}
+                  distance={220}
                   className={`relative flex flex-col p-10 ${
                     inv ? 'bg-black text-white' : 'border border-black/6 bg-white'
                   }`}
@@ -1840,11 +1715,11 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                   >
                     {p.cta}
                   </a>
-                </div>
+                </Reveal>
               );
             })}
           </div>
-        </Reveal>
+        </div>
       </div>
     </section>
   );
@@ -2011,40 +1886,39 @@ function Contact({ language }: { language: LanguageCode }) {
   };
 
   return (
-    <section id="contact" className="scroll-mt-16 bg-white py-32">
+    <section id="contact" className="scroll-mt-16 bg-white py-32" data-motion-section>
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <div className="grid gap-16 lg:grid-cols-[2fr_3fr] lg:gap-14">
-          <Reveal>
-            <SectionLabel>{copy.label}</SectionLabel>
-            <h2
-              className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
-                language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
-              }`}
-            >
-              {copy.heading.map((line, index) => (
-                <span key={line}>
-                  {line}
-                  {index < copy.heading.length - 1 && <br />}
-                </span>
-              ))}
-            </h2>
-            <p className="mt-8 max-w-sm text-[14px] leading-relaxed text-black/55">
-              {copy.intro}
-            </p>
-            <div className="mt-12 max-w-sm">
-              {copy.info.map((row) => (
-                <div
-                  key={row.label}
-                  className="flex items-center justify-between border-b border-black/6 py-4"
-                >
-                  <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30">
-                    {row.label}
-                  </span>
-                  <span className="font-display text-base font-bold uppercase">{row.value}</span>
-                </div>
-              ))}
-            </div>
-          </Reveal>
+          <div>
+            <Reveal kind="heading">
+              <SectionLabel>{copy.label}</SectionLabel>
+              <h2
+                className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
+                  language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
+                }`}
+              >
+                <MotionLines lines={copy.heading} />
+              </h2>
+              </Reveal>
+            <Reveal>
+              <p className="mt-8 max-w-sm text-[14px] leading-relaxed text-black/55">
+                {copy.intro}
+              </p>
+              <div className="mt-12 max-w-sm">
+                {copy.info.map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center justify-between border-b border-black/6 py-4"
+                  >
+                    <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30">
+                      {row.label}
+                    </span>
+                    <span className="font-display text-base font-bold uppercase">{row.value}</span>
+                  </div>
+                ))}
+              </div>
+              </Reveal>
+          </div>
 
           <Reveal delay={150}>
             <div className="border border-black/8 bg-[#FAFAF8] p-10">
@@ -2731,16 +2605,17 @@ function LandingPage() {
           currency={currency}
           onCurrencyChange={handleCurrencyChange}
         />
-        <main>
+        <MotionPage ready={!loading} language={language}>
           <Hero language={language} />
           <Features language={language} />
+          <ChatDemo language={language} />
           <Poster language={language} />
           {SHOWCASE_ENABLED && <Showcase />}
           {/* Hidden until we have real testimonials — the current quotes are placeholders. */}
           {/* <Reviews /> */}
           <Pricing currency={currency} language={language} />
           <Contact language={language} />
-        </main>
+        </MotionPage>
         <Footer language={language} />
       </div>
     </>

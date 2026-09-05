@@ -4,8 +4,8 @@ export const prefersReducedMotion = () =>
   typeof window !== 'undefined' &&
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const DEFAULT_RADIUS = 0.18;
-const DEFAULT_STRENGTH = 0.45;
+const DEFAULT_RADIUS = 0.085;
+const RIPPLE_GLYPHS = '.:-=+*#%@';
 const MOUSE_LERP = 0.08;
 const STRENGTH_LERP_IN = 0.06;
 // 0.10 per the spec decays in ~470ms; 0.15 lands within the ~400ms target.
@@ -64,16 +64,15 @@ function buildGlyphGrid(text: string): GlyphGrid {
 }
 
 /**
- * Cursor-following "lens bulge" over an ASCII-art <pre>, applied per character:
- * glyphs near the cursor scale up and displace outward via CSS transforms, so
- * the portrait remains real, selectable DOM text throughout.
+ * Circular waves change the ASCII characters beneath the pointer in place.
+ * Original characters return as the ripple moves away; glyph geometry stays fixed.
  *
- * Attach `containerRef` to the positioned wrapper (with optional data-radius /
- * data-strength tunables), `preRef` to the <pre>, and render `children` inside
+ * Attach `containerRef` to the positioned wrapper (with optional data-radius),
+ * `preRef` to the <pre>, and render `children` inside
  * it. Under reduced motion or on touch devices no listeners attach and the
  * text renders statically.
  */
-export function useAsciiTextBulge(text: string) {
+export function useAsciiTextRipple(text: string) {
   const containerRef = useRef<HTMLDivElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
   const grid = useMemo(() => buildGlyphGrid(text), [text]);
@@ -82,16 +81,17 @@ export function useAsciiTextBulge(text: string) {
     const container = containerRef.current;
     const pre = preRef.current;
     if (!container || !pre) return;
-    if (prefersReducedMotion()) return;
-    if (!window.matchMedia('(hover: hover)').matches) return;
+    const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const hoverPreference = window.matchMedia('(hover: hover)');
+    const canAnimate = () => !motionPreference.matches && hoverPreference.matches;
 
     const { rows, cols, cellToGlyph, glyphCount } = grid;
     // Spans appear in document order = glyph emission order.
     const spans = Array.from(pre.getElementsByTagName('span'));
     if (spans.length !== glyphCount) return;
+    const originals = spans.map((span) => span.textContent ?? '');
 
     const radiusFactor = parseFloat(container.dataset.radius ?? '') || DEFAULT_RADIUS;
-    const maxStrength = parseFloat(container.dataset.strength ?? '') || DEFAULT_STRENGTH;
 
     let disposed = false;
     let rafId: number | null = null;
@@ -102,25 +102,24 @@ export function useAsciiTextBulge(text: string) {
     let charW = 0;
     let lineH = 0;
     let radiusPx = 0;
-    // Lens state, in pre-local px.
+    // Ripple state, in pre-local px.
     const mouse = { x: 0, y: 0 };
     const target = { x: 0, y: 0 };
     // Last pointer position in viewport px. Scrolling moves the art under a
     // stationary cursor without firing any pointer event, so the scroll
-    // handler needs the cursor's location to re-aim the lens itself.
+    // handler needs the cursor's location to re-aim the ripple itself.
     const client = { x: 0, y: 0 };
     let hasPointer = false;
     let strength = 0;
-    // Per-frame bookkeeping: which glyphs currently carry a transform, and a
-    // frame stamp so glyphs the lens left get cleared even on fast jumps.
+    // Track changed glyphs so fast jumps also restore the previous circle.
     let active: number[] = [];
     const lastFrame = new Int32Array(glyphCount).fill(-1);
     let frame = 0;
-    // Quantised (mouse, strength) of the last written frame; when neither has
-    // visibly changed the frame is a no-op and no DOM writes happen at all.
+    // Quantise the character animation to 24fps, independent of display refresh.
     let prevQx = NaN;
     let prevQy = NaN;
     let prevQs = NaN;
+    let prevStep = -1;
 
     const measure = () => {
       const next = pre.getBoundingClientRect();
@@ -133,21 +132,21 @@ export function useAsciiTextBulge(text: string) {
         mouse.x = rect.width / 2;
         mouse.y = rect.height / 2;
       }
-      prevQx = NaN; // force a rewrite: cached transforms use stale geometry
+      prevQx = NaN; // force a rewrite after geometry changes
     };
 
     const clearAll = () => {
-      for (const gi of active) spans[gi].style.transform = '';
+      for (const gi of active) spans[gi].textContent = originals[gi];
       active = [];
       prevQx = NaN;
     };
 
-    const tick = () => {
+    const tick = (now: number) => {
       rafId = null;
       frame++;
       mouse.x += (target.x - mouse.x) * MOUSE_LERP;
       mouse.y += (target.y - mouse.y) * MOUSE_LERP;
-      const goal = pointerInside ? maxStrength : 0;
+      const goal = pointerInside ? 1 : 0;
       strength += (goal - strength) * (pointerInside ? STRENGTH_LERP_IN : STRENGTH_LERP_OUT);
       if (!pointerInside && strength < IDLE_EPSILON) strength = 0;
 
@@ -161,12 +160,14 @@ export function useAsciiTextBulge(text: string) {
       const qx = Math.round(mouse.x * 10);
       const qy = Math.round(mouse.y * 10);
       const qs = Math.round(strength * 1000);
-      if (qx !== prevQx || qy !== prevQy || qs !== prevQs) {
+      const step = Math.floor(now / (1000 / 24));
+      if (step !== prevStep || qx !== prevQx || qy !== prevQy || qs !== prevQs) {
         prevQx = qx;
         prevQy = qy;
         prevQs = qs;
+        prevStep = step;
         const next: number[] = [];
-        // Only cells inside the lens bounding box are visited.
+        // Only cells inside the circular ripple's bounding box are visited.
         const r0 = Math.max(0, Math.floor((mouse.y - radiusPx) / lineH));
         const r1 = Math.min(rows - 1, Math.ceil((mouse.y + radiusPx) / lineH));
         const c0 = Math.max(0, Math.floor((mouse.x - radiusPx) / charW));
@@ -182,20 +183,26 @@ export function useAsciiTextBulge(text: string) {
             const r = Math.hypot(dx, dy);
             if (r >= radiusPx) continue;
             const t = r / radiusPx;
-            // Cubic falloff over smoothstep: zero slope at the rim, so the
-            // distortion reads as a lens rather than a dent with a boundary.
-            const mask = 1 - t * t * (3 - 2 * t);
-            const amount = strength * mask * mask * mask;
-            if (amount < 0.001) continue;
+            // A sparse, slow shimmer with a soft circular falloff. Keep most
+            // characters intact and use adjacent tones to preserve the portrait.
+            const phase = step / 24;
+            const angle = Math.atan2(dy, dx);
+            const wave = (Math.sin(t * Math.PI * 2 + angle - phase * 1.8) + 1) / 2;
+            const edge = 1 - t * t * (3 - 2 * t);
+            const threshold = ((gi * 37) % 101 + 0.5) / 101;
+            if (threshold > strength * edge * (0.12 + wave * 0.22)) continue;
+            const originalIndex = RIPPLE_GLYPHS.indexOf(originals[gi]);
+            if (originalIndex < 0) continue;
             lastFrame[gi] = frame;
             next.push(gi);
-            spans[gi].style.transform = `translate(${(dx * amount).toFixed(2)}px, ${(
-              dy * amount
-            ).toFixed(2)}px) scale(${(1 + amount).toFixed(3)})`;
+            const direction = Math.sin(phase * 1.8 + angle) > 0 ? 1 : -1;
+            const index = Math.max(0, Math.min(RIPPLE_GLYPHS.length - 1, originalIndex + direction));
+            const glyph = RIPPLE_GLYPHS[index];
+            if (spans[gi].textContent !== glyph) spans[gi].textContent = glyph;
           }
         }
         for (const gi of active) {
-          if (lastFrame[gi] !== frame) spans[gi].style.transform = '';
+          if (lastFrame[gi] !== frame) spans[gi].textContent = originals[gi];
         }
         active = next;
       }
@@ -205,7 +212,7 @@ export function useAsciiTextBulge(text: string) {
     };
 
     const startLoop = () => {
-      if (rafId === null && intersecting && !disposed) {
+      if (rafId === null && intersecting && !disposed && canAnimate()) {
         rafId = requestAnimationFrame(tick);
       }
     };
@@ -220,11 +227,16 @@ export function useAsciiTextBulge(text: string) {
     /* ----- pointer / keyboard ----- */
 
     const onPointerEnter = (e: PointerEvent) => {
-      if (!rect) measure();
+      if (!canAnimate()) return;
+      measure();
       if (!rect) return;
       rect = pre.getBoundingClientRect();
       target.x = e.clientX - rect.left;
       target.y = e.clientY - rect.top;
+      if (!pointerInside) {
+        mouse.x = target.x;
+        mouse.y = target.y;
+      }
       pointerInside = true;
       startLoop();
     };
@@ -246,7 +258,7 @@ export function useAsciiTextBulge(text: string) {
     };
 
     // On scroll the cached rect is stale and no pointer event will fire:
-    // re-read the rect, re-aim the lens at the cursor's new pre-local
+    // re-read the rect, re-aim the ripple at the cursor's new pre-local
     // position, and re-derive inside/outside from geometry.
     const onScroll = () => {
       if (!hasPointer) return;
@@ -263,7 +275,7 @@ export function useAsciiTextBulge(text: string) {
       if (pointerInside) startLoop();
     };
 
-    // Keyboard affordance: focusing the artwork blooms the lens at centre.
+    // Keyboard affordance: focusing the artwork animates a circle at centre.
     const onFocus = () => {
       if (!rect) measure();
       if (!rect) return;
@@ -275,6 +287,16 @@ export function useAsciiTextBulge(text: string) {
     const onBlur = () => {
       pointerInside = false;
     };
+    const onPreference = () => {
+      if (!canAnimate()) {
+        stopLoop();
+        strength = 0;
+        pointerInside = false;
+        clearAll();
+      }
+    };
+    motionPreference.addEventListener('change', onPreference);
+    hoverPreference.addEventListener('change', onPreference);
 
     container.addEventListener('pointerenter', onPointerEnter);
     container.addEventListener('pointermove', onPointerMove);
@@ -306,6 +328,8 @@ export function useAsciiTextBulge(text: string) {
       intersecting = entry.isIntersecting;
       if (!intersecting) {
         stopLoop();
+        strength = 0;
+        clearAll();
       } else if (pointerInside || strength > 0) {
         startLoop();
       }
@@ -316,6 +340,8 @@ export function useAsciiTextBulge(text: string) {
       disposed = true;
       stopLoop();
       window.clearTimeout(debounceId);
+      motionPreference.removeEventListener('change', onPreference);
+      hoverPreference.removeEventListener('change', onPreference);
       container.removeEventListener('pointerenter', onPointerEnter);
       container.removeEventListener('pointermove', onPointerMove);
       container.removeEventListener('pointerleave', onPointerLeave);

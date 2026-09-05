@@ -1,0 +1,70 @@
+.site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 50;
+  width: 100%;
+  max-width: min(85rem, calc(100% - 32px));
+  height: 4rem;
+  margin-inline: auto;
+  border: 1px solid transparent;
+  background: transparent;
+  transition: top 300ms ease, height 300ms ease,
+    border-radius 300ms ease, background-color 300ms ease,
+    border-color 300ms ease, box-shadow 300ms ease;
+}
+
+.site-header[data-floating='true'] {
+  top: 12px;
+  height: 3.5rem;
+  border-color: rgb(255 255 255 / 60%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 65%);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 8%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.site-header[data-menu-open='true'] {
+  max-width: 100%;
+  background: white;
+}
+
+/* Keep the existing desktop controls comfortable on narrow tablets. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .site-header nav,
+  .site-header nav + div {
+    gap: 12px;
+  }
+
+  .site-header nav a,
+  .site-header nav + div a {
+    letter-spacing: 0.12em;
+  }
+}
+
+/* Chinese characters need more room than the compact Latin header labels. */
+.site-header:lang(zh) :is(a, button) {
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+}
+
+.site-header:lang(zh) [role='menu'] {
+  min-width: 11rem;
+}
+
+.site-header:lang(zh) [role='menuitemradio'] {
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+}
+
+.site-header:lang(zh) #mobile-language-options {
+  left: 0;
+  translate: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header {
+    transition: none;
+  }
+}
