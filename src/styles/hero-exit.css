@@ -1,8 +1,12 @@
 @media (prefers-reduced-motion: no-preference) {
   /* One content transform keeps the headline, description and action together.
-     Stationary outer wrappers remain the scroll anchors for both columns. */
+     Stationary outer wrappers remain the scroll anchors for both columns.
+     The transform updates every scroll frame, so both columns need their own
+     compositor layer — otherwise the ASCII portrait (thousands of glyph spans)
+     and the headline repaint into the page at each position instead of moving. */
   [data-motion-ready] [data-hero-exit] {
     --hero-exit-distance: calc(50vw + 32px);
+    will-change: transform;
   }
   [data-motion-ready] [data-hero-exit='content'] {
     transform: translate3d(calc(var(--hero-exit, 0) * var(--hero-exit-distance) * -1), 0, 0);

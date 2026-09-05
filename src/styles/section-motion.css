@@ -90,6 +90,9 @@
     z-index: -1;
     pointer-events: none;
     opacity: var(--page-grid, 1);
+    /* The grid fade updates every scroll frame; on its own layer that is a
+       compositor opacity change instead of a full-viewport repaint. */
+    will-change: opacity;
     background-image:
       linear-gradient(color-mix(in srgb, var(--page-ink) 2.5%, transparent) 1px, transparent 1px),
       linear-gradient(90deg, color-mix(in srgb, var(--page-ink) 2.5%, transparent) 1px, transparent 1px);
@@ -160,9 +163,12 @@
     opacity: var(--reveal-opacity, 1);
     transform: translateY(calc(var(--reveal-y, 0px) * .3));
   }
-  [data-motion-ready] [data-motion-state='moving'],
-  [data-motion-ready] [data-motion-state='moving'] > .motion-curve-content,
-  [data-motion-ready] [data-motion-state='moving'] .motion-line-inner {
+  /* Layers come from the near band set in the scroll loop — never from the
+     animated state itself, which would promote/demote mid-transition. */
+  [data-motion-ready] [data-motion-near='true'],
+  [data-motion-ready] [data-motion-near='true'] > .motion-curve-content,
+  [data-motion-ready] [data-motion-near='true'] .motion-line-inner,
+  [data-motion-ready] [data-motion-near='true'] .chat-demo-column {
     will-change: transform, opacity;
   }
   [data-motion-ready] [data-motion-parallax] { transform: translateY(var(--hero-drift, 0px)); }

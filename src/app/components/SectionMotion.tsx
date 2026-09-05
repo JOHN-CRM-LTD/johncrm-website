@@ -100,6 +100,11 @@ export function MotionPage({ children, ready, language }: {
         }
 
         for (const { target, top, center, height, focused, lineOffsets } of positions) {
+          // Compositor layers must exist before the first animated frame and
+          // survive settling, or promotion/demotion repaints land mid-transition.
+          // The near band demotes only well off-screen where that cost is invisible.
+          const near = top < viewport * 2 && top + height > -viewport * 2;
+          if ((target.element.dataset.motionNear === 'true') !== near) target.element.dataset.motionNear = String(near);
           let state = focused ? { enter: 1, exit: 0, opacity: 1, x: 0, y: 0, z: 0, rotateY: 0 } : target.curve ?
             getCurveRevealState(top, height, viewport, target.curve, target.delay, { viewportWidth: window.innerWidth, center }) :
             { ...getRevealState(top, height, viewport, target.delay, target.distance), x: 0, z: 0, rotateY: 0 };
