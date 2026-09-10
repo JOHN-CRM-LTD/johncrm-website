@@ -2099,7 +2099,7 @@ const PRIVACY_NAV = [
   ['contact', 'Contact'],
 ] as const;
 
-function PrivacyPolicyPage() {
+export function PrivacyPolicyPage() {
   useEffect(() => {
     const previousTitle = document.title;
     document.title = 'Privacy Policy — JOHN CRM';
