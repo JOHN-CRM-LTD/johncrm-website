@@ -501,7 +501,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: 'For teams ready to put follow up on autopilot.',
           features: [
             'Everything in PLUS',
-            'All channels: WhatsApp, WeChat, Telegram & more',
+            'WhatsApp, WhatsApp Business and Webchat',
             'AI drafts with approval queue',
             'Knowledge base answers (RAG)',
             'Bulk campaigns & templates',
@@ -644,7 +644,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '为准备将跟进工作全自动化的团队而设。',
           features: [
             '包含 PLUS 全部功能',
-            '全渠道，WhatsApp、微信、Telegram 等',
+            'WhatsApp、WhatsApp Business 和网页聊天',
             'AI 草稿与审批队列',
             '知识库问答（RAG）',
             '批量营销与模板',
@@ -786,7 +786,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '為準備將跟進工作全自動化的團隊而設。',
           features: [
             '包含 PLUS 全部功能',
-            '全渠道，WhatsApp、微信、Telegram 等',
+            'WhatsApp、WhatsApp Business 和網頁聊天',
             'AI 草稿與審批隊列',
             '知識庫問答（RAG）',
             '批量行銷與模板',

@@ -1,37 +1,37 @@
 /* The diagram carries the story; text stays at the label level. */
-.integration-overview { padding-top: 60px; }
+.integration-overview { padding-top: 84px; }
 .integration-intro { text-align: center; }
 .integration-intro > p { margin: 17px auto 0; font-size: 15px; }
-.integration-map { position: relative; max-width: 1000px; height: 520px; margin: 48px auto 0; }
-.integration-wires { position: absolute; inset: 0; width: 100%; height: 520px; overflow: visible; pointer-events: none; }
+.integration-map { position: relative; max-width: 1100px; height: 620px; margin: 80px auto 0; }
+.integration-wires { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .integration-wires path { fill: none; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .integration-wire-ghost { stroke: #d8ddda; stroke-width: 1.15; }
 .integration-wire-live { stroke: #86938f; stroke-width: 1.35; }
 .integration-map-destinations { display: contents; }
-.integration-node { display: flex; flex-direction: column; align-items: center; justify-content: center; position: absolute; width: 20%; min-height: 100px; padding: 12px 6px; text-align: center; background: none; border: 0; border-radius: 10px; color: #566660; }
+.integration-node { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; position: absolute; width: 20%; min-height: 100px; padding: 12px 6px; text-align: center; background: none; border: 0; border-radius: 10px; color: #566660; }
 .integration-node > img, .integration-node > svg { width: 36px; height: 36px; object-fit: contain; transition: transform 450ms cubic-bezier(.2,.7,.2,1); }
 .integration-node > strong { margin-top: 13px; font-size: 13px; line-height: 1.45; font-weight: 400; }
 button.integration-node { padding-bottom: 23px; }
 button.integration-node:hover > img, button.integration-node:hover > svg { transform: translateY(-3px); }
-.integration-node--webchat { left: 0; top: 30px; }
-.integration-node--business { right: 0; top: 30px; }
-.integration-node--whatsapp { left: 0; top: 174px; }
-.integration-node--api { right: 0; top: 174px; }
-.integration-map-hub { position: absolute; top: 122px; left: 35%; width: 30%; padding: 12px 0; }
+.integration-node--webchat { left: 0; top: 40px; }
+.integration-node--business { right: 0; top: 40px; }
+.integration-node--whatsapp { left: 0; top: 260px; }
+.integration-node--api { right: 0; top: 260px; }
+.integration-map-hub { position: absolute; top: 152px; left: 35%; width: 30%; padding: 12px 0; }
 .integration-map-hub > img { width: 100%; height: auto; }
-.integration-extra-channels { position: absolute; left: 35%; top: 0; width: 30%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.integration-extra-channels { position: absolute; left: 32%; top: 0; width: 36%; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .integration-extra-channels > button { display: flex; flex: 1; flex-direction: column; align-items: center; gap: 9px; min-height: 62px; padding: 9px 3px; border: 0; border-radius: 8px; background: transparent; color: #71817b; font-size: 10px; }
-.integration-knowledge { display: flex; align-items: center; gap: 12px; position: absolute; top: 295px; left: 33%; width: 34%; height: 64px; padding: 16px 22px; border: 1px solid #d2d9d2; border-radius: 10px; background: #faf9f5; transition: background 600ms ease, border-color 600ms ease; }
+.integration-knowledge { display: flex; align-items: center; gap: 12px; position: absolute; top: 345px; left: 33%; width: 34%; height: 64px; padding: 16px 22px; border: 1px solid #d2d9d2; border-radius: 10px; background: #faf9f5; transition: background 600ms ease, border-color 600ms ease; }
 .integration-knowledge[data-updated='true'] { background: #eef3ec; border-color: #9cbcaf; }
 .integration-knowledge strong { font-size: 14px; font-weight: 400; }
 .integration-knowledge > svg { flex-shrink: 0; }
 .integration-knowledge > svg:last-child { margin-left: auto; color: #738d7f; }
-.integration-documents { position: absolute; top: 420px; left: 26%; width: 48%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.integration-documents { position: absolute; top: 490px; left: 22%; width: 56%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
 .integration-document { display: flex; flex-direction: column; align-items: center; text-align: center; }
 .integration-document > img { width: 39px; height: 51px; filter: drop-shadow(0 3px 3px #182f2710); }
 .integration-document > strong { margin-top: 11px; font-size: 12px; font-weight: 400; color: #45554f; }
 .integration-document > small { margin-top: 4px; font-size: 9px; color: #73817a; }
-.integration-update { display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 64px; max-width: 1000px; margin: 45px auto 0; padding-top: 32px; border-top: 1px solid var(--product-line); }
+.integration-update { display: grid; grid-template-columns: 1fr 1.15fr; align-items: center; gap: 64px; max-width: 1000px; margin: 64px auto 0; padding-top: 40px; border-top: 1px solid var(--product-line); }
 .integration-update-copy h3 { font-size: 23px; line-height: 1.35; letter-spacing: -.04em; font-weight: 400; }
 .integration-update-copy > p { margin-top: 12px; font-size: 12px; }
 .integration-update-copy > button { margin-top: 20px; }
@@ -54,20 +54,21 @@ button.integration-node:hover > img, button.integration-node:hover > svg { trans
 .integration-overview button:focus-visible { outline: 2px solid #216d89; outline-offset: 5px; }
 .integration-wires .integration-signal { stroke: #364642; stroke-width: 2.5; opacity: 0; stroke-dasharray: 1 100; stroke-dashoffset: 101; }
 
-/* One gentle reveal and one signal per interaction; no perpetual movement. */
+/* Sources feed JOHN together, then the selected channel receives the answer. */
 @media (prefers-reduced-motion: no-preference) {
   .integration-overview.is-visible .integration-document { animation: integration-rise 800ms cubic-bezier(.2,.7,.2,1) var(--document-delay) both; }
   .integration-overview.is-visible .integration-knowledge { animation: integration-rise 850ms cubic-bezier(.2,.7,.2,1) 180ms both; }
   .integration-overview.is-visible .integration-map-hub { animation: integration-rise 900ms cubic-bezier(.2,.7,.2,1) 300ms both; }
   .integration-overview.is-visible .integration-node, .integration-overview.is-visible .integration-extra-channels { animation: integration-rise 900ms cubic-bezier(.2,.7,.2,1) 430ms both; }
-  .integration-overview.is-visible .integration-wire-live { stroke-dasharray: 1; animation: integration-draw 1400ms cubic-bezier(.2,.7,.2,1) 250ms both; }
-  .integration-overview.is-visible .integration-signal { animation: integration-signal 1100ms cubic-bezier(.25,.1,.25,1) 300ms both; }
-  .integration-overview.is-visible .integration-signal--source { animation-delay: 0ms; animation-duration: 650ms; }
+  /* Discard reveal dashes when finished: scaled, non-scaling strokes can otherwise leave pale endpoints. */
+  .integration-overview.is-visible .integration-wire-live { animation: integration-draw 1400ms cubic-bezier(.2,.7,.2,1) 250ms backwards; }
+  .integration-overview.is-visible .integration-signal { animation: integration-signal 1100ms cubic-bezier(.25,.1,.25,1) 850ms both; }
+  .integration-overview.is-visible .integration-signal--source { animation-delay: 0ms; animation-duration: 850ms; }
   .integration-icon-feedback { animation: integration-icon-pulse 600ms cubic-bezier(.2,.7,.2,1); }
   .integration-answer-content { animation: integration-answer-in 500ms cubic-bezier(.2,.7,.2,1) both; }
 }
 @keyframes integration-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes integration-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes integration-draw { from { stroke-dasharray: 1; stroke-dashoffset: 1; } to { stroke-dasharray: 1; stroke-dashoffset: 0; } }
 @keyframes integration-signal { 0% { stroke-dashoffset: 101; opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 @keyframes integration-answer-in { from { opacity: .15; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes integration-icon-pulse { 0%, 100% { transform: scale(1); } 45% { transform: scale(1.12); } }
@@ -80,25 +81,26 @@ button.integration-node:hover > img, button.integration-node:hover > svg { trans
 }
 
 @media (max-width: 767px) {
+  .integration-overview { padding-top: 64px; }
   .integration-intro > p { margin-top: 15px; font-size: 13px; }
-  .integration-map { display: flex; flex-direction: column; height: auto; margin-top: 34px; gap: 28px; }
+  .integration-map { display: flex; flex-direction: column; height: auto; margin-top: 48px; gap: 40px; }
   .integration-wires { display: none; }
   .integration-documents { position: relative; top: auto; left: auto; width: 100%; gap: 10px; }
   .integration-document > img { width: 34px; height: 44px; }
   .integration-document > strong { font-size: 11px; }
   .integration-knowledge, .integration-map-hub { position: relative; top: auto; left: auto; width: 100%; }
   .integration-knowledge { width: 88%; height: 60px; margin-inline: auto; padding: 16px 18px; }
-  .integration-knowledge::before, .integration-map-hub::before, .integration-map-destinations::before { content: ''; position: absolute; left: 50%; width: 1px; height: 28px; top: -29px; background: #b3beb8; }
+  .integration-knowledge::before, .integration-map-hub::before, .integration-map-destinations::before { content: ''; position: absolute; left: 50%; width: 1px; height: 40px; top: -41px; background: #b3beb8; }
   .integration-map-hub { padding: 15px 0; }
   .integration-map-hub > img { width: 225px; max-width: 80%; margin: auto; }
-  .integration-map-destinations { display: grid; position: relative; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+  .integration-map-destinations { display: grid; position: relative; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .integration-node { position: relative; top: auto; left: auto; right: auto; width: 100%; min-height: 106px; padding: 9px 5px; }
   .integration-node > strong { margin-top: 10px; font-size: 12px; }
   .integration-node > img, .integration-node > svg { width: 30px; height: 30px; }
   .integration-extra-channels { position: relative; top: auto; left: auto; grid-column: 1 / -1; width: 100%; gap: 10px; }
   .integration-extra-channels > button { flex-direction: row; justify-content: center; min-height: 46px; gap: 8px; }
   .integration-extra-channels > button > svg { width: 19px; height: 19px; }
-  .integration-update { grid-template-columns: 1fr; gap: 24px; margin-top: 30px; padding-top: 27px; }
+  .integration-update { grid-template-columns: 1fr; gap: 32px; margin-top: 44px; padding-top: 32px; }
   .integration-update-copy h3 { font-size: 22px; }
   .integration-update-copy > button { margin-top: 16px; }
   .integration-answer { padding: 21px; min-height: 174px; }

@@ -30,20 +30,20 @@ function makeWire(start: WirePoint, end: WirePoint, vertical = false) {
 }
 
 const CONNECTION_WIRES: Record<Connection, string> = {
-  Webchat: makeWire([322, 147], [207, 60]),
-  WhatsApp: makeWire([322, 163], [207, 204]),
-  'WhatsApp Business API': makeWire([678, 147], [793, 60]),
-  Email: makeWire([445, 118], [400, 76], true),
-  SMS: makeWire([500, 118], [500, 76], true),
-  Voice: makeWire([555, 118], [600, 76], true),
-  'Custom APIs': makeWire([793, 204], [678, 163]),
+  Webchat: makeWire([338, 177], [132, 70]),
+  WhatsApp: makeWire([338, 193], [132, 290]),
+  'WhatsApp Business API': makeWire([662, 177], [868, 70]),
+  Email: makeWire([445, 155], [380, 62], true),
+  SMS: makeWire([500, 155], [500, 62], true),
+  Voice: makeWire([555, 155], [620, 62], true),
+  'Custom APIs': makeWire([868, 290], [662, 193]),
 };
 const SOURCE_PATHS = [
-  'M500 295 V195',
-  'M320 420 V402 Q320 390 337 390 H480 Q500 390 500 373 V359',
-  'M440 420 V390',
-  'M560 420 V390',
-  'M680 420 V402 Q680 390 663 390 H520 Q500 390 500 373 V359',
+  'M500 345 V225',
+  'M290 490 V462 Q290 450 307 450 H480 Q500 450 500 433 V409',
+  'M430 490 V450',
+  'M570 490 V450',
+  'M710 490 V462 Q710 450 693 450 H520 Q500 450 500 433 V409',
 ];
 
 function ChannelIcon({ channel, animated = false }: { channel: Connection; animated?: boolean }) {
@@ -75,7 +75,7 @@ function KnowledgeMap({ channel, onChannelChange, updated }: {
     </button>
   );
   return <div className="integration-map" role="group" aria-label="Documents feed the Knowledge Base. JOHN uses this knowledge and connected APIs to answer on your selected channel.">
-    <svg className="integration-wires" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">
+    <svg className="integration-wires" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
       <g className="integration-wire-tracks">
         {Object.values(CONNECTION_WIRES).map(path => <g key={path}>
           <path className="integration-wire-ghost" d={path} />
@@ -84,8 +84,11 @@ function KnowledgeMap({ channel, onChannelChange, updated }: {
         {SOURCE_PATHS.map(path => <g key={path}><path className="integration-wire-ghost" d={path} /><path className="integration-wire-live" pathLength="1" d={path} /></g>)}
       </g>
       <g key={`${motion.sequence}-${updated}`} className="integration-signals" data-connection={motion.connection} data-replay={motion.sequence}>
-        {motion.connection !== 'Custom APIs' && <path className="integration-signal integration-signal--source" pathLength="100" d="M500 295 V195" />}
-        <path className="integration-signal" pathLength="100" d={CONNECTION_WIRES[motion.connection]} />
+        <path className="integration-signal integration-signal--source integration-signal--api" pathLength="100" d={CONNECTION_WIRES['Custom APIs']} />
+        {motion.connection !== 'Custom APIs' && <>
+          <path className="integration-signal integration-signal--source integration-signal--knowledge" pathLength="100" d={SOURCE_PATHS[0]} />
+          <path className="integration-signal integration-signal--destination" pathLength="100" d={CONNECTION_WIRES[motion.connection]} />
+        </>}
       </g>
     </svg>
     <div className="integration-documents" aria-label="Knowledge sources and import formats">
@@ -126,7 +129,7 @@ export default function IntegrationDetails() {
   const [channel, setChannel] = useState<Channel>('Webchat');
   return <>
     <section id="possibilities" className="product-section integration-overview product-reveal" aria-labelledby="integration-overview-title">
-      <div className="integration-intro"><h2 id="integration-overview-title">Your knowledge. Put to work.</h2><p>One knowledge base. Every conversation.</p></div>
+      <div className="integration-intro"><h2 id="integration-overview-title">Your knowledge. Put to work.</h2></div>
       <KnowledgeMap channel={channel} onChannelChange={setChannel} updated={updated} />
       <div className="integration-update" aria-labelledby="integration-update-title">
         <div className="integration-update-copy"><h3 id="integration-update-title">Update once. Answer everywhere.</h3><p>Choose a channel above. Try a policy update.</p><button type="button" className="product-text-link" aria-controls="integration-answer" onClick={() => setUpdated(value => !value)}>{updated ? 'Reset policy' : 'Try an update'}{updated ? <RotateCcw size={15} /> : <ArrowRight size={16} />}</button></div>
