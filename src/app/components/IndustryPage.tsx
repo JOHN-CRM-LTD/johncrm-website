@@ -97,7 +97,7 @@ function IndustryStory({ industry, reducedMotion }: { industry: IndustrySlug; re
             <h3>{scene.heading}</h3><p>{scene.description}</p>
           </div>
           <div className="industry-playback">
-            {!reducedMotion && <button type="button" className="industry-play" aria-pressed={playing} onClick={() => {
+            {industry !== 'healthcare' && !reducedMotion && <button type="button" className="industry-play" aria-pressed={playing} onClick={() => {
               if (playing) { setPlaying(false); return; }
               if (selected === content.scenes.length - 1) { setSelected(0); setReplay(value => value + 1); }
               setPlaying(true);
