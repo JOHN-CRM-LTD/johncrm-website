@@ -63,9 +63,7 @@ html:has(.industry-page) { scroll-behavior: smooth; }
 .industry-scene-description { min-height: 175px; padding: 28px 0 10px; animation: industry-enter 600ms var(--industry-ease) both; }
 .industry-scene-description h3 { max-width: 360px; font-size: 23px; font-weight: 400; line-height: 1.3; letter-spacing: -.035em; text-wrap: balance; }
 .industry-scene-description p { margin-top: 13px; color: #b7c8ca; font-size: 13px; line-height: 1.85; }
-.industry-playback { display: flex; align-items: center; gap: 10px; margin-top: 23px; }
-.industry-play { display: inline-flex; gap: 10px; align-items: center; min-height: 40px; margin-right: auto; padding: 0 3px; background: transparent; color: #f7f5f0; font-size: 12px; }
-.industry-play:hover { color: #a9dbea; }
+.industry-scene-navigation { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 23px; }
 .industry-scene-count { margin-right: 10px; font-size: 11px; font-variant-numeric: tabular-nums; }
 .industry-scene-count > span { color: #96adb3; }
 .industry-scene-arrow { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #ffffff30; border-radius: 50%; background: transparent; color: #f7f5f0; transition: background 180ms ease; }
@@ -177,8 +175,7 @@ html:has(.industry-page) { scroll-behavior: smooth; }
   .industry-scene-description { min-height: 164px; padding-top: 25px; }
   .industry-scene-description h3 { max-width: 390px; font-size: 23px; }
   .industry-scene-description p { font-size: 13px; }
-  .industry-playback { margin-top: 15px; }
-  .industry-play { min-height: 44px; }
+  .industry-scene-navigation { margin-top: 15px; }
   .industry-scene-arrow { width: 42px; height: 42px; }
   .industry-conversation { border-radius: 14px; }
   .industry-conversation__header { padding: 16px 19px; }
@@ -218,5 +215,5 @@ html:has(.industry-page) { scroll-behavior: smooth; }
   .industry-page { padding-top: 0; overflow: visible; }
   .industry-reveal { opacity: 1; transform: none; }
   .industry-page *, .industry-page *::before { animation: none !important; }
-  .industry-playback { display: none; }
+  .industry-scene-navigation { display: none; }
 }

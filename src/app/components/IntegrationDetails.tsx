@@ -1,3 +1,5 @@
+import { usePageTranslation } from '../translations/language';
+import { PRODUCT_COPY } from '../translations/product';
 import { useState, type CSSProperties } from 'react';
 import { ArrowRight, BookOpen, Check, CodeXml, KeyRound, Mail, MessageSquare, Phone, RotateCcw, Workflow } from 'lucide-react';
 import johnLogo from '../../assets/johncrm.svg';
@@ -59,6 +61,7 @@ function ChannelIcon({ channel, animated = false }: { channel: Connection; anima
 function KnowledgeMap({ channel, onChannelChange, updated }: {
   channel: Channel; onChannelChange: (channel: Channel) => void; updated: boolean;
 }) {
+  const { t } = usePageTranslation(PRODUCT_COPY);
   const [motion, setMotion] = useState<{ connection: Connection; sequence: number }>({ connection: channel, sequence: 0 });
   const playConnection = (connection: Connection) => {
     setMotion(previous => ({ connection, sequence: previous.sequence + 1 }));
@@ -71,10 +74,10 @@ function KnowledgeMap({ channel, onChannelChange, updated }: {
   const channelNode = (name: Connection, className: string) => (
     <button type="button" className={`integration-node ${className}`} aria-pressed={name === 'Custom APIs' ? undefined : channel === name}
       aria-controls={name === 'Custom APIs' ? undefined : 'integration-answer'} onClick={() => playConnection(name)}>
-      {connectionIcon(name)}<strong>{name}</strong>
+      {connectionIcon(name)}<strong>{t(name)}</strong>
     </button>
   );
-  return <div className="integration-map" role="group" aria-label="Documents feed the Knowledge Base. JOHN uses this knowledge and connected APIs to answer on your selected channel.">
+  return <div className="integration-map" role="group" aria-label={t("Documents feed the Knowledge Base. JOHN uses this knowledge and connected APIs to answer on your selected channel.")}>
     <svg className="integration-wires" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
       <g className="integration-wire-tracks">
         {Object.values(CONNECTION_WIRES).map(path => <g key={path}>
@@ -91,13 +94,13 @@ function KnowledgeMap({ channel, onChannelChange, updated }: {
         </>}
       </g>
     </svg>
-    <div className="integration-documents" aria-label="Knowledge sources and import formats">
-      {DOCUMENTS.map((document, index) => <div className="integration-document" key={document.name} style={{ '--document-delay': `${index * 70}ms` } as CSSProperties}><img src={document.icon} alt="" width="54" height="70" /><strong>{document.name}</strong>{document.format && <small>{document.format}</small>}</div>)}
+    <div className="integration-documents" aria-label={t("Knowledge sources and import formats")}>
+      {DOCUMENTS.map((document, index) => <div className="integration-document" key={document.name} style={{ '--document-delay': `${index * 70}ms` } as CSSProperties}><img src={document.icon} alt="" width="54" height="70" /><strong>{document.name}</strong>{document.format && <small>{t(document.format)}</small>}</div>)}
     </div>
-    <div className="integration-knowledge" data-updated={updated}><BookOpen size={22} strokeWidth={1.4} aria-hidden="true" /><strong>Knowledge Base</strong><Check size={15} aria-hidden="true" /></div>
-    <div className="integration-extra-channels" role="group" aria-label="More channels">{(['Email', 'SMS', 'Voice'] as const).map(name => <button type="button" key={name} aria-pressed={channel === name} aria-controls="integration-answer" onClick={() => playConnection(name)}>{connectionIcon(name)}<span>{name}</span></button>)}</div>
+    <div className="integration-knowledge" data-updated={updated}><BookOpen size={22} strokeWidth={1.4} aria-hidden="true" /><strong>{t("Knowledge Base")}</strong><Check size={15} aria-hidden="true" /></div>
+    <div className="integration-extra-channels" role="group" aria-label={t("More channels")}>{(['Email', 'SMS', 'Voice'] as const).map(name => <button type="button" key={name} aria-pressed={channel === name} aria-controls="integration-answer" onClick={() => playConnection(name)}>{connectionIcon(name)}<span>{t(name)}</span></button>)}</div>
     <div className="integration-map-hub"><img src={johnLogo} alt="JOHN CRM" width="370" height="50" /></div>
-    <div className="integration-map-destinations" role="group" aria-label="Explore channels and connected APIs">
+    <div className="integration-map-destinations" role="group" aria-label={t("Explore channels and connected APIs")}>
       {channelNode('Webchat', 'integration-node--webchat')}
       {channelNode('WhatsApp Business API', 'integration-node--business')}
       {channelNode('WhatsApp', 'integration-node--whatsapp')}
@@ -113,27 +116,29 @@ const CONNECTION_STEPS = [
 ] as const;
 
 function ConnectionWalkthrough() {
+  const { t } = usePageTranslation(PRODUCT_COPY);
   return <section className="product-section integration-setup product-reveal" aria-labelledby="integration-build-title">
-    <div className="integration-intro"><h2 id="integration-build-title">Your tools. Connected.</h2><p>From API documentation to a working connection.</p></div>
-    <ol className="integration-setup-flow" aria-label="API connection walkthrough">
+    <div className="integration-intro"><h2 id="integration-build-title">{t("Your tools. Connected.")}</h2><p>{t("From API documentation to a working connection.")}</p></div>
+    <ol className="integration-setup-flow" aria-label={t("API connection walkthrough")}>
       {CONNECTION_STEPS.map(({ title, detail, icon }, index) => <li key={title}>
         <div className="integration-setup-icon">{icon === 'document' ? <img src={pdfIcon} width="35" height="46" alt="" /> : icon === 'workflow' ? <Workflow size={31} strokeWidth={1.3} aria-hidden="true" /> : <KeyRound size={31} strokeWidth={1.3} aria-hidden="true" />}</div>
-        <span className="integration-setup-number">0{index + 1}</span><h3>{title}</h3><p>{detail}</p>
+        <span className="integration-setup-number">0{index + 1}</span><h3>{t(title)}</h3><p>{t(detail)}</p>
       </li>)}
     </ol>
   </section>;
 }
 
 export default function IntegrationDetails() {
+  const { t } = usePageTranslation(PRODUCT_COPY);
   const [updated, setUpdated] = useState(false);
   const [channel, setChannel] = useState<Channel>('Webchat');
   return <>
     <section id="possibilities" className="product-section integration-overview product-reveal" aria-labelledby="integration-overview-title">
-      <div className="integration-intro"><h2 id="integration-overview-title">Your knowledge. Put to work.</h2></div>
+      <div className="integration-intro"><h2 id="integration-overview-title">{t("Your knowledge. Put to work.")}</h2></div>
       <KnowledgeMap channel={channel} onChannelChange={setChannel} updated={updated} />
       <div className="integration-update" aria-labelledby="integration-update-title">
-        <div className="integration-update-copy"><h3 id="integration-update-title">Update once. Answer everywhere.</h3><p>Choose a channel above. Try a policy update.</p><button type="button" className="product-text-link" aria-controls="integration-answer" onClick={() => setUpdated(value => !value)}>{updated ? 'Reset policy' : 'Try an update'}{updated ? <RotateCcw size={15} /> : <ArrowRight size={16} />}</button></div>
-        <div id="integration-answer" className="integration-answer" aria-live="polite" aria-atomic="true"><div className="integration-answer-content" key={`${channel}-${updated}`}><span><ChannelIcon channel={channel} />{channel}</span><p>“You can return an unworn item within <strong>{updated ? '60' : '30'} days.</strong>”</p><small><BookOpen size={12} aria-hidden="true" />Returns policy · {updated ? 'Updated' : 'Original'}<span>Example</span></small></div></div>
+        <div className="integration-update-copy"><h3 id="integration-update-title">{t("Update once. Answer everywhere.")}</h3><p>{t("Choose a channel above. Try a policy update.")}</p><button type="button" className="product-text-link" aria-controls="integration-answer" onClick={() => setUpdated(value => !value)}>{t(updated ? 'Reset policy' : 'Try an update')}{updated ? <RotateCcw size={15} /> : <ArrowRight size={16} />}</button></div>
+        <div id="integration-answer" className="integration-answer" aria-live="polite" aria-atomic="true"><div className="integration-answer-content" key={`${channel}-${updated}`}><span><ChannelIcon channel={channel} />{t(channel)}</span><p>{t("“You can return an unworn item within")}{' '}<strong>{updated ? '60' : '30'}{' '}{t("days.")}</strong>{t("”")}</p><small><BookOpen size={12} aria-hidden="true" />{t("Returns policy ·")}{' '}{t(updated ? 'Updated' : 'Original')}<span>{t("Example")}</span></small></div></div>
       </div>
     </section>
     <ConnectionWalkthrough />

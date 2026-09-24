@@ -283,10 +283,12 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  let channelPaths = [], networkLayout;
  function makeNetwork(mobile) {
   const compact=mobile&&dimensions.h<=720;
+  // Mobile reads left to right: Webchat, Business API, WhatsApp, custom API.
+  const mobileSlots=[0,2,1,3];
   networkLayout = mobile
-   ? {w:420,h:690,hub:[210,330],kb:[210,448],nodes:[[80,84],[340,84],[80,196],[340,196]],fileX:[54,158,262,366],fileY:587,destX:[92,170,248,326],destY:474}
+   ? {w:420,h:690,hub:[210,330],kb:[210,448],nodes:mobileSlots.map(slot=>[(slot+.5)*105,compact?96:130]),fileX:[54,158,262,366],fileY:587,destX:[92,170,248,326],destY:474}
    : {w:1100,h:650,hub:[550,185],kb:[550,407],nodes:[[140,112],[140,277],[960,112],[960,277]],fileX:[370,490,610,730],fileY:570,destX:[409,503,597,691],destY:433};
-  if(compact)Object.assign(networkLayout,{h:610,hub:[210,296],kb:[210,420],nodes:[[80,45],[340,45],[80,161],[340,161]],fileY:548,destY:446});
+  if(compact)Object.assign(networkLayout,{h:610,hub:[210,296],kb:[210,420],fileY:548,destY:446});
   const n=networkLayout;
   $('network').style.width=`${n.w}px`;$('network').style.height=`${n.h}px`;
   $('wires').setAttribute('viewBox',`0 0 ${n.w} ${n.h}`);
@@ -301,12 +303,8 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
     endpoints.push([[hx,hy],[ex,ey]]);
     return `M${hx} ${hy} C${mx} ${hy} ${mx} ${ey} ${ex} ${ey}`;
    }
-   const endY=y+50,startY=n.hub[1]-31,port=[0,3,1,2][i],hx=n.hub[0]+(port-1.5)*50;
+   const endY=y+50,startY=n.hub[1]-31,hx=n.hub[0]+(mobileSlots[i]-1.5)*50;
    endpoints.push([[hx,startY],[x,endY]]);
-   if(i<2){
-    const side=i===0?-1:1,outer=n.hub[0]+side*204,shelf=endY+15,bendY=startY-32,r=14;
-    return `M${hx} ${startY} C${hx} ${startY-20} ${outer} ${startY-10} ${outer} ${bendY} V${shelf+r} Q${outer} ${shelf} ${outer-side*r} ${shelf} H${x+side*r} Q${x} ${shelf} ${x} ${endY}`;
-   }
    const midY=(startY+endY)/2;
    return `M${hx} ${startY} C${hx} ${midY} ${x} ${midY} ${x} ${endY}`;
   });

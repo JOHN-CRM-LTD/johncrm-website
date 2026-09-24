@@ -1,3 +1,4 @@
+import { LanguageContext } from './translations/language';
 import {
   lazy,
   Suspense,
@@ -2511,7 +2512,7 @@ export function TermsOfServicePage() {
 
 const SHOWCASE_ENABLED = false;
 
-function LandingPage({ product, industry }: { product?: ProductSlug; industry?: IndustrySlug }) {
+function useSiteLanguage() {
   const [language, setLanguage] = useState<LanguageCode>(() => {
     try {
       const preference = localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY);
@@ -2522,7 +2523,6 @@ function LandingPage({ product, industry }: { product?: ProductSlug; industry?: 
     } catch { /* Use the detected location if browser storage is unavailable. */ }
     return detectInitialLanguage();
   });
-  const [currency] = useState<CurrencyCode>(detectInitialCurrency);
 
   const handleLanguageChange = (nextLanguage: LanguageCode) => {
     setLanguage(nextLanguage);
@@ -2533,14 +2533,22 @@ function LandingPage({ product, industry }: { product?: ProductSlug; industry?: 
     document.documentElement.lang = language === 'CN' ? 'zh-CN' : language === 'HK' ? 'zh-HK' : 'en';
   }, [language]);
 
+  return { language, handleLanguageChange };
+}
+
+function LandingPage({ product, industry }: { product?: ProductSlug; industry?: IndustrySlug }) {
+  const { language, handleLanguageChange } = useSiteLanguage();
+  const [currency] = useState<CurrencyCode>(detectInitialCurrency);
+
   return (
+    <LanguageContext.Provider value={language}>
     <div className={`landing-site${product ? ' product-site' : ''}${industry ? ' industry-site' : ''}`}>
       <Nav
         language={language}
         onLanguageChange={handleLanguageChange}
         productPage={Boolean(product || industry)}
       />
-      {industry ? <Suspense fallback={<main className="min-h-screen pt-40 text-center" role="status">Loading industry story…</main>}><IndustryPage industry={industry} /></Suspense> : product ? <ProductPage product={product} /> : <main className="landing-main">
+      {industry ? <Suspense fallback={<main className="min-h-screen pt-40 text-center" role="status">{language === 'EN' ? 'Loading industry story…' : language === 'CN' ? '正在加载行业案例…' : '正在載入行業案例…'}</main>}><IndustryPage industry={industry} /></Suspense> : product ? <ProductPage product={product} /> : <main className="landing-main">
         <ProductStory language={language} />
         <div className="landing-details">
           <Pricing currency={currency} language={language} />
@@ -2549,6 +2557,7 @@ function LandingPage({ product, industry }: { product?: ProductSlug; industry?: 
       </main>}
       <Footer language={language} />
     </div>
+    </LanguageContext.Provider>
   );
 }
 
