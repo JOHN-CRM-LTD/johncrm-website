@@ -4,13 +4,9 @@ import test from 'node:test';
 
 const source = await readFile(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 
-test('the header currency selection drives the pricing currency', () => {
-  assert.match(source, /code: 'AUD', label: 'AUD'/);
-  assert.match(source, /const \[currency, setCurrency\] = useState<CurrencyCode>\(detectInitialCurrency\);/);
-  assert.match(
-    source,
-    /<Nav[\s\S]*?currency=\{currency\}[\s\S]*?onCurrencyChange=\{handleCurrencyChange\}/,
-  );
+test('location detection drives the pricing currency', () => {
+  assert.match(source, /const \[currency\] = useState<CurrencyCode>\(detectInitialCurrency\);/);
+  assert.doesNotMatch(source, /onCurrencyChange|handleCurrencyChange|setCurrency/);
   assert.match(source, /<Pricing currency=\{currency\} language=\{language\} \/>/);
   assert.match(
     source,
@@ -18,19 +14,15 @@ test('the header currency selection drives the pricing currency', () => {
   );
 });
 
-test('location defaults the currency while a saved manual selection wins', () => {
-  assert.match(source, /const CURRENCY_PREFERENCE_STORAGE_KEY = 'johncrm:currency:v1';/);
+test('currency follows location without saved manual overrides', () => {
+  assert.doesNotMatch(source, /CURRENCY_PREFERENCE_STORAGE_KEY|johncrm:currency:v1/);
   assert.match(source, /'Asia\/Hong_Kong': 'HKD'/);
   assert.match(source, /timeZone\.startsWith\('Australia\/'\)[\s\S]*?'AUD'/);
   assert.match(source, /HK: 'HKD'/);
   assert.match(source, /AU: 'AUD'/);
   assert.match(
     source,
-    /function detectInitialCurrency\(\)[\s\S]*?localStorage\.getItem\(CURRENCY_PREFERENCE_STORAGE_KEY\)[\s\S]*?currencyForTimeZone[\s\S]*?currencyForRegion/,
-  );
-  assert.match(
-    source,
-    /const handleCurrencyChange = useCallback[\s\S]*?localStorage\.setItem\(CURRENCY_PREFERENCE_STORAGE_KEY, nextCurrency\)[\s\S]*?setCurrency\(nextCurrency\)/,
+    /function detectInitialCurrency\(\)[\s\S]*?currencyForTimeZone[\s\S]*?currencyForRegion/,
   );
 });
 

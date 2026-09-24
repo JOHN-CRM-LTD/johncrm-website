@@ -9,8 +9,8 @@ test('contact form uses an accessible custom team-size combobox', async () => {
   assert.match(source, /role="combobox"/);
   assert.match(source, /role="listbox"/);
   assert.match(source, /name="teamSize"/);
-  assert.match(source, /1–5/);
-  assert.match(source, /6–20/);
-  assert.match(source, /21–100/);
+  assert.match(source, /1 to 5/);
+  assert.match(source, /6 to 20/);
+  assert.match(source, /21 to 100/);
   assert.match(source, /100\+/);
 });

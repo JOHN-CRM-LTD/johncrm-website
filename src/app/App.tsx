@@ -1,6 +1,9 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -31,16 +34,22 @@ import heroAscii from '../assets/hero-ascii.txt?raw';
 import { useAsciiIntro } from '../lib/useAsciiIntro';
 import johnCrmLogo from '../assets/johncrm.svg';
 import { prefersReducedMotion, useAsciiTextRipple } from '../lib/useAsciiTextRipple';
-import ChatDemo from './components/ChatDemo';
+import ProductStory from './components/ProductStory';
+import ProductMenu, { PRODUCTS, type ProductSlug } from './components/ProductMenu';
+import ProductPage from './components/ProductPage';
+import IndustriesMenu from './components/IndustriesMenu';
+import { INDUSTRIES, type IndustrySlug } from './industries/catalog';
+import LegalPageLayout, { type LegalPage } from './components/LegalPageLayout';
+import '../styles/product-landing.css';
 import { MotionLines, MotionPage, Reveal } from './components/SectionMotion';
 
 const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
+const IndustryPage = lazy(() => import('./components/IndustryPage'));
 
 /* --------------------------------- contact --------------------------------- */
 
-// Sales enquiries land in the same Gmail mailbox as legal mail, but the `+sales`
-// sub-address and the `[Demo Request]` subject prefix give Gmail filters two handles to
-// label/skip-inbox on, so cold sales traffic never buries real mail.
+// Sales enquiries use a dedicated `+sales` sub-address and `[Demo Request]`
+// subject prefix so the sales mailbox can filter demo requests.
 const APP_LOGIN_URL = 'https://app.johncrm.com/g/login';
 const SALES_CONTACT_EMAIL = 'biz.johncrm+sales@gmail.com';
 const SALES_SUBJECT = '[Demo Request] JOHN CRM';
@@ -64,7 +73,7 @@ const SALES_MAILTO = `mailto:${SALES_CONTACT_EMAIL}?subject=${encodeURIComponent
     'Team size:',
     'What you want to automate:',
     '',
-    '— sent from johncrm.com',
+    'Sent from johncrm.com',
   ].join('\n'),
 )}`;
 
@@ -147,7 +156,7 @@ type LanguageCode = 'EN' | 'CN' | 'HK';
 type HeaderSelectorOption<Code extends string = string> = { code: Code; label: string };
 
 const NAV_LINKS = [
-  { key: 'features', href: '#features' },
+  { key: 'features', href: '#top' },
   // Reviews section is hidden until we have real testimonials.
   // { key: 'clients', href: '#clients' },
   { key: 'pricing', href: '#pricing' },
@@ -160,20 +169,38 @@ const LANGUAGE_OPTIONS = [
   { code: 'HK', label: '繁體中文' },
 ] as const satisfies readonly HeaderSelectorOption<LanguageCode>[];
 
-const CURRENCY_OPTIONS = [
-  { code: 'USD', label: 'USD' },
-  { code: 'CNY', label: 'CNY' },
-  { code: 'HKD', label: 'HKD' },
-  { code: 'EUR', label: 'EUR' },
-  { code: 'AUD', label: 'AUD' },
-] as const;
+// v1 also saved automatic defaults; v2 stores only deliberate dropdown choices.
+const LANGUAGE_PREFERENCE_STORAGE_KEY = 'johncrm:language:v2';
 
-type CurrencyCode = (typeof CURRENCY_OPTIONS)[number]['code'];
+function detectInitialLanguage(): LanguageCode {
+  if (typeof window === 'undefined') return 'EN';
+
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timeZone) {
+      return timeZone === 'Asia/Hong_Kong' || timeZone === 'Hongkong' ? 'HK' : 'EN';
+    }
+  } catch {
+    // Use the browser's explicit region only when timezone detection is unavailable.
+  }
+
+  const locales = navigator.languages?.length ? navigator.languages : [navigator.language];
+  for (const locale of locales) {
+    try {
+      const region = new Intl.Locale(locale).region;
+      if (region) return region === 'HK' ? 'HK' : 'EN';
+    } catch {
+      // Ignore malformed or unsupported locale values.
+    }
+  }
+
+  return 'EN';
+}
+
+type CurrencyCode = 'USD' | 'CNY' | 'HKD' | 'EUR' | 'AUD';
 type BillingCycle = 'monthly' | 'annual';
 type PricedPlanKey = 'starter' | 'growth';
 type CurrencyPriceBook = Record<PricedPlanKey, Record<BillingCycle, number>>;
-
-const CURRENCY_PREFERENCE_STORAGE_KEY = 'johncrm:currency:v1';
 
 const REGION_CURRENCY: Partial<Record<string, CurrencyCode>> = {
   HK: 'HKD',
@@ -246,10 +273,6 @@ const TIME_ZONE_CURRENCY: Partial<Record<string, CurrencyCode>> = {
   'Europe/Zagreb': 'EUR',
 };
 
-function isCurrencyCode(value: string | null): value is CurrencyCode {
-  return CURRENCY_OPTIONS.some((option) => option.code === value);
-}
-
 function currencyForTimeZone(timeZone: string | undefined): CurrencyCode | null {
   if (!timeZone) return null;
   if (timeZone.startsWith('Australia/')) return 'AUD';
@@ -263,13 +286,6 @@ function currencyForRegion(region: string | undefined): CurrencyCode | null {
 
 function detectInitialCurrency(): CurrencyCode {
   if (typeof window === 'undefined') return 'USD';
-
-  try {
-    const savedCurrency = window.localStorage.getItem(CURRENCY_PREFERENCE_STORAGE_KEY);
-    if (isCurrencyCode(savedCurrency)) return savedCurrency;
-  } catch {
-    // Storage can be unavailable in privacy modes; location detection still works.
-  }
 
   // Timezone is a useful location signal and does not send the visitor's IP to a third party.
   try {
@@ -341,7 +357,7 @@ function formatCurrencyPrice(currency: CurrencyCode, price: number | null) {
 type ContactFormField = { id: 'name' | 'company' | 'email'; label: string; placeholder: string };
 
 type SiteCopy = {
-  selectors: { language: string; currency: string };
+  selectors: { language: string };
   navigation: Record<(typeof NAV_LINKS)[number]['key'], string>;
   actions: { contactSales: string; login: string; tryForFree: string };
   hero: {
@@ -408,8 +424,8 @@ type SiteCopy = {
 
 const SITE_COPY: Record<LanguageCode, SiteCopy> = {
   EN: {
-    selectors: { language: 'Language', currency: 'Currency' },
-    navigation: { features: 'Features', pricing: 'Pricing', contact: 'Contact' },
+    selectors: { language: 'Language' },
+    navigation: { features: 'Product', pricing: 'Pricing', contact: 'Contact' },
     actions: { contactSales: 'Contact Sales', login: 'Login', tryForFree: 'Try for Free' },
     hero: {
       title: ['THE', 'Assistant', 'That Never', 'Sleeps'],
@@ -417,19 +433,19 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         '#1 AI Agent Platform for Automating messages. Manage your site, WhatsApp, WeChat, email and more in one place.',
       primaryAction: 'Get Started',
       secondaryAction: 'Watch Demo',
-      supportNote: 'No credit card required · 30-day free trial · Cancel anytime',
+      supportNote: 'No credit card required · 30 day free trial · Cancel anytime',
     },
     features: {
-      label: '01 — Capabilities',
+      label: '01 Capabilities',
       heading: ['Built for', 'Performance'],
       items: [
         {
-          title: 'AI-Powered Outreach',
-          body: 'AI drafts every reply and follow-up, grounded in your own playbooks and policy documents. Nothing sends until you approve — or flip low-risk replies to full autopilot.',
+          title: 'AI Powered Outreach',
+          body: 'AI drafts every reply and follow up, grounded in your own playbooks and policy documents. Nothing sends until you approve, or flip low risk replies to full autopilot.',
         },
         {
           title: 'Revenue Intelligence',
-          body: 'Deal scoring, forecast rollups, and win-probability signals surfaced in real time — so you commit numbers you can actually hit.',
+          body: 'Deal scoring, forecast rollups, and win probability signals surfaced in real time, so you commit numbers you can actually hit.',
         },
         {
           title: 'Team Alignment',
@@ -437,11 +453,11 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         },
         {
           title: 'Enterprise Security',
-          body: 'SSO, role-based access, and a full audit trail of every AI draft, approval, and send. Blacklisted phrases and mandatory disclaimers enforced automatically.',
+          body: 'SSO, role based access, and a full audit trail of every AI draft, approval, and send. Blacklisted phrases and mandatory disclaimers enforced automatically.',
         },
         {
-          title: 'Multi-Channel Reach',
-          body: 'WhatsApp, WeChat, Telegram, Messenger, Instagram, email, and web chat — every conversation in one inbox, answered in the client’s language: English, Cantonese, or Mandarin.',
+          title: 'Multi Channel Reach',
+          body: 'WhatsApp, WeChat, Telegram, Messenger, Instagram, email, and web chat, every conversation in one inbox, answered in the client’s language: English, Cantonese, or Mandarin.',
         },
         {
           title: 'Pipeline Analytics',
@@ -456,10 +472,10 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       cta: 'Start Free Trial',
     },
     pricing: {
-      label: '04 — Pricing',
+      label: 'Pricing',
       heading: ['Transparent', 'Pricing'],
       monthly: 'Monthly',
-      annual: 'Annual –17%',
+      annual: 'Annual save 17%',
       mostPopular: 'Most Popular',
       perMonth: '/ mo',
       enterprise: 'Enterprise',
@@ -470,7 +486,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: 'For small teams getting their first pipeline in order.',
           features: [
             'Up to 1,000 contacts',
-            'Shared inbox — email & web chat',
+            'Shared inbox: email & web chat',
             'Pipeline board',
             'Basic analytics',
             '2 team seats',
@@ -482,12 +498,12 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         {
           name: 'PRO',
           priceKey: 'growth',
-          blurb: 'For teams ready to put follow-up on autopilot.',
+          blurb: 'For teams ready to put follow up on autopilot.',
           features: [
             'Everything in PLUS',
-            'All channels — WhatsApp, WeChat, Telegram & more',
+            'All channels: WhatsApp, WeChat, Telegram & more',
             'AI drafts with approval queue',
-            'Knowledge-base answers (RAG)',
+            'Knowledge base answers (RAG)',
             'Bulk campaigns & templates',
             '10 team seats',
             'Priority support',
@@ -513,16 +529,14 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       ],
     },
     contact: {
-      label: '05 — Contact',
+      label: 'Contact',
       heading: ['Let’s', 'Talk', 'Revenue'],
       intro:
-        'Tell us about your team and we’ll show you exactly how JOHN CRM fits your pipeline. No slide decks — a live walkthrough on your own data.',
+        'Tell us about your team and we’ll show you exactly how JOHN CRM fits your pipeline. No slide decks, just a live walkthrough on your own data.',
       info: [
         { label: 'Response Time', value: '< 2 hours' },
         { label: 'Demo Duration', value: '30 minutes' },
         { label: 'Setup Time', value: 'Same day' },
-        { label: 'Free Trial', value: '30 days' },
-        { label: 'Channels Supported', value: '8+' },
       ],
       form: {
         fields: [
@@ -554,8 +568,8 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     },
   },
   CN: {
-    selectors: { language: '语言', currency: '货币' },
-    navigation: { features: '功能', pricing: '定价', contact: '联系' },
+    selectors: { language: '语言' },
+    navigation: { features: '产品', pricing: '定价', contact: '联系' },
     actions: { contactSales: '联系销售', login: '登录', tryForFree: '免费试用' },
     hero: {
       title: ['永不休眠的', '智能助手'],
@@ -565,12 +579,12 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       supportNote: '无需信用卡 · 30 天免费试用 · 随时取消',
     },
     features: {
-      label: '01 — 核心能力',
+      label: '01 核心能力',
       heading: ['为效能', '而生'],
       items: [
         {
           title: 'AI 智能外联',
-          body: 'AI 基于您自己的销售手册和策略文件起草每条回复与跟进内容，经您批准后才会发送——低风险回复也可切换为全自动发送。',
+          body: 'AI 基于您自己的销售手册和策略文件起草每条回复与跟进内容，经您批准后才会发送，低风险回复也可切换为全自动发送。',
         },
         {
           title: '收入智能',
@@ -586,7 +600,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         },
         {
           title: '全渠道触达',
-          body: 'WhatsApp、微信、Telegram、Messenger、Instagram、电子邮件与网页聊天——所有对话汇聚于同一个收件箱，并以客户的语言（英文、粤语或普通话）回复。',
+          body: 'WhatsApp、微信、Telegram、Messenger、Instagram、电子邮件与网页聊天，所有对话汇聚于同一个收件箱，并以客户的语言（英文、粤语或普通话）回复。',
         },
         {
           title: '管道分析',
@@ -601,10 +615,10 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       cta: '开始免费试用',
     },
     pricing: {
-      label: '04 — 定价',
+      label: '定价',
       heading: ['透明', '定价'],
       monthly: '月付',
-      annual: '年付 –17%',
+      annual: '年付优惠 17%',
       mostPopular: '最受欢迎',
       perMonth: '/ 月',
       enterprise: '企业版',
@@ -615,7 +629,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '适合初次搭建销售管道的小团队。',
           features: [
             '最多 1,000 位联系人',
-            '共享收件箱——电子邮件与网页聊天',
+            '共享收件箱，电子邮件与网页聊天',
             '管道看板',
             '基础分析',
             '2 个团队席位',
@@ -630,7 +644,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '为准备将跟进工作全自动化的团队而设。',
           features: [
             '包含 PLUS 全部功能',
-            '全渠道——WhatsApp、微信、Telegram 等',
+            '全渠道，WhatsApp、微信、Telegram 等',
             'AI 草稿与审批队列',
             '知识库问答（RAG）',
             '批量营销与模板',
@@ -658,16 +672,14 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       ],
     },
     contact: {
-      label: '05 — 联系',
-      heading: ['让我们', '谈谈', '业绩'],
+      label: '联系',
+      heading: ['让我们', '谈谈业绩'],
       intro:
-        '告诉我们您的团队情况，我们将展示 JOHN CRM 如何契合您的销售流程。没有幻灯片——只用您自己的数据做实时演示。',
+        '告诉我们您的团队情况，我们将展示 JOHN CRM 如何契合您的销售流程。没有幻灯片，只用您自己的数据做实时演示。',
       info: [
         { label: '响应时间', value: '2 小时内' },
         { label: '演示时长', value: '30 分钟' },
         { label: '部署时间', value: '当天完成' },
-        { label: '免费试用', value: '30 天' },
-        { label: '支持渠道', value: '8+ 个' },
       ],
       form: {
         fields: [
@@ -698,8 +710,8 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     },
   },
   HK: {
-    selectors: { language: '語言', currency: '貨幣' },
-    navigation: { features: '功能', pricing: '定價', contact: '聯繫' },
+    selectors: { language: '語言' },
+    navigation: { features: '產品', pricing: '定價', contact: '聯繫' },
     actions: { contactSales: '聯絡銷售', login: '登入', tryForFree: '免費試用' },
     hero: {
       title: ['永不休眠的', '智慧助手'],
@@ -709,12 +721,12 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       supportNote: '無需信用卡 · 30 天免費試用 · 隨時取消',
     },
     features: {
-      label: '01 — 核心能力',
+      label: '01 核心能力',
       heading: ['為效能', '而生'],
       items: [
         {
           title: 'AI 智能外聯',
-          body: 'AI 基於您自己的銷售手冊和策略文件起草每條回覆與跟進內容，經您批准後才會發送——低風險回覆也可切換為全自動發送。',
+          body: 'AI 基於您自己的銷售手冊和策略文件起草每條回覆與跟進內容，經您批准後才會發送，低風險回覆也可切換為全自動發送。',
         },
         {
           title: '收入智能',
@@ -730,7 +742,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         },
         {
           title: '全渠道觸達',
-          body: 'WhatsApp、微信、Telegram、Messenger、Instagram、電子郵件與網頁聊天——所有對話匯聚於同一個收件箱，並以客戶的語言（英文、粵語或普通話）回覆。',
+          body: 'WhatsApp、微信、Telegram、Messenger、Instagram、電子郵件與網頁聊天，所有對話匯聚於同一個收件箱，並以客戶的語言（英文、粵語或普通話）回覆。',
         },
         {
           title: '管道分析',
@@ -745,10 +757,10 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       cta: '開始免費試用',
     },
     pricing: {
-      label: '04 — 定價',
+      label: '定價',
       heading: ['透明', '定價'],
       monthly: '月付',
-      annual: '年付 –17%',
+      annual: '年付優惠 17%',
       mostPopular: '最受歡迎',
       perMonth: '/ 月',
       enterprise: '企業版',
@@ -759,7 +771,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '適合初次搭建銷售管道的小團隊。',
           features: [
             '最多 1,000 位聯絡人',
-            '共享收件箱——電子郵件與網頁聊天',
+            '共享收件箱，電子郵件與網頁聊天',
             '管道看板',
             '基礎分析',
             '2 個團隊席位',
@@ -774,7 +786,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '為準備將跟進工作全自動化的團隊而設。',
           features: [
             '包含 PLUS 全部功能',
-            '全渠道——WhatsApp、微信、Telegram 等',
+            '全渠道，WhatsApp、微信、Telegram 等',
             'AI 草稿與審批隊列',
             '知識庫問答（RAG）',
             '批量行銷與模板',
@@ -802,16 +814,14 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       ],
     },
     contact: {
-      label: '05 — 聯繫',
-      heading: ['讓我們', '談談', '業績'],
+      label: '聯繫',
+      heading: ['讓我們', '談談業績'],
       intro:
-        '告訴我們您的團隊情況，我們將展示 JOHN CRM 如何契合您的銷售流程。沒有投影片——只用您自己的數據做實時示範。',
+        '告訴我們您的團隊情況，我們將展示 JOHN CRM 如何契合您的銷售流程。沒有投影片，只用您自己的數據做實時示範。',
       info: [
         { label: '回應時間', value: '2 小時內' },
         { label: '示範時長', value: '30 分鐘' },
         { label: '部署時間', value: '當天完成' },
-        { label: '免費試用', value: '30 天' },
-        { label: '支援渠道', value: '8+ 個' },
       ],
       form: {
         fields: [
@@ -921,7 +931,7 @@ function HeaderSelector<Code extends string>({
   };
 
   return (
-    <div ref={wrapperRef} className={`relative ${fullWidth ? 'w-full' : 'shrink-0'}`}>
+    <div ref={wrapperRef} className={`header-selector relative ${fullWidth ? 'header-selector--full w-full' : 'shrink-0'}`}>
       <button
         ref={triggerRef}
         type="button"
@@ -931,15 +941,15 @@ function HeaderSelector<Code extends string>({
         aria-haspopup="menu"
         onClick={() => (open ? setOpen(false) : openMenu())}
         onKeyDown={handleKeyDown}
-        className={`flex items-center font-mono text-[10px] tracking-[0.2em] uppercase text-black/55 transition-colors hover:text-black ${
-          fullWidth ? 'w-full justify-between py-4 text-left' : 'gap-1.5 py-2'
+        className={`header-selector__trigger ${
+          fullWidth ? 'w-full justify-between text-left' : 'gap-2'
         }`}
       >
         <span>{fullWidth ? `${label}: ${selectedOption.code}` : selectedOption.code}</span>
         <ChevronDown
           size={13}
           strokeWidth={1.5}
-          className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`header-selector__chevron shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"
         />
       </button>
@@ -948,8 +958,8 @@ function HeaderSelector<Code extends string>({
           id={`${id}-options`}
           role="menu"
           aria-label={`${label} options`}
-          className={`absolute left-1/2 top-full z-[60] mt-2 -translate-x-1/2 border border-black/10 bg-white p-1 shadow-[0_12px_30px_rgba(0,0,0,0.08)] ${
-            fullWidth ? 'w-full' : 'min-w-[9.5rem]'
+          className={`header-selector__menu absolute left-1/2 -translate-x-1/2 ${
+            fullWidth ? 'w-full' : 'min-w-[10.5rem]'
           }`}
         >
           {options.map((option, index) => {
@@ -963,12 +973,11 @@ function HeaderSelector<Code extends string>({
                 aria-checked={selected}
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => selectOption(option.code)}
-                className={`flex w-full items-center justify-between gap-3 whitespace-nowrap px-3 py-2.5 text-left font-mono text-[10px] tracking-[0.15em] uppercase transition-colors ${
-                  active ? 'bg-black text-white' : 'text-black/65 hover:bg-black/5 hover:text-black'
-                }`}
+                data-active={active}
+                className="header-selector__option"
               >
-                {option.label === option.code ? option.code : `${option.code} — ${option.label}`}
-                {selected && <Check size={12} strokeWidth={2.5} aria-hidden="true" />}
+                {option.label === option.code ? option.code : `${option.code} ${option.label}`}
+                <Check size={14} strokeWidth={2} className="header-selector__check" aria-hidden="true" />
               </button>
             );
           })}
@@ -981,13 +990,11 @@ function HeaderSelector<Code extends string>({
 function Nav({
   language,
   onLanguageChange,
-  currency,
-  onCurrencyChange,
+  productPage = false,
 }: {
   language: LanguageCode;
   onLanguageChange: (language: LanguageCode) => void;
-  currency: CurrencyCode;
-  onCurrencyChange: (currency: CurrencyCode) => void;
+  productPage?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -1014,15 +1021,17 @@ function Nav({
       data-menu-open={open}
     >
       <div className="mx-auto flex h-full max-w-[85rem] items-center justify-between px-6 lg:px-10">
-        <a href="#top" className="flex items-center" aria-label="JOHN CRM home">
+        <a href={productPage ? '/#top' : '#top'} className="flex items-center" aria-label="JOHN CRM home">
           <img src={johnCrmLogo} alt="JOHN CRM" className="h-5 w-auto shrink-0" />
         </a>
 
         <nav className="hidden items-center gap-10 md:flex">
-          {NAV_LINKS.map((l) => (
+          <ProductMenu language={language} />
+          <IndustriesMenu language={language} />
+          {NAV_LINKS.filter((l) => l.key !== 'features').map((l) => (
             <a
               key={l.key}
-              href={l.href}
+              href={productPage ? `/${l.href}` : l.href}
               className="font-mono text-[11px] tracking-[0.25em] uppercase text-black/45 transition-colors hover:text-black"
             >
               {copy.navigation[l.key]}
@@ -1039,14 +1048,6 @@ function Nav({
             value={language}
             onChange={onLanguageChange}
           />
-          <HeaderSelector
-            id="currency"
-            label={copy.selectors.currency}
-            ariaLabel={copy.selectors.currency}
-            options={CURRENCY_OPTIONS}
-            value={currency}
-            onChange={onCurrencyChange}
-          />
           <a
             href="https://app.johncrm.com/"
             className="font-mono text-[11px] tracking-[0.25em] uppercase text-black/60 transition-colors hover:text-black"
@@ -1054,7 +1055,7 @@ function Nav({
             {copy.actions.login}
           </a>
           <a
-            href="#contact"
+            href={productPage ? '/#contact' : '#contact'}
             className="bg-black px-5 py-2.5 font-mono text-[11px] tracking-[0.25em] uppercase text-white transition-opacity hover:opacity-80"
           >
             {copy.actions.contactSales}
@@ -1065,25 +1066,29 @@ function Nav({
           className="md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-expanded={open}
+          aria-controls="mobile-navigation"
         >
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
 {open && (
-        <div className="absolute left-0 right-0 top-16 h-[calc(100dvh-4rem)] overflow-y-auto border-b border-black/6 bg-white md:hidden">
+        <div id="mobile-navigation" className="absolute left-0 right-0 top-16 h-[calc(100dvh-4rem)] overflow-y-auto border-b border-black/6 bg-white md:hidden">
           <div className="flex flex-col px-6 py-6">
-            {NAV_LINKS.map((l) => (
+            <ProductMenu language={language} mobile onNavigate={() => setOpen(false)} />
+            <IndustriesMenu language={language} mobile onNavigate={() => setOpen(false)} />
+            {NAV_LINKS.filter((l) => l.key !== 'features').map((l) => (
               <a
                 key={l.key}
-                href={l.href}
+                href={productPage ? `/${l.href}` : l.href}
                 onClick={() => setOpen(false)}
                 className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
               >
                 {copy.navigation[l.key]}
               </a>
             ))}
-            <div className="grid grid-cols-2 gap-x-6 border-b border-black/5">
+            <div className="border-b border-black/5">
               <HeaderSelector
                 id="mobile-language"
                 label={copy.selectors.language}
@@ -1091,15 +1096,6 @@ function Nav({
                 options={LANGUAGE_OPTIONS}
                 value={language}
                 onChange={onLanguageChange}
-                fullWidth
-              />
-              <HeaderSelector
-                id="mobile-currency"
-                label={copy.selectors.currency}
-                ariaLabel={copy.selectors.currency}
-                options={CURRENCY_OPTIONS}
-                value={currency}
-                onChange={onCurrencyChange}
                 fullWidth
               />
             </div>
@@ -1111,7 +1107,7 @@ function Nav({
               {copy.actions.login}
             </a>
             <a
-              href="#contact"
+              href={productPage ? '/#contact' : '#contact'}
               onClick={() => setOpen(false)}
               className="mt-6 bg-black px-5 py-4 text-center font-mono text-[11px] tracking-[0.25em] uppercase text-white"
             >
@@ -1369,12 +1365,12 @@ const SCREENS: Screen[] = [
     path: 'app.johncrm.io/clients',
     icon: Users,
     shot: shotClients,
-    alt: 'JOHN CRM client list with tags, pipeline stage, and last-contact columns',
+    alt: 'JOHN CRM client list with tags, pipeline stage, and last contact columns',
   },
   {
     key: 'inbox',
     name: 'AI Inbox',
-    sub: 'WhatsApp, email, and web chat in one thread — AI replies on standby.',
+    sub: 'WhatsApp, email, and web chat in one thread, AI replies on standby.',
     path: 'app.johncrm.io/chat',
     icon: MessageCircle,
     shot: shotChat,
@@ -1429,7 +1425,7 @@ function Showcase() {
           {/* header */}
           <div className="mb-6 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <SectionLabel>02 — Product Tour</SectionLabel>
+              <SectionLabel>02 Product Tour</SectionLabel>
               <h2 className="mt-2 font-display text-5xl font-black uppercase leading-none lg:text-6xl">
                 {screen.name}
               </h2>
@@ -1520,7 +1516,7 @@ const REVIEWS = [
   },
   {
     quote:
-      'The forecast rollups are the first numbers I have ever trusted enough to take straight to the board. No massaging, no spreadsheet gymnastics — the pipeline is the report.',
+      'The forecast rollups are the first numbers I have ever trusted enough to take straight to the board. No massaging or spreadsheet gymnastics. The pipeline is the report.',
     name: 'Daniel Osei',
     title: 'COO, Vertex Group',
   },
@@ -1532,13 +1528,13 @@ const REVIEWS = [
   },
   {
     quote:
-      'JOHN CRM follows up when my team forgets. That alone paid for the subscription in the first month — we closed two deals that would have gone cold.',
+      'JOHN CRM follows up when my team forgets. That alone paid for the subscription in the first month. We closed two deals that would have gone cold.',
     name: 'James Okafor',
     title: 'VP Sales, Nightline Corp',
   },
   {
     quote:
-      'Our clients write in Cantonese, English, and Mandarin. JOHN CRM drafts the reply in all three — my team just reviews and hits approve.',
+      'Our clients write in Cantonese, English, and Mandarin. JOHN CRM drafts the reply in all three. My team just reviews and hits approve.',
     name: 'Claire Beaumont',
     title: 'Managing Director, Propager',
   },
@@ -1559,7 +1555,7 @@ function Reviews() {
     <section id="clients" className="bg-white py-32">
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <Reveal>
-          <SectionLabel>03 — Clients</SectionLabel>
+          <SectionLabel>03 Clients</SectionLabel>
           <h2 className="mt-4 font-display text-6xl font-black uppercase leading-[0.9] lg:text-7xl">
             What They
             <br />
@@ -1599,46 +1595,66 @@ function Reviews() {
 
 function Pricing({ currency, language }: { currency: CurrencyCode; language: LanguageCode }) {
   const [annual, setAnnual] = useState(true);
+  const billingToggleRef = useRef<HTMLDivElement>(null);
   const pricing = CURRENCY_PRICING[currency];
   const copy = SITE_COPY[language].pricing;
 
-  return (
-    <section id="pricing" data-motion-section className="bg-[#F8F8F6] py-32">
-      <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
-        <Reveal kind="heading">
-          <SectionLabel>{copy.label}</SectionLabel>
-          <h2
-            className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
-              language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
-            }`}
-          >
-            <MotionLines lines={copy.heading} />
-          </h2>
-        </Reveal>
+  useLayoutEffect(() => {
+    const toggle = billingToggleRef.current;
+    const activeButton = toggle?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
+    if (!toggle || !activeButton) return;
 
-        <Reveal delay={100}>
-          <div className="mt-10 inline-flex border border-black/10 bg-white p-1">
-            {(
-              [
-                { key: false, label: copy.monthly },
-                { key: true, label: copy.annual },
-              ] as const
-            ).map((t) => (
-              <button
-                key={t.label}
-                onClick={() => setAnnual(t.key)}
-                className={`px-5 py-2 font-mono text-[9px] tracking-[0.2em] uppercase transition-colors ${
-                  annual === t.key ? 'bg-black text-white' : 'text-black/40 hover:text-black'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </Reveal>
+    const updateIndicator = () => {
+      const { offsetLeft, offsetWidth } = activeButton;
+      toggle.style.setProperty('--billing-indicator-x', `${offsetLeft}px`);
+      toggle.style.setProperty('--billing-indicator-width', `${offsetWidth}px`);
+    };
+
+    updateIndicator();
+    const observer = new ResizeObserver(updateIndicator);
+    toggle.querySelectorAll('button').forEach((button) => observer.observe(button, { box: 'border-box' }));
+    return () => observer.disconnect();
+  }, [annual, language]);
+
+  return (
+    <section id="pricing" tabIndex={-1} data-motion-section className="bg-[#F8F8F6] py-32">
+      <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
+        <div className="pricing-heading-layout">
+          <Reveal kind="heading">
+            <SectionLabel>{copy.label}</SectionLabel>
+            <h2
+              className={`mt-4 font-display text-6xl font-black uppercase lg:text-7xl ${
+                language === 'EN' ? 'leading-[0.9]' : 'leading-[1.15]'
+              }`}
+            >
+              <MotionLines lines={copy.heading} />
+            </h2>
+          </Reveal>
+
+          <Reveal delay={100}>
+            <div ref={billingToggleRef} className="billing-toggle mt-10 inline-flex border border-black/10 bg-white p-1">
+              {(
+                [
+                  { key: false, label: copy.monthly },
+                  { key: true, label: copy.annual },
+                ] as const
+              ).map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  aria-pressed={annual === t.key}
+                  onClick={() => setAnnual(t.key)}
+                  className="px-5 py-2 font-mono text-[9px] tracking-[0.2em] uppercase"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </Reveal>
+        </div>
 
         <div className="mt-12">
-          <div className="grid gap-px lg:grid-cols-3">
+          <div className="pricing-grid grid lg:grid-cols-3">
             {copy.plans.map((p, index) => {
               const price = p.priceKey ? pricing.prices[p.priceKey][annual ? 'annual' : 'monthly'] : null;
               const formattedPrice = formatCurrencyPrice(currency, price);
@@ -1648,23 +1664,23 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                   key={p.name}
                   delay={index * 320}
                   distance={220}
-                  className={`relative flex flex-col p-10 ${
+                  className={`pricing-card relative flex flex-col p-10 ${
                     inv ? 'bg-black text-white' : 'border border-black/6 bg-white'
                   }`}
                 >
                   {inv && (
-                    <span className="absolute -top-3.5 left-8 border border-white/20 bg-black px-3 py-1.5 font-mono text-[8px] tracking-[0.25em] uppercase text-white">
+                    <span className="pricing-badge absolute -top-3.5 left-8 border border-white/20 bg-black px-3 py-1.5 font-mono text-[8px] tracking-[0.25em] uppercase text-white">
                       {copy.mostPopular}
                       </span>
                   )}
                   <div
-                    className={`font-mono text-[9px] tracking-[0.3em] uppercase ${
+                    className={`pricing-name font-mono text-[9px] tracking-[0.3em] uppercase ${
                       inv ? 'text-white/40' : 'text-black/30'
                     }`}
                   >
                     {p.name}
                   </div>
-                  <div className="mt-6 flex items-baseline gap-2">
+                  <div className="pricing-price mt-6 flex items-baseline gap-2">
                     {formattedPrice !== null ? (
                       <>
                         <span className="font-display text-6xl font-black leading-none">
@@ -1679,7 +1695,7 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                         </span>
                       </>
                     ) : (
-                      <span className="font-display text-6xl font-black uppercase leading-none">{copy.enterprise}</span>
+                      <span className="enterprise-price font-display text-6xl font-black uppercase leading-none">{copy.enterprise}</span>
                     )}
                   </div>
                   <p
@@ -1707,7 +1723,7 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                   </ul>
                   <a
                     href={p.ctaHref ?? '#contact'}
-                    className={`mt-auto block py-4 text-center font-mono text-[10px] tracking-[0.25em] uppercase transition-opacity hover:opacity-80 ${
+                    className={`pricing-cta mt-auto block py-4 text-center font-mono text-[10px] tracking-[0.25em] uppercase transition-opacity hover:opacity-80 ${
                       inv
                         ? 'bg-white text-black'
                         : 'border border-black/15 text-black/70 hover:border-black/40'
@@ -1727,7 +1743,7 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
 
 /* --------------------------------- contact --------------------------------- */
 
-const TEAM_SIZE_OPTIONS = ['1–5', '6–20', '21–100', '100+'] as const;
+const TEAM_SIZE_OPTIONS = ['1 to 5', '6 to 20', '21 to 100', '100+'] as const;
 
 function TeamSizeCombobox({ placeholder }: { placeholder: string }) {
   const [open, setOpen] = useState(false);
@@ -1886,7 +1902,7 @@ function Contact({ language }: { language: LanguageCode }) {
   };
 
   return (
-    <section id="contact" className="scroll-mt-16 bg-white py-32" data-motion-section>
+    <section id="contact" tabIndex={-1} className="scroll-mt-16 bg-white py-32" data-motion-section>
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <div className="grid gap-16 lg:grid-cols-[2fr_3fr] lg:gap-14">
           <div>
@@ -1921,10 +1937,10 @@ function Contact({ language }: { language: LanguageCode }) {
           </div>
 
           <Reveal delay={150}>
-            <div className="border border-black/8 bg-[#FAFAF8] p-10">
+            <div className="contact-panel border border-black/8 bg-[#FAFAF8] p-10">
               {status === 'sent' ? (
                 <div className="flex min-h-[28rem] flex-col items-center justify-center text-center">
-                  <div className="flex h-12 w-12 items-center justify-center border border-black/15">
+                  <div className="contact-success-icon flex h-12 w-12 items-center justify-center border border-black/15">
                     <Check size={18} strokeWidth={2.5} />
                   </div>
                   <div className="mt-6 font-display text-4xl font-black uppercase">{copy.form.sentTitle}</div>
@@ -1995,7 +2011,7 @@ function Contact({ language }: { language: LanguageCode }) {
                       {copy.form.errorAfter}
                       {devError && (
                         <span className="mt-2 block font-mono text-[11px] text-black/45">
-                          dev only — API said: {devError}
+                          dev only, API said: {devError}
                         </span>
                       )}
                     </p>
@@ -2033,14 +2049,14 @@ const FOOTER_LINK_HREFS = ['/privacy-policy', '/terms-of-service', '#top'] as co
 function Footer({ language = 'EN' }: { language?: LanguageCode }) {
   const links = SITE_COPY[language].footer.links;
   return (
-    <footer className="border-t border-black/6 bg-[#F8F8F6]">
+    <footer className="bg-[#F8F8F6]">
       <div className="mx-auto flex max-w-[85rem] flex-col items-start justify-between gap-8 px-6 py-14 md:flex-row md:items-center lg:px-10">
         <img src={johnCrmLogo} alt="JOHN CRM" className="h-5 w-auto" />
         <nav className="flex flex-wrap gap-x-8 gap-y-3">
           {links.map((l, i) => (
             <a
               key={l.label}
-              href={FOOTER_LINK_HREFS[i]}
+              href={FOOTER_LINK_HREFS[i].startsWith('#') && currentPath() !== '/' ? `/${FOOTER_LINK_HREFS[i]}` : FOOTER_LINK_HREFS[i]}
               aria-label={l.ariaLabel}
               className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/35 transition-colors hover:text-black"
             >
@@ -2049,7 +2065,7 @@ function Footer({ language = 'EN' }: { language?: LanguageCode }) {
           ))}
         </nav>
         <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/35">
-          &copy; 2026 KITT DESIGNS LTD
+          &copy; 2026 BOSS SOFTWARE LTD
         </div>
       </div>
     </footer>
@@ -2058,8 +2074,24 @@ function Footer({ language = 'EN' }: { language?: LanguageCode }) {
 
 /* ------------------------------- legal pages ------------------------------- */
 
-const LEGAL_CONTACT_EMAIL = 'biz.johncrm@gmail.com';
-const LEGAL_ADDRESS = 'Flat C, 4/F, Room 9, Ka Ming Court, 688-690 Castle Peak Road, Kowloon, Hong Kong';
+const LEGAL_COMPANY = 'BOSS SOFTWARE LTD';
+const LEGAL_CONTACT_EMAIL = 'info@hkboss.com.hk';
+const LEGAL_PHONE = '(852) 2485 2033';
+const LEGAL_PHONE_HREF = 'tel:+85224852033';
+const LEGAL_ADDRESS = 'Unit 2, 3/F, Block B, Hoi Luen Industrial Centre, 55 Hoi Yuen Road, Kwun Tong, Kowloon, Hong Kong';
+
+function LegalContactBlock() {
+  return (
+    <div className="border-l-2 border-black pl-6 text-black">
+      <p className="font-display text-2xl font-bold uppercase leading-none">{LEGAL_COMPANY}</p>
+      <dl className="legal-contact-details">
+        <div><dt>Address</dt><dd>{LEGAL_ADDRESS}</dd></div>
+        <div><dt>Telephone</dt><dd><a href={LEGAL_PHONE_HREF}>{LEGAL_PHONE}</a></dd></div>
+        <div><dt>Email</dt><dd><a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a></dd></div>
+      </dl>
+    </div>
+  );
+}
 
 function LegalSection({
   id,
@@ -2071,11 +2103,11 @@ function LegalSection({
   children: ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-8 border-t border-black/8 pt-10 first:border-t-0 first:pt-0">
-      <h2 className="font-display text-3xl font-bold uppercase leading-none tracking-[-0.02em] text-black md:text-4xl">
+    <section id={id} className="legal-section" aria-labelledby={`${id}-title`}>
+      <h2 id={`${id}-title`}>
         {title}
       </h2>
-      <div className="mt-6 space-y-5 text-[15px] leading-7 text-black/65">{children}</div>
+      <div className="legal-section-body">{children}</div>
     </section>
   );
 }
@@ -2099,237 +2131,165 @@ const PRIVACY_NAV = [
   ['contact', 'Contact'],
 ] as const;
 
-export function PrivacyPolicyPage() {
-  useEffect(() => {
-    const previousTitle = document.title;
-    document.title = 'Privacy Policy — JOHN CRM';
-    return () => {
-      document.title = previousTitle;
-    };
-  }, []);
-
+function PrivacyPolicyContent() {
   return (
-    <div className="min-h-screen bg-[#F8F8F6] text-black">
-      <header className="border-b border-black/8 bg-white">
-        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-10">
-          <a href="/" className="flex items-center" aria-label="JOHN CRM home">
-            <img src={johnCrmLogo} alt="JOHN CRM" className="h-5 w-auto" />
-          </a>
-          <a
-            href="/"
-            className="group inline-flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] uppercase text-black/45 transition-colors hover:text-black"
-          >
-            <span className="hidden sm:inline">Back to JOHN CRM</span>
-            <ArrowRight size={14} strokeWidth={1.5} className="transition-transform group-hover:translate-x-1" />
-          </a>
+    <>
+      <LegalSection id="who-we-are" title="1. Who we are">
+        <p>
+          John CRM ("<strong>John CRM</strong>", "<strong>we</strong>", "<strong>us</strong>") is a customer relationship management platform for professional service businesses, including insurance and financial advisory practices, operated by {LEGAL_COMPANY}, a company registered in Hong Kong ("<strong>the Service</strong>").
+        </p>
+        <p>
+          This policy explains what personal data we collect, why we collect it, how we use and share it, and the choices available to you.
+        </p>
+        <p>
+          <strong className="text-black">Contact:</strong>{' '}
+          <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
+            {LEGAL_CONTACT_EMAIL}
+          </a>{' '}
+          · <a href={LEGAL_PHONE_HREF}>{LEGAL_PHONE}</a> · {LEGAL_ADDRESS}
+        </p>
+      </LegalSection>
+
+      <LegalSection id="roles" title="2. Our two roles: controller and processor">
+        <p>John CRM handles personal data in two distinct capacities:</p>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">As a data controller</strong> for <strong className="text-black">Account Data</strong>: information about you as a user of the Service (your login email, name, password hash, workspace settings, billing records, activity records). We decide how and why this data is processed.</li>
+          <li><strong className="text-black">As a data processor</strong> for <strong className="text-black">Customer Content</strong>: the data that you and your organization enter into or route through the Service about <em>your</em> clients and contacts (names, phone numbers, messages, uploaded documents, policy details, and similar). For Customer Content, <strong className="text-black">you or your organization are the data controller</strong>, and we process it only to provide the Service under your instructions and our agreement with you. You are responsible for having a lawful basis (and, where required, consent) to collect and process your clients' data, and for responding to your clients' privacy requests.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="data-we-collect" title="3. Data we collect">
+        <h3 className="pt-2 font-display text-2xl font-bold uppercase leading-none text-black">3.1 Account Data (you as a user)</h3>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Registration details:</strong> email address, display name, password (stored as a salted bcrypt hash; we never store plaintext passwords), and preferred timezone and language.</li>
+          <li><strong className="text-black">Google sign in:</strong> if you sign in with Google, we receive your Google account email and basic profile identifiers.</li>
+          <li><strong className="text-black">Organization data:</strong> organization name, legal/contact information, logo, membership and role records, and team assignments.</li>
+          <li><strong className="text-black">Billing data:</strong> subscription and token purchase records, invoices, and adjustments. Payment card details are collected and processed by <strong className="text-black">Stripe</strong>  we never see or store full card numbers.</li>
+          <li><strong className="text-black">Connected account credentials:</strong> if you connect Gmail, Google Calendar, Telegram, Discord, WeChat, WhatsApp, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).</li>
+          <li><strong className="text-black">Usage and activity records:</strong> authenticated requests to the Service (endpoint, timestamp, status, IP address, active workspace) are logged for security and administration. Request bodies (message text, passwords, tokens) are <strong className="text-black">never</strong> stored in these logs. Activity records are retained for a short rolling window (currently 14 days) before deletion.</li>
+          <li><strong className="text-black">AI usage records:</strong> model used, token counts, and billing attribution for AI features.</li>
+          <li><strong className="text-black">Support access records:</strong> if John CRM staff access your workspace in view as mode (see section 6), the session is recorded in an append only audit log, and an access log is visible to your organization's administrators.</li>
+        </ul>
+        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">3.2 Customer Content (data about your clients, controlled by you)</h3>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Client profiles:</strong> names, phone numbers, email addresses, dates of birth, addresses, timezones, tags, pipeline status, notes, and, where you use these features, insurance/MPF portfolio details.</li>
+          <li><strong className="text-black">Messages and attachments:</strong> conversations sent and received through connected channels (WhatsApp, email, Telegram, WeChat, Discord, website chat widget), including images and files.</li>
+          <li><strong className="text-black">Uploaded documents:</strong> policy PDFs and knowledge base documents you upload, stored in private object storage and served only via short lived signed URLs after an ownership check.</li>
+          <li><strong className="text-black">Website chat visitor data:</strong> if you embed our chat widget, visitors' pre chat form details (e.g. name, email) and messages are collected on your behalf.</li>
+          <li><strong className="text-black">Consent records:</strong> opt in/opt out status for mass messaging, kept as a durable ledger so that contacts who decline are never messaged again.</li>
+        </ul>
+        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">3.3 Cookies</h3>
+        <p>We use strictly necessary session cookies to keep you logged in. We do not use advertising or cross site tracking cookies.</p>
+      </LegalSection>
+
+      <LegalSection id="how-we-use-data" title="4. How we use data">
+        <p>We use personal data to:</p>
+        <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
+          <li><strong className="text-black">Provide the Service</strong>  authentication, workspace management, message delivery and receipt, calendar scheduling, document storage and retrieval, and reporting.</li>
+          <li><strong className="text-black">Provide AI features</strong>  classifying inbound messages, drafting and sending replies, extracting text from uploaded documents (OCR), generating embeddings for document search, and generating content you request. See section 5.</li>
+          <li><strong className="text-black">Bill for the Service</strong>  processing subscriptions, token purchases, and usage based accounting via Stripe.</li>
+          <li><strong className="text-black">Secure and operate the Service</strong>  activity logging, fraud and abuse prevention, rate limiting, debugging, and platform monitoring (aggregate statistics).</li>
+          <li><strong className="text-black">Support you</strong>  responding to support requests, including consent gated view as access (section 6).</li>
+          <li><strong className="text-black">Comply with legal obligations</strong>  record keeping, responding to lawful requests from authorities.</li>
+        </ol>
+        <p>We do <strong className="text-black">not</strong> sell personal data, and we do not use Customer Content for advertising.</p>
+      </LegalSection>
+
+      <LegalSection id="ai-processing" title="5. AI processing">
+        <p>The Service includes AI features that process message content and documents:</p>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Message classification and auto replies:</strong> inbound client messages may be sent to third party AI model providers to classify the message topic and, where enabled by you, to draft or send a reply. Replies can be reviewed, edited, held, or disabled per conversation by your agents.</li>
+          <li><strong className="text-black">Document processing (OCR and retrieval):</strong> uploaded policy and knowledge base documents may be processed by Google Cloud Document AI (OCR) and Google Vertex AI (embeddings) so their content can be retrieved to answer questions. Documents transiting Google Cloud Storage for OCR are deleted after processing, with a 1 day automatic deletion backstop.</li>
+          <li><strong className="text-black">Model providers:</strong> depending on configuration, AI requests are routed to providers including OpenRouter, DeepSeek, Anthropic, and Google. If you supply your own API key ("bring your own key"), requests for that provider are made directly with your key.</li>
+          <li><strong className="text-black">No training:</strong> we do not use your data to train AI models. Our arrangements with AI providers are limited to inference (generating a response).</li>
+        </ul>
+        <p>You are responsible for informing your clients, as required by applicable law, that AI assisted responses may be used in your communications with them.</p>
+      </LegalSection>
+
+      <LegalSection id="support-access" title="6. Support access (view as) and transparency">
+        <p>John CRM support staff may, with a stated reason, access your workspace in a <strong className="text-black">read only "view as" mode</strong> to troubleshoot issues. Safeguards:</p>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li>Your organization can <strong className="text-black">disable support access</strong> at any time in its settings; when disabled, new support sessions cannot start.</li>
+          <li>View as sessions are read only (no changes can be made), time limited (maximum 30 minutes), and every session is recorded in an append only audit log.</li>
+          <li>Your organization's administrators can see a log of John CRM staff access to your organization.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="subprocessors" title="7. Who we share data with (subprocessors)">
+        <p>We share data only with service providers who help us operate the Service, under contracts restricting their use of the data:</p>
+        <div className="overflow-x-auto border-y border-black/10">
+          <table className="w-full min-w-[38rem] border-collapse text-left text-[13px] leading-6">
+            <thead>
+              <tr className="border-b border-black/10 font-mono text-[9px] tracking-[0.2em] uppercase text-black/40">
+                <th className="py-4 pr-5 font-medium">Provider</th>
+                <th className="py-4 pr-5 font-medium">Purpose</th>
+                <th className="py-4 font-medium">Location</th>
+              </tr>
+            </thead>
+            <tbody className="text-black/65">
+              {[
+                ['DigitalOcean', 'Application hosting and managed database', 'Singapore'],
+                ['DigitalOcean Spaces', 'Object storage for documents and attachments (private bucket)', 'Singapore'],
+                ['Google Cloud (Document AI, Vertex AI, Cloud Storage)', 'Document OCR, embeddings for search (transient staging)', 'United States'],
+                ['OpenRouter / DeepSeek / Anthropic / Google', 'AI inference (classification, drafting, verification)', 'United States'],
+                ['Stripe', 'Payment processing', 'United States / global'],
+                ['Google', 'OAuth sign in, Gmail sending/receiving, Calendar (where you connect them)', 'Global'],
+                ['Cloudflare', 'Network security and content delivery', 'Global'],
+              ].map(([provider, purpose, location]) => (
+                <tr key={provider} className="border-b border-black/6 last:border-0">
+                  <td className="py-4 pr-5 align-top font-medium text-black">{provider}</td>
+                  <td className="py-4 pr-5 align-top">{purpose}</td>
+                  <td className="py-4 align-top">{location}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </header>
+        <p>Messages you send and receive through third party channels (WhatsApp, Telegram, WeChat, Discord, email providers) are also processed by those platforms under <strong className="text-black">their own privacy policies</strong>; we do not control them.</p>
+        <p>We may also disclose data where required by law, to protect the rights and safety of users, or in connection with a merger or acquisition (in which case this policy will continue to apply to previously collected data).</p>
+      </LegalSection>
 
-      <main id="top">
-        <section className="border-b border-black/8 bg-white" style={GRID_BG}>
-          <div className="mx-auto max-w-6xl px-6 py-24 lg:px-10 lg:py-32">
-            <SectionLabel>Legal / Privacy Policy</SectionLabel>
-            <div className="mt-8 max-w-4xl">
-              <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-[-0.035em] text-black md:text-8xl">
-                Privacy
-                <br />
-                Policy
-              </h1>
-              <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-[10px] tracking-[0.2em] uppercase text-black/40">
-                <span>JOHN CRM</span>
-                <span aria-hidden="true">/</span>
-                <span>Last updated: 3 August 2026</span>
-              </div>
-            </div>
-          </div>
-        </section>
+      <LegalSection id="international-transfers" title="8. International transfers">
+        <p>Our primary infrastructure is in Singapore. AI and document processing involves transfers to providers in the United States as listed above. Where required by applicable law, we rely on appropriate safeguards (such as contractual data protection commitments with our subprocessors) for these transfers.</p>
+      </LegalSection>
 
-        <div className="mx-auto grid max-w-6xl gap-16 px-6 py-20 lg:grid-cols-[13rem_minmax(0,52rem)] lg:gap-24 lg:px-10 lg:py-28">
-          <aside className="hidden lg:block">
-            <div className="sticky top-10">
-              <SectionLabel>On this page</SectionLabel>
-              <nav className="mt-6 border-l border-black/10">
-                {PRIVACY_NAV.map(([id, label]) => (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    className="block border-l border-transparent py-1.5 pl-4 font-mono text-[10px] tracking-[0.12em] uppercase text-black/40 transition-colors hover:border-black hover:text-black"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </nav>
-            </div>
-          </aside>
+      <LegalSection id="retention" title="9. Retention">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Account Data:</strong> retained while your account is active and for a reasonable period afterwards for record keeping, then deleted or anonymized.</li>
+          <li><strong className="text-black">Customer Content:</strong> retained under your organization's control while your subscription is active. On verified account/organization deletion, Customer Content is deleted, subject to the exceptions below.</li>
+          <li><strong className="text-black">Activity logs:</strong> rolling 14 day retention.</li>
+          <li><strong className="text-black">Billing and audit records:</strong> retained as required for accounting, tax, and dispute resolution obligations.</li>
+          <li><strong className="text-black">Executed contracts</strong> (where the contract feature is used): retained for at least 7 years after termination, in line with record keeping obligations.</li>
+          <li><strong className="text-black">OCR staging data:</strong> deleted after processing (1 day automatic backstop).</li>
+          <li><strong className="text-black">Backups:</strong> deleted data may persist in encrypted backups for a limited period before rotating out.</li>
+        </ul>
+      </LegalSection>
 
-          <article className="min-w-0 space-y-14">
-            <LegalSection id="who-we-are" title="1. Who we are">
-              <p>
-                John CRM ("<strong>John CRM</strong>", "<strong>we</strong>", "<strong>us</strong>") is a customer relationship management platform for professional service businesses, including insurance and financial advisory practices, operated by KITT DESIGNS LTD, a company registered in Hong Kong ("<strong>the Service</strong>").
-              </p>
-              <p>
-                This policy explains what personal data we collect, why we collect it, how we use and share it, and the choices available to you.
-              </p>
-              <p>
-                <strong className="text-black">Contact:</strong>{' '}
-                <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
-                  {LEGAL_CONTACT_EMAIL}
-                </a>{' '}
-                · {LEGAL_ADDRESS}
-              </p>
-            </LegalSection>
+      <LegalSection id="security" title="10. Security">
+        <p>Measures we apply include: encryption in transit (TLS); encryption at rest for stored credentials and API keys (AES 256 GCM with per purpose keys); salted password hashing (bcrypt); private object storage reachable only through short lived signed URLs after ownership checks; workspace scoped data isolation enforced at the query layer; role based access control; append only, tamper evident staff audit logging; and login rate limiting. No system is perfectly secure; we will notify affected customers of a personal data breach as required by applicable law.</p>
+      </LegalSection>
 
-            <LegalSection id="roles" title="2. Our two roles: controller and processor">
-              <p>John CRM handles personal data in two distinct capacities:</p>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">As a data controller</strong> for <strong className="text-black">Account Data</strong> — information about you as a user of the Service (your login email, name, password hash, workspace settings, billing records, activity records). We decide how and why this data is processed.</li>
-                <li><strong className="text-black">As a data processor</strong> for <strong className="text-black">Customer Content</strong> — the data that you and your organization enter into or route through the Service about <em>your</em> clients and contacts (names, phone numbers, messages, uploaded documents, policy details, and similar). For Customer Content, <strong className="text-black">you or your organization are the data controller</strong>, and we process it only to provide the Service under your instructions and our agreement with you. You are responsible for having a lawful basis (and, where required, consent) to collect and process your clients' data, and for responding to your clients' privacy requests.</li>
-              </ul>
-            </LegalSection>
+      <LegalSection id="your-rights" title="11. Your rights">
+        <p>Depending on your jurisdiction (including under the Hong Kong PDPO), you may have rights to access, correct, or delete personal data we hold about you, to object to or restrict certain processing, and to data portability.</p>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Users:</strong> contact us at <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> to exercise rights over your Account Data.</li>
+          <li><strong className="text-black">Clients of our customers:</strong> because your data is controlled by the business you interact with, please direct requests to that business. We will assist our customers in fulfilling such requests.</li>
+        </ul>
+        <p>We will respond within the timeframe required by applicable law. You may also have the right to lodge a complaint with your data protection authority (in Hong Kong, the Office of the Privacy Commissioner for Personal Data).</p>
+      </LegalSection>
 
-            <LegalSection id="data-we-collect" title="3. Data we collect">
-              <h3 className="pt-2 font-display text-2xl font-bold uppercase leading-none text-black">3.1 Account Data (you as a user)</h3>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Registration details:</strong> email address, display name, password (stored as a salted bcrypt hash — we never store plaintext passwords), and preferred timezone and language.</li>
-                <li><strong className="text-black">Google sign-in:</strong> if you sign in with Google, we receive your Google account email and basic profile identifiers.</li>
-                <li><strong className="text-black">Organization data:</strong> organization name, legal/contact information, logo, membership and role records, and team assignments.</li>
-                <li><strong className="text-black">Billing data:</strong> subscription and token-purchase records, invoices, and adjustments. Payment card details are collected and processed by <strong className="text-black">Stripe</strong> — we never see or store full card numbers.</li>
-                <li><strong className="text-black">Connected account credentials:</strong> if you connect Gmail, Google Calendar, Telegram, Discord, WeChat, WhatsApp, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES-256-GCM).</li>
-                <li><strong className="text-black">Usage and activity records:</strong> authenticated requests to the Service (endpoint, timestamp, status, IP address, active workspace) are logged for security and administration. Request bodies — message text, passwords, tokens — are <strong className="text-black">never</strong> stored in these logs. Activity records are retained for a short rolling window (currently 14 days) before deletion.</li>
-                <li><strong className="text-black">AI usage records:</strong> model used, token counts, and billing attribution for AI features.</li>
-                <li><strong className="text-black">Support access records:</strong> if John CRM staff access your workspace in view-as mode (see section 6), the session is recorded in an append-only audit log, and an access log is visible to your organization's administrators.</li>
-              </ul>
-              <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">3.2 Customer Content (data about your clients, controlled by you)</h3>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Client profiles:</strong> names, phone numbers, email addresses, dates of birth, addresses, timezones, tags, pipeline status, notes, and — where you use these features — insurance/MPF portfolio details.</li>
-                <li><strong className="text-black">Messages and attachments:</strong> conversations sent and received through connected channels (WhatsApp, email, Telegram, WeChat, Discord, website chat widget), including images and files.</li>
-                <li><strong className="text-black">Uploaded documents:</strong> policy PDFs and knowledge-base documents you upload, stored in private object storage and served only via short-lived signed URLs after an ownership check.</li>
-                <li><strong className="text-black">Website chat visitor data:</strong> if you embed our chat widget, visitors' pre-chat form details (e.g. name, email) and messages are collected on your behalf.</li>
-                <li><strong className="text-black">Consent records:</strong> opt-in/opt-out status for mass messaging, kept as a durable ledger so that contacts who decline are never messaged again.</li>
-              </ul>
-              <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">3.3 Cookies</h3>
-              <p>We use strictly necessary session cookies to keep you logged in. We do not use advertising or cross-site tracking cookies.</p>
-            </LegalSection>
+      <LegalSection id="children" title="12. Children">
+        <p>The Service is a business tool and is not directed at children. We do not knowingly collect personal data from anyone under 18 as users of the Service.</p>
+      </LegalSection>
 
-            <LegalSection id="how-we-use-data" title="4. How we use data">
-              <p>We use personal data to:</p>
-              <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
-                <li><strong className="text-black">Provide the Service</strong> — authentication, workspace management, message delivery and receipt, calendar scheduling, document storage and retrieval, and reporting.</li>
-                <li><strong className="text-black">Provide AI features</strong> — classifying inbound messages, drafting and sending replies, extracting text from uploaded documents (OCR), generating embeddings for document search, and generating content you request. See section 5.</li>
-                <li><strong className="text-black">Bill for the Service</strong> — processing subscriptions, token purchases, and usage-based accounting via Stripe.</li>
-                <li><strong className="text-black">Secure and operate the Service</strong> — activity logging, fraud and abuse prevention, rate limiting, debugging, and platform monitoring (aggregate statistics).</li>
-                <li><strong className="text-black">Support you</strong> — responding to support requests, including consent-gated view-as access (section 6).</li>
-                <li><strong className="text-black">Comply with legal obligations</strong> — record-keeping, responding to lawful requests from authorities.</li>
-              </ol>
-              <p>We do <strong className="text-black">not</strong> sell personal data, and we do not use Customer Content for advertising.</p>
-            </LegalSection>
+      <LegalSection id="changes" title="13. Changes to this policy">
+        <p>We may update this policy from time to time. Material changes will be notified to organization administrators by email or in app notice before they take effect. The "Last updated" date at the top reflects the current version.</p>
+      </LegalSection>
 
-            <LegalSection id="ai-processing" title="5. AI processing">
-              <p>The Service includes AI features that process message content and documents:</p>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Message classification and auto-replies:</strong> inbound client messages may be sent to third-party AI model providers to classify the message topic and, where enabled by you, to draft or send a reply. Replies can be reviewed, edited, held, or disabled per conversation by your agents.</li>
-                <li><strong className="text-black">Document processing (OCR and retrieval):</strong> uploaded policy and knowledge-base documents may be processed by Google Cloud Document AI (OCR) and Google Vertex AI (embeddings) so their content can be retrieved to answer questions. Documents transiting Google Cloud Storage for OCR are deleted after processing, with a 1-day automatic deletion backstop.</li>
-                <li><strong className="text-black">Model providers:</strong> depending on configuration, AI requests are routed to providers including OpenRouter, DeepSeek, Anthropic, and Google. If you supply your own API key ("bring your own key"), requests for that provider are made directly with your key.</li>
-                <li><strong className="text-black">No training:</strong> we do not use your data to train AI models. Our arrangements with AI providers are limited to inference (generating a response).</li>
-              </ul>
-              <p>You are responsible for informing your clients, as required by applicable law, that AI-assisted responses may be used in your communications with them.</p>
-            </LegalSection>
-
-            <LegalSection id="support-access" title="6. Support access (view-as) and transparency">
-              <p>John CRM support staff may, with a stated reason, access your workspace in a <strong className="text-black">read-only "view-as" mode</strong> to troubleshoot issues. Safeguards:</p>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li>Your organization can <strong className="text-black">disable support access</strong> at any time in its settings; when disabled, new support sessions cannot start.</li>
-                <li>View-as sessions are read-only (no changes can be made), time-limited (maximum 30 minutes), and every session is recorded in an append-only audit log.</li>
-                <li>Your organization's administrators can see a log of John CRM staff access to your organization.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="subprocessors" title="7. Who we share data with (subprocessors)">
-              <p>We share data only with service providers who help us operate the Service, under contracts restricting their use of the data:</p>
-              <div className="overflow-x-auto border-y border-black/10">
-                <table className="w-full min-w-[38rem] border-collapse text-left text-[13px] leading-6">
-                  <thead>
-                    <tr className="border-b border-black/10 font-mono text-[9px] tracking-[0.2em] uppercase text-black/40">
-                      <th className="py-4 pr-5 font-medium">Provider</th>
-                      <th className="py-4 pr-5 font-medium">Purpose</th>
-                      <th className="py-4 font-medium">Location</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-black/65">
-                    {[
-                      ['DigitalOcean', 'Application hosting and managed database', 'Singapore'],
-                      ['DigitalOcean Spaces', 'Object storage for documents and attachments (private bucket)', 'Singapore'],
-                      ['Google Cloud (Document AI, Vertex AI, Cloud Storage)', 'Document OCR, embeddings for search (transient staging)', 'United States'],
-                      ['OpenRouter / DeepSeek / Anthropic / Google', 'AI inference (classification, drafting, verification)', 'United States'],
-                      ['Stripe', 'Payment processing', 'United States / global'],
-                      ['Google', 'OAuth sign-in, Gmail sending/receiving, Calendar (where you connect them)', 'Global'],
-                      ['Cloudflare', 'Network security and content delivery', 'Global'],
-                    ].map(([provider, purpose, location]) => (
-                      <tr key={provider} className="border-b border-black/6 last:border-0">
-                        <td className="py-4 pr-5 align-top font-medium text-black">{provider}</td>
-                        <td className="py-4 pr-5 align-top">{purpose}</td>
-                        <td className="py-4 align-top">{location}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p>Messages you send and receive through third-party channels (WhatsApp, Telegram, WeChat, Discord, email providers) are also processed by those platforms under <strong className="text-black">their own privacy policies</strong>; we do not control them.</p>
-              <p>We may also disclose data where required by law, to protect the rights and safety of users, or in connection with a merger or acquisition (in which case this policy will continue to apply to previously collected data).</p>
-            </LegalSection>
-
-            <LegalSection id="international-transfers" title="8. International transfers">
-              <p>Our primary infrastructure is in Singapore. AI and document processing involves transfers to providers in the United States as listed above. Where required by applicable law, we rely on appropriate safeguards (such as contractual data-protection commitments with our subprocessors) for these transfers.</p>
-            </LegalSection>
-
-            <LegalSection id="retention" title="9. Retention">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Account Data:</strong> retained while your account is active and for a reasonable period afterwards for record-keeping, then deleted or anonymized.</li>
-                <li><strong className="text-black">Customer Content:</strong> retained under your organization's control while your subscription is active. On verified account/organization deletion, Customer Content is deleted, subject to the exceptions below.</li>
-                <li><strong className="text-black">Activity logs:</strong> rolling 14-day retention.</li>
-                <li><strong className="text-black">Billing and audit records:</strong> retained as required for accounting, tax, and dispute-resolution obligations.</li>
-                <li><strong className="text-black">Executed contracts</strong> (where the contract feature is used): retained for at least 7 years after termination, in line with record-keeping obligations.</li>
-                <li><strong className="text-black">OCR staging data:</strong> deleted after processing (1-day automatic backstop).</li>
-                <li><strong className="text-black">Backups:</strong> deleted data may persist in encrypted backups for a limited period before rotating out.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="security" title="10. Security">
-              <p>Measures we apply include: encryption in transit (TLS); encryption at rest for stored credentials and API keys (AES-256-GCM with per-purpose keys); salted password hashing (bcrypt); private object storage reachable only through short-lived signed URLs after ownership checks; workspace-scoped data isolation enforced at the query layer; role-based access control; append-only, tamper-evident staff audit logging; and login rate limiting. No system is perfectly secure; we will notify affected customers of a personal data breach as required by applicable law.</p>
-            </LegalSection>
-
-            <LegalSection id="your-rights" title="11. Your rights">
-              <p>Depending on your jurisdiction (including under the Hong Kong PDPO), you may have rights to access, correct, or delete personal data we hold about you, to object to or restrict certain processing, and to data portability.</p>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Users:</strong> contact us at <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> to exercise rights over your Account Data.</li>
-                <li><strong className="text-black">Clients of our customers:</strong> because your data is controlled by the business you interact with, please direct requests to that business. We will assist our customers in fulfilling such requests.</li>
-              </ul>
-              <p>We will respond within the timeframe required by applicable law. You may also have the right to lodge a complaint with your data protection authority (in Hong Kong, the Office of the Privacy Commissioner for Personal Data).</p>
-            </LegalSection>
-
-            <LegalSection id="children" title="12. Children">
-              <p>The Service is a business tool and is not directed at children. We do not knowingly collect personal data from anyone under 18 as users of the Service.</p>
-            </LegalSection>
-
-            <LegalSection id="changes" title="13. Changes to this policy">
-              <p>We may update this policy from time to time. Material changes will be notified to organization administrators by email or in-app notice before they take effect. The "Last updated" date at the top reflects the current version.</p>
-            </LegalSection>
-
-            <LegalSection id="contact" title="14. Contact">
-              <div className="border-l-2 border-black pl-6 text-black">
-                <p className="font-display text-2xl font-bold uppercase leading-none">KITT DESIGNS LTD</p>
-                <p className="mt-4">{LEGAL_ADDRESS}</p>
-                <a className="mt-1 inline-block underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
-                  {LEGAL_CONTACT_EMAIL}
-                </a>
-              </div>
-            </LegalSection>
-          </article>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+      <LegalSection id="contact" title="14. Contact">
+        <LegalContactBlock />
+      </LegalSection>
+    </>
   );
 }
 
@@ -2340,7 +2300,7 @@ const TERMS_NAV = [
   ['accounts', 'Accounts and access'],
   ['customer-content', 'Customer Content'],
   ['acceptable-use', 'Acceptable use'],
-  ['third-party-services', 'Third-party services'],
+  ['third-party-services', 'Third party services'],
   ['ai-features', 'AI features'],
   ['fees', 'Fees and payment'],
   ['intellectual-property', 'Intellectual property'],
@@ -2354,271 +2314,241 @@ const TERMS_NAV = [
   ['contact', 'Contact'],
 ] as const;
 
-function TermsOfServicePage() {
+function TermsOfServiceContent() {
+  return (
+    <>
+      <LegalSection id="the-service" title="1. The Service">
+        <p>
+          These Terms of Service ("<strong>Terms</strong>") govern access to and use of the John CRM platform and related services (the "<strong>Service</strong>"), operated by {LEGAL_COMPANY} ("<strong>John CRM</strong>", "<strong>we</strong>", "<strong>us</strong>"). By creating an account, accepting an invitation, or using the Service, you agree to these Terms. If you use the Service on behalf of an organization, you represent that you have authority to bind that organization, and "<strong>Customer</strong>" or "<strong>you</strong>" refers to that organization.
+        </p>
+        <p>
+          John CRM is a customer relationship management platform for professional service businesses. It includes client and pipeline management, multi channel messaging (WhatsApp, email, Telegram, WeChat, Discord, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.
+        </p>
+        <p>
+          We may improve, add, or remove features of the Service over time. We will not materially reduce the core functionality of the Service during a paid subscription term without notice.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="accounts" title="2. Accounts and access">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Invitation based provisioning.</strong> Accounts are currently created by invitation from an organization administrator or by John CRM. You must provide accurate information and keep your credentials secure. You are responsible for all activity under your account.</li>
+          <li><strong className="text-black">Roles.</strong> Organization owners and administrators control membership, roles, and permissions within their organization, and are responsible for the actions of their members.</li>
+          <li><strong className="text-black">Eligibility.</strong> The Service is for business use by users aged 18 or over. You may not use the Service if you are barred from doing so under applicable law.</li>
+          <li><strong className="text-black">Security.</strong> Notify us promptly at <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> if you suspect unauthorized access to your account.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="customer-content" title="3. Customer Content and data protection">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Your content, your responsibility.</strong> "Customer Content" means data you or your users submit to or route through the Service, including client records, messages, and uploaded documents. You retain all rights to Customer Content. You grant us a limited license to host, process, transmit, and display Customer Content solely to provide and support the Service.</li>
+          <li><strong className="text-black">Lawful basis and consent.</strong> You are solely responsible for ensuring you have the legal right, including any required notices and consents from your clients, to collect, store, and message the contacts you manage in the Service, and to process their data through the AI and messaging features you enable.</li>
+          <li><strong className="text-black">Privacy.</strong> Our processing of personal data is described in the <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">John CRM Privacy Policy</a>, which forms part of these Terms.</li>
+          <li><strong className="text-black">Regulated professionals.</strong> If you are subject to professional or regulatory obligations (for example as a licensed insurance intermediary or financial adviser), you are responsible for ensuring your use of the Service, including AI generated communications, complies with those obligations.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="acceptable-use" title="4. Acceptable use">
+        <p>You agree not to:</p>
+        <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
+          <li>Send spam or unsolicited bulk messages, or message any contact who has opted out. The Service maintains a consent ledger; circumventing it is a material breach of these Terms.</li>
+          <li>Violate the terms of service of any connected third party platform (WhatsApp, Telegram, WeChat, Discord, Google, etc.).</li>
+          <li>Upload or transmit unlawful content, malware, or content that infringes the rights of others.</li>
+          <li>Use the Service to provide, or hold out AI output as, regulated advice without the required license and human review.</li>
+          <li>Probe, scan, or test the vulnerability of the Service, attempt to access other customers' data, or interfere with the operation of the Service.</li>
+          <li>Resell, sublicense, or white label the Service without a written agreement with us.</li>
+          <li>Use the Service to build a competing product, or scrape the Service by automated means outside documented interfaces.</li>
+        </ol>
+        <p>We may suspend or restrict access immediately where we reasonably believe use of the Service threatens its security or integrity, breaches this section, or exposes us or other customers to liability. Where practical we will notify you and work with you to restore access.</p>
+      </LegalSection>
+
+      <LegalSection id="third-party-services" title="5. Third party channels and services">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Independent platforms.</strong> Messaging channels and connected accounts (WhatsApp, Telegram, WeChat, Discord, Gmail, Google Calendar, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.</li>
+          <li><strong className="text-black">Unofficial integrations.</strong> Certain channel integrations (including WhatsApp and WeChat personal accounts) operate through connection methods that are not officially sanctioned by the platform operator. <strong className="text-black">The platform operator may restrict, suspend, or ban accounts connected this way at any time.</strong> The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.</li>
+          <li><strong className="text-black">Bring your own keys.</strong> If you connect your own AI provider API keys, your use of those providers is governed by your agreement with them, and their charges are your responsibility.</li>
+          <li><strong className="text-black">Connector endpoints.</strong> If you configure connectors to your own or third party HTTP APIs, you are responsible for having the right to call those APIs and for the data they return.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="ai-features" title="6. AI features">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Assistive, not authoritative.</strong> AI features classify messages, draft and (where you enable it) automatically send replies, and answer questions from documents you upload. AI output can be inaccurate, incomplete, or inappropriate for a given situation despite the safeguards built into the Service.</li>
+          <li><strong className="text-black">Your supervision.</strong> You are responsible for supervising AI assisted communications sent on your behalf, configuring the automation level appropriately (including per conversation controls and review queues), and correcting or disabling automation where needed.</li>
+          <li><strong className="text-black">No professional advice.</strong> AI output is not financial, insurance, legal, medical, or tax advice. Where the Service declines to state figures or defers to a human, that behavior is a safety feature and not a defect.</li>
+          <li><strong className="text-black">Usage based billing.</strong> AI features consume tokens under your plan or purchased balances (see <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#fees">section 7</a>).</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="fees" title="7. Fees and payment">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Plans and contracts.</strong> Access is provided under the subscription or contract agreed with us (including enterprise agreements managed by our team). Fees, billing periods, and included allowances are as stated in your plan, order form, or contract.</li>
+          <li><strong className="text-black">Token balances.</strong> AI usage draws on included allowances and purchased token balances. Purchased balances are consumed on use and, except where required by law, are non refundable and expire per your plan terms.</li>
+          <li><strong className="text-black">Self serve purchases.</strong> Where self serve billing is enabled, payments are processed by Stripe. You authorize us to charge the payment method you provide.</li>
+          <li><strong className="text-black">Late payment.</strong> We may suspend the Service for accounts with overdue amounts after reasonable notice.</li>
+          <li><strong className="text-black">Taxes.</strong> Fees are exclusive of taxes; you are responsible for applicable taxes other than taxes on our income.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="intellectual-property" title="8. Intellectual property">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li>The Service, including its software, design, and documentation, is owned by us or our licensors. We grant you a non exclusive, non transferable right to use the Service during your subscription for your internal business purposes.</li>
+          <li>You may not copy, modify, reverse engineer, or create derivative works of the Service except as permitted by law.</li>
+          <li><strong className="text-black">Feedback</strong> you provide may be used by us without restriction or obligation.</li>
+          <li><strong className="text-black">Aggregate data.</strong> We may use de identified, aggregated usage data to operate and improve the Service, provided it does not identify you or your clients.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="confidentiality" title="9. Confidentiality">
+        <p>Each party will protect the other's confidential information with at least reasonable care, use it only to perform under these Terms, and not disclose it except to personnel and contractors bound by confidentiality obligations, or where required by law (with prompt notice to the other party where lawful).</p>
+      </LegalSection>
+
+      <LegalSection id="termination" title="10. Term, suspension, and termination">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Term.</strong> These Terms apply from your first use of the Service and continue until your subscription ends or your account is terminated.</li>
+          <li><strong className="text-black">Termination by you.</strong> You may stop using the Service at any time; contractual commitments (minimum terms, outstanding fees) survive per your agreement with us.</li>
+          <li><strong className="text-black">Termination by us.</strong> We may terminate or suspend access for material breach that remains uncured after reasonable notice, for non payment, or where required by law. We may terminate accounts with immediate effect for serious abuse (<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">section 4</a>).</li>
+          <li><strong className="text-black">Effect of termination.</strong> On termination, your right to use the Service ends. Upon written request made within 30 days of termination, we will make Customer Content available for export in a reasonable format; after that period we may delete Customer Content, except for records we retain under our Privacy Policy (e.g. billing and audit records, executed contracts).</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="warranties" title="11. Warranties and disclaimers">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li>We warrant that we will provide the Service with reasonable skill and care.</li>
+          <li><strong className="text-black">Otherwise, the Service is provided "as is" and "as available."</strong> To the maximum extent permitted by law, we disclaim all other warranties, express or implied, including merchantability, fitness for a particular purpose, and non infringement. We do not warrant that the Service will be uninterrupted, error free, or that AI output will be accurate; that messages will be delivered by third party platforms; or that third party platforms will not restrict your connected accounts.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="liability" title="12. Limitation of liability">
+        <p>To the maximum extent permitted by law:</p>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li>Neither party is liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, revenue, goodwill, or data, however arising.</li>
+          <li>Our total aggregate liability arising out of or related to the Service is limited to the fees you paid to us for the Service in the <strong className="text-black">12 months</strong> preceding the event giving rise to the claim.</li>
+          <li>Nothing in these Terms excludes liability that cannot be excluded by law (including for fraud, or death or personal injury caused by negligence).</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="indemnity" title="13. Indemnity">
+        <p>
+          You will indemnify and hold us harmless from third party claims arising out of (a) Customer Content, (b) your breach of <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#customer-content">section 3</a> (data protection) or <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">section 4</a> (acceptable use), or (c) your violation of applicable law or the rights of your clients or contacts, except to the extent caused by our breach of these Terms.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="changes" title="14. Changes to the Service and these Terms">
+        <p>We may update these Terms from time to time. Material changes will be notified to organization administrators by email or in app notice at least 30 days before taking effect (except changes required by law, which may take effect sooner). Continued use of the Service after the effective date constitutes acceptance. If you do not accept a material change, you may terminate and receive a pro rata refund of prepaid, unused fees for the remaining term.</p>
+      </LegalSection>
+
+      <LegalSection id="general" title="15. General">
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">Governing law and venue.</strong> These Terms are governed by the laws of Hong Kong SAR, and the courts of Hong Kong have exclusive jurisdiction, without regard to conflict of law rules.</li>
+          <li><strong className="text-black">Entire agreement.</strong> These Terms, the <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">Privacy Policy</a>, and any signed order form or contract between us form the entire agreement and supersede prior discussions. A signed contract prevails over these Terms on conflict.</li>
+          <li><strong className="text-black">Assignment.</strong> You may not assign these Terms without our consent; we may assign them in connection with a merger, acquisition, or sale of assets.</li>
+          <li><strong className="text-black">Severability; waiver.</strong> If a provision is unenforceable, the rest remains in effect. Failure to enforce a provision is not a waiver.</li>
+          <li><strong className="text-black">Force majeure.</strong> Neither party is liable for delay or failure caused by events beyond its reasonable control.</li>
+          <li><strong className="text-black">Notices.</strong> We may notify you via the email address on your account or in app. Legal notices to us go to <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> and {LEGAL_ADDRESS}.</li>
+        </ul>
+      </LegalSection>
+
+      <LegalSection id="contact" title="16. Contact">
+        <LegalContactBlock />
+      </LegalSection>
+    </>
+  );
+}
+
+function LegalDocumentsPage({ initialPage }: { initialPage: LegalPage }) {
+  const [page, setPage] = useState(initialPage);
+  const isPrivacy = page === 'privacy';
+  const title = isPrivacy ? 'Privacy Policy' : 'Terms of Service';
+
   useEffect(() => {
     const previousTitle = document.title;
-    document.title = 'Terms of Service — JOHN CRM';
-    return () => {
-      document.title = previousTitle;
+    document.title = `${title} · JOHN CRM`;
+    return () => { document.title = previousTitle; };
+  }, [title]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const path = currentPath();
+      if (path === '/privacy-policy') setPage('privacy');
+      if (path === '/terms-of-service') setPage('terms');
     };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
+  const navigate = (nextPage: LegalPage) => {
+    const path = nextPage === 'privacy' ? '/privacy-policy' : '/terms-of-service';
+    if (currentPath() !== path || window.location.hash) {
+      window.history.pushState(null, '', path);
+    }
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
   return (
-    <div className="min-h-screen bg-[#F8F8F6] text-black">
-      <header className="border-b border-black/8 bg-white">
-        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6 lg:px-10">
-          <a href="/" className="flex items-center" aria-label="JOHN CRM home">
-            <img src={johnCrmLogo} alt="JOHN CRM" className="h-5 w-auto" />
-          </a>
-          <a
-            href="/"
-            className="group inline-flex items-center gap-3 font-mono text-[10px] tracking-[0.25em] uppercase text-black/45 transition-colors hover:text-black"
-          >
-            <span className="hidden sm:inline">Back to JOHN CRM</span>
-            <ArrowRight size={14} strokeWidth={1.5} className="transition-transform group-hover:translate-x-1" />
-          </a>
-        </div>
-      </header>
-
-      <main id="top">
-        <section className="border-b border-black/8 bg-white" style={GRID_BG}>
-          <div className="mx-auto max-w-6xl px-6 py-24 lg:px-10 lg:py-32">
-            <SectionLabel>Legal / Terms of Service</SectionLabel>
-            <div className="mt-8 max-w-4xl">
-              <h1 className="font-display text-6xl font-black uppercase leading-[0.88] tracking-[-0.035em] text-black md:text-8xl">
-                Terms of
-                <br />
-                Service
-              </h1>
-              <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-[10px] tracking-[0.2em] uppercase text-black/40">
-                <span>JOHN CRM</span>
-                <span aria-hidden="true">/</span>
-                <span>Last updated: 4 August 2026</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="mx-auto grid max-w-6xl gap-16 px-6 py-20 lg:grid-cols-[13rem_minmax(0,52rem)] lg:gap-24 lg:px-10 lg:py-28">
-          <aside className="hidden lg:block">
-            <div className="sticky top-10">
-              <SectionLabel>On this page</SectionLabel>
-              <nav className="mt-6 border-l border-black/10">
-                {TERMS_NAV.map(([id, label]) => (
-                  <a
-                    key={id}
-                    href={`#${id}`}
-                    className="block border-l border-transparent py-1.5 pl-4 font-mono text-[10px] tracking-[0.12em] uppercase text-black/40 transition-colors hover:border-black hover:text-black"
-                  >
-                    {label}
-                  </a>
-                ))}
-              </nav>
-            </div>
-          </aside>
-
-          <article className="min-w-0 space-y-14">
-            <LegalSection id="the-service" title="1. The Service">
-              <p>
-                These Terms of Service ("<strong>Terms</strong>") govern access to and use of the John CRM platform and related services (the "<strong>Service</strong>"), operated by KITT DESIGNS LTD ("<strong>John CRM</strong>", "<strong>we</strong>", "<strong>us</strong>"). By creating an account, accepting an invitation, or using the Service, you agree to these Terms. If you use the Service on behalf of an organization, you represent that you have authority to bind that organization, and "<strong>Customer</strong>" or "<strong>you</strong>" refers to that organization.
-              </p>
-              <p>
-                John CRM is a customer relationship management platform for professional service businesses. It includes client and pipeline management, multi-channel messaging (WhatsApp, email, Telegram, WeChat, Discord, and an embeddable website chat widget), AI-assisted message classification and reply drafting, document storage and AI-powered document retrieval, meeting scheduling, and reporting.
-              </p>
-              <p>
-                We may improve, add, or remove features of the Service over time. We will not materially reduce the core functionality of the Service during a paid subscription term without notice.
-              </p>
-            </LegalSection>
-
-            <LegalSection id="accounts" title="2. Accounts and access">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Invitation-based provisioning.</strong> Accounts are currently created by invitation from an organization administrator or by John CRM. You must provide accurate information and keep your credentials secure. You are responsible for all activity under your account.</li>
-                <li><strong className="text-black">Roles.</strong> Organization owners and administrators control membership, roles, and permissions within their organization, and are responsible for the actions of their members.</li>
-                <li><strong className="text-black">Eligibility.</strong> The Service is for business use by users aged 18 or over. You may not use the Service if you are barred from doing so under applicable law.</li>
-                <li><strong className="text-black">Security.</strong> Notify us promptly at <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> if you suspect unauthorized access to your account.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="customer-content" title="3. Customer Content and data protection">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Your content, your responsibility.</strong> "Customer Content" means data you or your users submit to or route through the Service, including client records, messages, and uploaded documents. You retain all rights to Customer Content. You grant us a limited license to host, process, transmit, and display Customer Content solely to provide and support the Service.</li>
-                <li><strong className="text-black">Lawful basis and consent.</strong> You are solely responsible for ensuring you have the legal right — including any required notices and consents from your clients — to collect, store, and message the contacts you manage in the Service, and to process their data through the AI and messaging features you enable.</li>
-                <li><strong className="text-black">Privacy.</strong> Our processing of personal data is described in the <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">John CRM Privacy Policy</a>, which forms part of these Terms.</li>
-                <li><strong className="text-black">Regulated professionals.</strong> If you are subject to professional or regulatory obligations (for example as a licensed insurance intermediary or financial adviser), you are responsible for ensuring your use of the Service — including AI-generated communications — complies with those obligations.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="acceptable-use" title="4. Acceptable use">
-              <p>You agree not to:</p>
-              <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
-                <li>Send spam or unsolicited bulk messages, or message any contact who has opted out. The Service maintains a consent ledger; circumventing it is a material breach of these Terms.</li>
-                <li>Violate the terms of service of any connected third-party platform (WhatsApp, Telegram, WeChat, Discord, Google, etc.).</li>
-                <li>Upload or transmit unlawful content, malware, or content that infringes the rights of others.</li>
-                <li>Use the Service to provide, or hold out AI output as, regulated advice without the required license and human review.</li>
-                <li>Probe, scan, or test the vulnerability of the Service, attempt to access other customers' data, or interfere with the operation of the Service.</li>
-                <li>Resell, sublicense, or white-label the Service without a written agreement with us.</li>
-                <li>Use the Service to build a competing product, or scrape the Service by automated means outside documented interfaces.</li>
-              </ol>
-              <p>We may suspend or restrict access immediately where we reasonably believe use of the Service threatens its security or integrity, breaches this section, or exposes us or other customers to liability. Where practical we will notify you and work with you to restore access.</p>
-            </LegalSection>
-
-            <LegalSection id="third-party-services" title="5. Third-party channels and services">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Independent platforms.</strong> Messaging channels and connected accounts (WhatsApp, Telegram, WeChat, Discord, Gmail, Google Calendar, etc.) are third-party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.</li>
-                <li><strong className="text-black">Unofficial integrations.</strong> Certain channel integrations (including WhatsApp and WeChat personal accounts) operate through connection methods that are not officially sanctioned by the platform operator. <strong className="text-black">The platform operator may restrict, suspend, or ban accounts connected this way at any time.</strong> The Service is designed to reduce this risk (for example by respecting opt-outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third-party platforms against your accounts.</li>
-                <li><strong className="text-black">Bring-your-own keys.</strong> If you connect your own AI provider API keys, your use of those providers is governed by your agreement with them, and their charges are your responsibility.</li>
-                <li><strong className="text-black">Connector endpoints.</strong> If you configure connectors to your own or third-party HTTP APIs, you are responsible for having the right to call those APIs and for the data they return.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="ai-features" title="6. AI features">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Assistive, not authoritative.</strong> AI features classify messages, draft and (where you enable it) automatically send replies, and answer questions from documents you upload. AI output can be inaccurate, incomplete, or inappropriate for a given situation despite the safeguards built into the Service.</li>
-                <li><strong className="text-black">Your supervision.</strong> You are responsible for supervising AI-assisted communications sent on your behalf, configuring the automation level appropriately (including per-conversation controls and review queues), and correcting or disabling automation where needed.</li>
-                <li><strong className="text-black">No professional advice.</strong> AI output is not financial, insurance, legal, medical, or tax advice. Where the Service declines to state figures or defers to a human, that behavior is a safety feature and not a defect.</li>
-                <li><strong className="text-black">Usage-based billing.</strong> AI features consume tokens under your plan or purchased balances (see <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#fees">section 7</a>).</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="fees" title="7. Fees and payment">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Plans and contracts.</strong> Access is provided under the subscription or contract agreed with us (including enterprise agreements managed by our team). Fees, billing periods, and included allowances are as stated in your plan, order form, or contract.</li>
-                <li><strong className="text-black">Token balances.</strong> AI usage draws on included allowances and purchased token balances. Purchased balances are consumed on use and, except where required by law, are non-refundable and expire per your plan terms.</li>
-                <li><strong className="text-black">Self-serve purchases.</strong> Where self-serve billing is enabled, payments are processed by Stripe. You authorize us to charge the payment method you provide.</li>
-                <li><strong className="text-black">Late payment.</strong> We may suspend the Service for accounts with overdue amounts after reasonable notice.</li>
-                <li><strong className="text-black">Taxes.</strong> Fees are exclusive of taxes; you are responsible for applicable taxes other than taxes on our income.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="intellectual-property" title="8. Intellectual property">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li>The Service, including its software, design, and documentation, is owned by us or our licensors. We grant you a non-exclusive, non-transferable right to use the Service during your subscription for your internal business purposes.</li>
-                <li>You may not copy, modify, reverse engineer, or create derivative works of the Service except as permitted by law.</li>
-                <li><strong className="text-black">Feedback</strong> you provide may be used by us without restriction or obligation.</li>
-                <li><strong className="text-black">Aggregate data.</strong> We may use de-identified, aggregated usage data to operate and improve the Service, provided it does not identify you or your clients.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="confidentiality" title="9. Confidentiality">
-              <p>Each party will protect the other's confidential information with at least reasonable care, use it only to perform under these Terms, and not disclose it except to personnel and contractors bound by confidentiality obligations, or where required by law (with prompt notice to the other party where lawful).</p>
-            </LegalSection>
-
-            <LegalSection id="termination" title="10. Term, suspension, and termination">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Term.</strong> These Terms apply from your first use of the Service and continue until your subscription ends or your account is terminated.</li>
-                <li><strong className="text-black">Termination by you.</strong> You may stop using the Service at any time; contractual commitments (minimum terms, outstanding fees) survive per your agreement with us.</li>
-                <li><strong className="text-black">Termination by us.</strong> We may terminate or suspend access for material breach that remains uncured after reasonable notice, for non-payment, or where required by law. We may terminate accounts with immediate effect for serious abuse (<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">section 4</a>).</li>
-                <li><strong className="text-black">Effect of termination.</strong> On termination, your right to use the Service ends. Upon written request made within 30 days of termination, we will make Customer Content available for export in a reasonable format; after that period we may delete Customer Content, except for records we retain under our Privacy Policy (e.g. billing and audit records, executed contracts).</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="warranties" title="11. Warranties and disclaimers">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li>We warrant that we will provide the Service with reasonable skill and care.</li>
-                <li><strong className="text-black">Otherwise, the Service is provided "as is" and "as available."</strong> To the maximum extent permitted by law, we disclaim all other warranties, express or implied, including merchantability, fitness for a particular purpose, and non-infringement. We do not warrant that the Service will be uninterrupted, error-free, or that AI output will be accurate; that messages will be delivered by third-party platforms; or that third-party platforms will not restrict your connected accounts.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="liability" title="12. Limitation of liability">
-              <p>To the maximum extent permitted by law:</p>
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li>Neither party is liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, revenue, goodwill, or data, however arising.</li>
-                <li>Our total aggregate liability arising out of or related to the Service is limited to the fees you paid to us for the Service in the <strong className="text-black">12 months</strong> preceding the event giving rise to the claim.</li>
-                <li>Nothing in these Terms excludes liability that cannot be excluded by law (including for fraud, or death or personal injury caused by negligence).</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="indemnity" title="13. Indemnity">
-              <p>
-                You will indemnify and hold us harmless from third-party claims arising out of (a) Customer Content, (b) your breach of <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#customer-content">section 3</a> (data protection) or <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">section 4</a> (acceptable use), or (c) your violation of applicable law or the rights of your clients or contacts, except to the extent caused by our breach of these Terms.
-              </p>
-            </LegalSection>
-
-            <LegalSection id="changes" title="14. Changes to the Service and these Terms">
-              <p>We may update these Terms from time to time. Material changes will be notified to organization administrators by email or in-app notice at least 30 days before taking effect (except changes required by law, which may take effect sooner). Continued use of the Service after the effective date constitutes acceptance. If you do not accept a material change, you may terminate and receive a pro-rata refund of prepaid, unused fees for the remaining term.</p>
-            </LegalSection>
-
-            <LegalSection id="general" title="15. General">
-              <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-                <li><strong className="text-black">Governing law and venue.</strong> These Terms are governed by the laws of Hong Kong SAR, and the courts of Hong Kong have exclusive jurisdiction, without regard to conflict-of-law rules.</li>
-                <li><strong className="text-black">Entire agreement.</strong> These Terms, the <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">Privacy Policy</a>, and any signed order form or contract between us form the entire agreement and supersede prior discussions. A signed contract prevails over these Terms on conflict.</li>
-                <li><strong className="text-black">Assignment.</strong> You may not assign these Terms without our consent; we may assign them in connection with a merger, acquisition, or sale of assets.</li>
-                <li><strong className="text-black">Severability; waiver.</strong> If a provision is unenforceable, the rest remains in effect. Failure to enforce a provision is not a waiver.</li>
-                <li><strong className="text-black">Force majeure.</strong> Neither party is liable for delay or failure caused by events beyond its reasonable control.</li>
-                <li><strong className="text-black">Notices.</strong> We may notify you via the email address on your account or in-app. Legal notices to us go to <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> and {LEGAL_ADDRESS}.</li>
-              </ul>
-            </LegalSection>
-
-            <LegalSection id="contact" title="16. Contact">
-              <div className="border-l-2 border-black pl-6 text-black">
-                <p className="font-display text-2xl font-bold uppercase leading-none">KITT DESIGNS LTD</p>
-                <p className="mt-4">{LEGAL_ADDRESS}</p>
-                <a className="mt-1 inline-block underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
-                  {LEGAL_CONTACT_EMAIL}
-                </a>
-              </div>
-            </LegalSection>
-          </article>
-        </div>
-      </main>
-
-      <Footer />
-    </div>
+    <LegalPageLayout
+      page={page}
+      title={title}
+      updated={isPrivacy ? 'Last updated: 3 August 2026' : 'Last updated: 4 August 2026'}
+      sections={isPrivacy ? PRIVACY_NAV : TERMS_NAV}
+      footer={<Footer />}
+      onNavigate={navigate}
+    >
+      {isPrivacy ? <PrivacyPolicyContent /> : <TermsOfServiceContent />}
+    </LegalPageLayout>
   );
+}
+
+export function PrivacyPolicyPage() {
+  return <LegalDocumentsPage initialPage="privacy" />;
+}
+
+export function TermsOfServicePage() {
+  return <LegalDocumentsPage initialPage="terms" />;
 }
 
 /* ----------------------------------- app ----------------------------------- */
 
 const SHOWCASE_ENABLED = false;
 
-function LandingPage() {
-  const [loading, setLoading] = useState(
-    () => !prefersReducedMotion() && sessionStorage.getItem('johncrm-visited') !== '1',
-  );
-  const [language, setLanguage] = useState<LanguageCode>('EN');
-  const [currency, setCurrency] = useState<CurrencyCode>(detectInitialCurrency);
-  const handleDone = useCallback(() => {
-    sessionStorage.setItem('johncrm-visited', '1');
-    setLoading(false);
-  }, []);
-  const handleCurrencyChange = useCallback((nextCurrency: CurrencyCode) => {
+function LandingPage({ product, industry }: { product?: ProductSlug; industry?: IndustrySlug }) {
+  const [language, setLanguage] = useState<LanguageCode>(() => {
     try {
-      window.localStorage.setItem(CURRENCY_PREFERENCE_STORAGE_KEY, nextCurrency);
-    } catch {
-      // The selection still applies for this visit if storage is unavailable.
-    }
-    setCurrency(nextCurrency);
-  }, []);
+      const preference = localStorage.getItem(LANGUAGE_PREFERENCE_STORAGE_KEY);
+      if (preference === 'EN' || preference === 'CN' || preference === 'HK') return preference;
+      // Earlier Chinese selections were manual; the old English value could be automatic.
+      const saved = localStorage.getItem('johncrm:language:v1');
+      if (saved === 'CN' || saved === 'HK') return saved;
+    } catch { /* Use the detected location if browser storage is unavailable. */ }
+    return detectInitialLanguage();
+  });
+  const [currency] = useState<CurrencyCode>(detectInitialCurrency);
+
+  const handleLanguageChange = (nextLanguage: LanguageCode) => {
+    setLanguage(nextLanguage);
+    try { localStorage.setItem(LANGUAGE_PREFERENCE_STORAGE_KEY, nextLanguage); } catch { /* Optional preference. */ }
+  };
 
   useEffect(() => {
-    document.documentElement.lang =
-      language === 'CN' ? 'zh-CN' : language === 'HK' ? 'zh-HK' : 'en';
+    document.documentElement.lang = language === 'CN' ? 'zh-CN' : language === 'HK' ? 'zh-HK' : 'en';
   }, [language]);
 
   return (
-    <>
-      {loading && <LoadingScreen onDone={handleDone} />}
-      <div className={`transition-opacity duration-700 ${loading ? 'opacity-0' : 'opacity-100'}`}>
-        <Nav
-          language={language}
-          onLanguageChange={setLanguage}
-          currency={currency}
-          onCurrencyChange={handleCurrencyChange}
-        />
-        <MotionPage ready={!loading} language={language}>
-          <Hero language={language} />
-          <Features language={language} />
-          <ChatDemo language={language} />
-          <Poster language={language} />
-          {SHOWCASE_ENABLED && <Showcase />}
-          {/* Hidden until we have real testimonials — the current quotes are placeholders. */}
-          {/* <Reviews /> */}
+    <div className={`landing-site${product ? ' product-site' : ''}${industry ? ' industry-site' : ''}`}>
+      <Nav
+        language={language}
+        onLanguageChange={handleLanguageChange}
+        productPage={Boolean(product || industry)}
+      />
+      {industry ? <Suspense fallback={<main className="min-h-screen pt-40 text-center" role="status">Loading industry story…</main>}><IndustryPage industry={industry} /></Suspense> : product ? <ProductPage product={product} /> : <main className="landing-main">
+        <ProductStory language={language} />
+        <div className="landing-details">
           <Pricing currency={currency} language={language} />
           <Contact language={language} />
-        </MotionPage>
-        <Footer language={language} />
-      </div>
-    </>
+        </div>
+      </main>}
+      <Footer language={language} />
+    </div>
   );
 }
 
@@ -2631,5 +2561,9 @@ export default function App() {
   const path = currentPath();
   if (path === '/privacy-policy') return <PrivacyPolicyPage />;
   if (path === '/terms-of-service') return <TermsOfServicePage />;
+  const product = PRODUCTS.find(({ slug }) => path === `/product/${slug}`);
+  if (product) return <LandingPage product={product.slug} />;
+  const industry = INDUSTRIES.find(({ slug }) => path === `/industries/${slug}`);
+  if (industry) return <LandingPage industry={industry.slug} />;
   return <LandingPage />;
 }

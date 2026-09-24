@@ -27,7 +27,7 @@ test('desktop header places login before the far-right contact sales button', ()
 
   assert.match(
     desktopActions,
-    /href="https:\/\/app\.johncrm\.com\/"[\s\S]*?>\s*\{copy\.actions\.login\}[\s\S]*?<\/a>\s*<a\s+href="#contact"\s+className="bg-black[^"]*"\s*>\s*\{copy\.actions\.contactSales\}/,
+    /href="https:\/\/app\.johncrm\.com\/"[\s\S]*?>\s*\{copy\.actions\.login\}[\s\S]*?<\/a>\s*<a\s+href=\{productPage \? '\/#contact' : '#contact'\}\s+className="bg-black[^"]*"\s*>\s*\{copy\.actions\.contactSales\}/,
   );
 });
 

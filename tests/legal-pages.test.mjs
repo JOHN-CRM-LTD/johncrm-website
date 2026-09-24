@@ -5,19 +5,21 @@ import test from 'node:test';
 const source = await readFile(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 const termsNavSource = source.slice(
   source.indexOf('const TERMS_NAV'),
-  source.indexOf('function TermsOfServicePage'),
+  source.indexOf('function TermsOfServiceContent'),
 );
 const termsPageSource = source.slice(
-  source.indexOf('function TermsOfServicePage'),
-  source.indexOf('/* ----------------------------------- app'),
+  source.indexOf('function TermsOfServiceContent'),
+  source.indexOf('function LegalDocumentsPage'),
 );
 
 test('the router serves a dedicated terms of service page', () => {
   assert.match(source, /function TermsOfServicePage\(\)/);
   assert.match(source, /path === '\/terms-of-service'/);
   assert.match(source, /<TermsOfServicePage \/>/);
-  assert.match(source, /\{ label: 'Terms', ariaLabel: 'Terms of Service', href: '\/terms-of-service' \}/);
-  assert.match(termsPageSource, /document\.title = 'Terms of Service — JOHN CRM'/);
+  assert.match(source, /\{ label: 'Terms', ariaLabel: 'Terms of Service' \}/);
+  assert.match(source, /const FOOTER_LINK_HREFS = \['\/privacy-policy', '\/terms-of-service', '#top'\]/);
+  assert.match(source, /<LegalDocumentsPage initialPage="terms" \/>/);
+  assert.match(source, /document\.title = `\$\{title\} · JOHN CRM`/);
 });
 
 test('every terms table-of-contents entry anchors a rendered section', () => {
@@ -49,13 +51,15 @@ test('the terms page ships finished copy, not the draft template', () => {
     /[Ââ]/,
     'mojibake from the source markdown must be repaired',
   );
-  assert.match(termsPageSource, /KITT DESIGNS LTD/);
-  assert.match(termsPageSource, /Last updated: 4 August 2026/);
+  assert.match(termsPageSource, /operated by \{LEGAL_COMPANY\}/);
+  assert.match(source, /const LEGAL_COMPANY = 'BOSS SOFTWARE LTD'/);
+  assert.match(source, /Last updated: 4 August 2026/);
 });
 
 test('both legal pages share one section primitive and one contact block', () => {
   assert.match(source, /function LegalSection\(\{/);
-  assert.match(source, /const LEGAL_CONTACT_EMAIL = 'biz\.johncrm@gmail\.com';/);
+  assert.match(source, /const LEGAL_CONTACT_EMAIL = 'info@hkboss\.com\.hk';/);
+  assert.equal((source.match(/<LegalContactBlock \/>/g) ?? []).length, 2);
   assert.doesNotMatch(source, /PrivacySection/, 'the section primitive is shared, not privacy-scoped');
   assert.doesNotMatch(source, /PRIVACY_CONTACT_EMAIL|PRIVACY_ADDRESS/);
   assert.equal(
@@ -68,7 +72,7 @@ test('both legal pages share one section primitive and one contact block', () =>
 test('the landing page is a component so the router stays hook-free', () => {
   const router = source.slice(source.indexOf('export default function App()'));
 
-  assert.match(source, /function LandingPage\(\)/);
+  assert.match(source, /function LandingPage\(/);
   assert.match(router, /<LandingPage \/>/);
   assert.doesNotMatch(router, /useState|useEffect|useCallback/, 'hooks must live in LandingPage');
 });

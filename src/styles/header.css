@@ -29,6 +29,122 @@
   background: white;
 }
 
+.header-selector {
+  --selector-surface: #fffefa;
+  --selector-text: #40555d;
+  --selector-accent: #102a32;
+  --selector-hover: #f0f2ed;
+  --selector-selected: #e7f1f4;
+}
+
+.site-header .header-selector__trigger {
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--selector-text);
+  font: 500 14px/1.4 var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.header-selector__trigger:hover,
+.header-selector__trigger[aria-expanded='true'] {
+  color: var(--selector-accent);
+}
+
+.header-selector__chevron {
+  color: #71848a;
+}
+
+.header-selector__menu {
+  top: calc(100% + 8px);
+  z-index: 60;
+  display: grid;
+  gap: 3px;
+  width: max-content;
+  padding: 6px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--selector-surface);
+  box-shadow: 0 12px 32px #10212814, 0 2px 6px #10212808;
+}
+
+.site-header .header-selector__option {
+  display: flex;
+  width: 100%;
+  min-height: 40px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--selector-text);
+  font: 500 14px/1.4 var(--font-sans);
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.header-selector__option:is(:hover, [data-active='true']) {
+  background: var(--selector-hover);
+  color: #102128;
+}
+
+.header-selector__option[aria-checked='true'] {
+  background: var(--selector-selected);
+  color: var(--selector-accent);
+}
+
+.header-selector__check {
+  flex-shrink: 0;
+  visibility: hidden;
+}
+
+.header-selector__option[aria-checked='true'] .header-selector__check {
+  visibility: visible;
+}
+
+.header-selector button:focus-visible {
+  outline: 2px solid var(--selector-accent);
+  outline-offset: 2px;
+}
+
+.header-selector--full {
+  margin-block: 12px;
+}
+
+.header-selector--full .header-selector__trigger {
+  min-height: 44px;
+  gap: 8px;
+}
+
+.header-selector--full .header-selector__menu {
+  left: 0;
+  min-width: 100%;
+  translate: none;
+}
+
+.header-selector--full:last-child .header-selector__menu {
+  right: 0;
+  left: auto;
+}
+
+.header-selector--full .header-selector__option {
+  min-height: 44px;
+}
+
 /* Keep the existing desktop controls comfortable on narrow tablets. */
 @media (min-width: 768px) and (max-width: 1023px) {
   .site-header nav,
@@ -40,27 +156,6 @@
   .site-header nav + div a {
     letter-spacing: 0.12em;
   }
-}
-
-/* Chinese characters need more room than the compact Latin header labels. */
-.site-header:lang(zh) :is(a, button) {
-  font-size: 1rem;
-  line-height: 1.5;
-  letter-spacing: 0.08em;
-}
-
-.site-header:lang(zh) [role='menu'] {
-  min-width: 11rem;
-}
-
-.site-header:lang(zh) [role='menuitemradio'] {
-  font-size: 0.875rem;
-  letter-spacing: 0.02em;
-}
-
-.site-header:lang(zh) #mobile-language-options {
-  left: 0;
-  translate: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

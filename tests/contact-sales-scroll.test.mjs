@@ -10,9 +10,9 @@ const navSource = appSource.slice(
 
 test('desktop and mobile Contact Sales actions target the contact section', () => {
   assert.equal(
-    (navSource.match(/href="#contact"/g) ?? []).length,
+    (navSource.match(/href=\{productPage \? '\/#contact' : '#contact'\}/g) ?? []).length,
     2,
-    'expected both Contact Sales actions to link to #contact',
+    'expected both Contact Sales actions to reach the home contact section from either page',
   );
 });
 

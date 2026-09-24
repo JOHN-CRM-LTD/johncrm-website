@@ -48,7 +48,7 @@ export const CHAT_DEMO_COPY: Record<DemoLanguage, DemoCopy> = {
       {
         "id": "property",
         "industry": "Real estate",
-        "question": "Is the two-bed on Park Road pet-friendly?",
+        "question": "Is the two bedroom on Park Road pet friendly?",
         "standardReply": "Please contact the listing agent for details.",
         "standardFollowUp": "Can you at least tell me who to ask?",
         "reply": "Hi Sam. Pets are welcome at Park Road. There’s a shared garden, too.",
@@ -59,7 +59,7 @@ export const CHAT_DEMO_COPY: Record<DemoLanguage, DemoCopy> = {
         "id": "hospitality",
         "industry": "Hospitality",
         "question": "We’ll arrive around 11 pm. Is that okay?",
-        "standardReply": "Check-in information is on our website.",
+        "standardReply": "Check in information is on our website.",
         "standardFollowUp": "But will someone be there that late?",
         "reply": "Hi Taylor. Reception is open 24 hours, so an 11 pm arrival is fine.",
         "followUp": "Lovely. Could we also have a cot?",
