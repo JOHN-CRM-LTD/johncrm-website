@@ -4,6 +4,7 @@ import styles from '../product-story/story.css?raw';
 import productPhoto from '../../assets/product-demo/red-sweatshirt.jpg';
 import { mountProductStory, type StoryController, type StoryLanguage } from '../product-story/runtime.js';
 import { createSectionTransition } from '../../lib/sectionTransition';
+import { createHomePageEntrance } from '../../lib/homePageEntrance';
 
 const storyMarkup = `<style>${styles}</style>${markup.replace('__RETAIL_PHOTO_URL__', productPhoto)}`;
 const languages = { EN: 'en', HK: 'zh-HK', CN: 'zh-CN' } as const;
@@ -38,7 +39,9 @@ export default function ProductStory({ language }: { language: keyof typeof lang
       onToneChange: (dark) => landing?.style.setProperty('--story-dark', String(dark)),
     });
     controllerRef.current = controller;
+    const destroyEntrance = createHomePageEntrance(host.closest('main') ?? host);
     return () => {
+      destroyEntrance();
       transition.destroy();
       controller.destroy();
       landing?.style.removeProperty('--story-dark');

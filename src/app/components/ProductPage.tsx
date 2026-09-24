@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowDown, ArrowRight, Bot, CalendarDays, Check, CircleHelp, FileText, Gift, Globe, MessageCircle, Package, Play, Plug, RotateCcw, ShieldCheck, Sparkles, Store, Upload, Workflow, Zap } from 'lucide-react';
-import { CHANNELS, PRODUCTS, type ProductSlug } from './ProductMenu';
+import { ArrowDown, ArrowRight, Bot, CalendarDays, Check, CircleHelp, FileText, Gift, Globe, MessageCircle, Package, Plug, RotateCcw, ShieldCheck, Sparkles, Store, Workflow } from 'lucide-react';
+import { PRODUCTS, type ProductSlug } from './ProductMenu';
 import aiImage from '../../assets/products/john-ai.webp';
 import automationsImage from '../../assets/products/automations.webp';
 import integrationsImage from '../../assets/products/integrations.webp';
 import sweatshirtImage from '../../assets/product-demo/red-sweatshirt.jpg';
 import '../../styles/product-pages.css';
+import IntegrationDetails from './IntegrationDetails';
+import pdfIcon from '../../assets/integrations/pdf.svg';
 
 const CONTENT = {
   'john-ai': {
@@ -59,7 +61,7 @@ function HeroPreview({ product }: { product: ProductSlug }) {
       <div className="preview-identity"><span>Connect your world</span><Plug size={18} /></div>
       {[[FileText, 'Your documents', 'Policies, guides and product details'], [Plug, 'Your APIs', 'Inventory, orders and business tools'], [Bot, 'One shared knowledge base', 'Ready for your connected channels']].map(([Icon, title, detail]) => {
         const SourceIcon = Icon as typeof FileText;
-        return <div className="source-row" key={String(title)}><SourceIcon size={19} /><span>{String(title)}<small>{String(detail)}</small></span><Check size={14} /></div>;
+        return <div className="source-row" key={String(title)}>{title === 'Your documents' ? <img src={pdfIcon} width="20" height="26" alt="" /> : <SourceIcon size={19} />}<span>{String(title)}<small>{String(detail)}</small></span><Check size={14} /></div>;
       })}
       <a href="#possibilities" className="preview-bottom-link">See how it connects<ArrowDown size={15} /></a>
     </div>
@@ -133,37 +135,6 @@ function AutomationDetails() {
       </div>
     </section>
     <section className="product-support product-reveal"><CircleHelp size={25} strokeWidth={1.4} /><h3>Your workflow is unique.<br />Your modules can be, too.</h3><p>Tell JOHN support how your business works. Our team can build custom modules and connect the steps, triggers and actions around your workflow.</p><TextLink href="/#contact">Build with JOHN</TextLink></section>
-  </>;
-}
-
-function IntegrationDetails() {
-  const [buildStep, setBuildStep] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [updated, setUpdated] = useState(false);
-  const [channel, setChannel] = useState('Webchat');
-  useEffect(() => {
-    if (!running) return;
-    if (buildStep === 3) { setRunning(false); return; }
-    const timer = setTimeout(() => setBuildStep(value => value + 1), window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 750);
-    return () => clearTimeout(timer);
-  }, [running, buildStep]);
-  return <>
-    <section id="possibilities" className="product-section integration-build product-reveal">
-      <h2>The connection starts with a document.</h2><p className="section-lead">No engineer required. JOHN support is here for setup.</p>
-      <div className="integration-steps">
-        <article data-complete={buildStep >= 1}><span className="integration-step-number">01</span><h3>Upload API documentation</h3><p>Give JOHN the endpoint documentation for the tool you want to connect. Start with the information you already have.</p><div className="integration-step-visual document-preview"><FileText size={30} strokeWidth={1.3} /><strong>Inventory API.pdf</strong><span>Endpoint documentation</span><span className="build-status">{buildStep >= 1 ? <><Check size={15} /> Documentation read</> : <><Upload size={15} /> Ready to explore</>}</span></div></article>
-        <article data-complete={buildStep >= 2}><span className="integration-step-number">02</span><h3>JOHN builds the connection</h3><p>JOHN reads the documentation and builds the integration, turning your API into something your AI can work with.</p><div className="integration-step-visual mapping-preview">{['Read the endpoints', 'Map the available actions', 'Prepare the connection'].map((label, index) => <span key={label}><Workflow size={16} />{label}<Check size={14} className={buildStep >= 2 || (buildStep === 1 && index === 0) ? 'mapping-done' : ''} /></span>)}</div></article>
-        <article data-complete={buildStep >= 3}><span className="integration-step-number">03</span><h3>Add access and go</h3><p>Provide any required access, review the setup, and choose where JOHN can use it. Need a hand? Our support team can help.</p><div className="integration-step-visual connected-preview"><Plug size={30} strokeWidth={1.3} /><strong>{buildStep >= 3 ? 'Connection ready' : 'Your tools. Now connected.'}</strong><span>{buildStep >= 3 ? 'Ready for your enabled channels' : 'You choose the access and permissions'}</span><span className="build-status"><ShieldCheck size={15} /> Your business, your control</span></div></article>
-      </div>
-      <div className="build-demo-action"><button className="product-button product-button--outline" disabled={running} onClick={() => { setBuildStep(0); setRunning(true); }}>{buildStep === 3 ? <RotateCcw size={16} /> : <Play size={15} />}{running ? 'Connecting the example…' : buildStep === 3 ? 'Replay the connection' : 'Watch the connection come together'}</button><span role="status">{buildStep === 3 ? 'Example complete. Your setup uses your own API documentation.' : 'An illustrative walkthrough. No files or accounts needed.'}</span></div>
-    </section>
-    <section className="product-section product-split product-reveal">
-      <div className="product-section-copy"><h2>Update once.<br />Answer everywhere.</h2><p>Upload your own documents, product information and policies to one shared knowledge base. When you update a source, JOHN can use the latest processed content across your enabled channels.</p><p>From Webchat and WhatsApp to email, SMS and voice, keep answers connected to the same business knowledge.</p><button className="product-text-link" onClick={() => setUpdated(value => !value)}>{updated ? 'Reset the example' : 'Preview a knowledge update'}{updated ? <RotateCcw size={16} /> : <ArrowRight size={17} />}</button></div>
-      <div className="knowledge-demo">
-        <div className="knowledge-diagram"><div className="knowledge-inputs"><span><FileText size={19} />Your documents</span><span><Package size={19} />Product catalogue</span><span><Plug size={19} />Connected APIs</span></div><div className="knowledge-hub"><Sparkles size={25} strokeWidth={1.2} /><strong>JOHN</strong><span>Knowledge</span></div><div className="knowledge-outputs">{CHANNELS.map(({ name, icon: Icon }) => <button key={name} aria-pressed={channel === name} onClick={() => setChannel(name)}><Icon size={16} /><span>{name}</span><Check size={12} /></button>)}</div></div>
-        <div className="knowledge-answer" aria-live="polite"><span><FileText size={14} /> Returns policy {updated ? '· updated' : '· original'}</span><p key={`${channel}-${updated}`}><strong>{channel} answer</strong>“You can return an unworn item within {updated ? '60' : '30'} days.”</p><small>{updated ? 'New policy reflected across all five example channels.' : 'Select a channel, then preview a policy update.'}</small></div>
-      </div>
-    </section>
   </>;
 }
 

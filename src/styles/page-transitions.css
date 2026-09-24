@@ -1,0 +1,45 @@
+/* Keep normal links and browser history, with a crossfade between documents. */
+@view-transition {
+  navigation: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-site > .site-header {
+    view-transition-name: site-header;
+  }
+
+  ::view-transition-group(root),
+  ::view-transition-group(site-header) {
+    animation-duration: 420ms;
+    animation-timing-function: cubic-bezier(.22, 1, .36, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation: page-leave 180ms ease-out both;
+  }
+
+  ::view-transition-new(root) {
+    animation: page-arrive 420ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  /* The shared navigation stays in place while the content changes. */
+  ::view-transition-old(site-header),
+  ::view-transition-new(site-header) {
+    animation-duration: 240ms;
+  }
+}
+
+@keyframes page-leave {
+  to { opacity: 0; }
+}
+
+@keyframes page-arrive {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}

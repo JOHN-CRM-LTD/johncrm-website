@@ -137,25 +137,6 @@ html:has(.product-site) { scroll-behavior: smooth; }
 .mapping-preview svg.mapping-done { opacity: 1; }
 .build-demo-action { display: flex; align-items: center; flex-direction: column; gap: 12px; margin-top: 32px; }
 .build-demo-action > span { color: #738185; font-size: 10px; }
-.knowledge-demo { min-width: 0; }
-.knowledge-diagram { display: grid; grid-template-columns: 1fr 100px 1fr; align-items: center; gap: 26px; position: relative; min-height: 260px; }
-.knowledge-inputs, .knowledge-outputs { display: flex; flex-direction: column; gap: 13px; position: relative; z-index: 1; }
-.knowledge-inputs > span, .knowledge-outputs > button { display: flex; align-items: center; gap: 8px; min-height: 42px; padding: 11px; background: #fffefa; border: 1px solid #e5e9e2; border-radius: 6px; font-size: 10px; white-space: nowrap; color: #34535f; }
-.knowledge-inputs svg, .knowledge-outputs svg { flex-shrink: 0; }
-.knowledge-outputs > button { transition: background 200ms ease, border-color 200ms ease; text-align: left; }
-.knowledge-outputs > button[aria-pressed='true'] { border-color: #91b0b7; background: #e7efec; }
-.knowledge-outputs > button > svg:last-child { margin-left: auto; }
-.knowledge-hub { display: flex; position: relative; align-items: center; justify-content: center; flex-direction: column; gap: 6px; min-height: 117px; border-radius: 20px; color: #fffefa; background: #102a32; box-shadow: 0 0 0 15px #102a3204, 0 0 0 30px #102a3203; }
-.knowledge-hub::before, .knowledge-hub::after { content: ''; position: absolute; top: 50%; width: 28px; height: 1px; background: #9cb8bb; }
-.knowledge-hub::before { right: 100%; }
-.knowledge-hub::after { left: 100%; }
-.knowledge-hub > strong { margin-top: 4px; font-size: 16px; font-weight: 400; letter-spacing: .06em; }
-.knowledge-hub > span { font-size: 9px; color: #c6d5d4; }
-.knowledge-answer { margin-top: 24px; padding: 20px; border-block: 1px solid #dce1dd; }
-.knowledge-answer > span { display: flex; gap: 7px; align-items: center; color: #216d89; font-size: 10px; }
-.knowledge-answer > p { margin-top: 13px; font-size: 13px; color: #304e57; animation: product-entrance 300ms ease both; }
-.knowledge-answer strong { display: block; margin-bottom: 5px; font-size: 11px; font-weight: 500; }
-.knowledge-answer small { display: block; margin-top: 12px; color: #6f8185; font-size: 9px; }
 .product-site #mobile-navigation { top: 88px; height: calc(100dvh - 88px); }
 .product-reveal { transition: opacity 750ms ease, transform 850ms cubic-bezier(.2,.7,.2,1); }
 @media (prefers-reduced-motion: no-preference) { .product-reveal:not(.is-visible):not(:focus-within) { opacity: 0; transform: translateY(24px); } }
@@ -178,11 +159,6 @@ html:has(.product-site) { scroll-behavior: smooth; }
   .product-support { max-width: none; margin-inline: 32px; gap: 20px; }
   .product-support > svg { display: none; }
   .product-support h3 { min-width: 220px; }
-  .knowledge-diagram { grid-template-columns: 1fr 80px 1fr; gap: 15px; }
-  .knowledge-hub { min-height: 105px; }
-  .knowledge-hub::before, .knowledge-hub::after { width: 16px; }
-  .knowledge-inputs > span, .knowledge-outputs > button { padding: 9px 7px; font-size: 9px; gap: 6px; }
-  .knowledge-inputs svg { width: 15px; }
 }
 @media (max-width: 767px) {
   .product-page { padding-top: 72px; }
@@ -235,11 +211,6 @@ html:has(.product-site) { scroll-behavior: smooth; }
   .integration-step-visual { min-height: 160px; }
   .build-demo-action { align-items: flex-start; }
   .build-demo-action > span { font-size: 9px; line-height: 1.6; }
-  .knowledge-diagram { grid-template-columns: 1fr 76px 1fr; gap: 13px; }
-  .knowledge-inputs > span, .knowledge-outputs > button { font-size: 8px; padding: 10px 6px; gap: 5px; }
-  .knowledge-inputs svg, .knowledge-outputs svg { width: 13px; }
-  .knowledge-outputs button > svg:last-child { display: none; }
-  .knowledge-hub::before, .knowledge-hub::after { width: 14px; }
 }
 @media (max-width: 380px) {
   .product-hero, .product-section { padding-inline: 20px; }
@@ -255,9 +226,6 @@ html:has(.product-site) { scroll-behavior: smooth; }
   .preview-identity small { font-size: 8px; }
   .demo-tabs { gap: 12px; }
   .demo-tabs button { font-size: 10px; }
-  .knowledge-diagram { grid-template-columns: 1fr 66px 1fr; gap: 9px; }
-  .knowledge-inputs > span { white-space: normal; }
-  .knowledge-hub::before, .knowledge-hub::after { width: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html:has(.product-site) { scroll-behavior: auto; }
