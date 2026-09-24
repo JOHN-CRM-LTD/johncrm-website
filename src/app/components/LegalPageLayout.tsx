@@ -1,3 +1,5 @@
+import { usePageTranslation } from '../translations/language';
+import { LEGAL_COPY } from '../translations/legal';
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import johnCrmLogo from '../../assets/johncrm.svg';
@@ -6,6 +8,7 @@ import '../../styles/legal-pages.css';
 export type LegalPage = 'privacy' | 'terms';
 
 type LegalPageLayoutProps = {
+  languageControl: ReactNode;
   page: LegalPage;
   title: string;
   updated: string;
@@ -16,6 +19,7 @@ type LegalPageLayoutProps = {
 };
 
 export default function LegalPageLayout({
+  languageControl,
   page,
   title,
   updated,
@@ -24,6 +28,7 @@ export default function LegalPageLayout({
   footer,
   onNavigate,
 }: LegalPageLayoutProps) {
+  const { t } = usePageTranslation(LEGAL_COPY);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const mobileContents = useRef<HTMLDetailsElement>(null);
 
@@ -76,21 +81,22 @@ export default function LegalPageLayout({
       }}
     >
       <span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-      {label}
+      {t(label)}
     </a>
   ));
 
   return (
     <div className="legal-site" onClick={handleDocumentLink}>
-      <a className="legal-skip-link" href="#legal-content">Skip to content</a>
+      <a className="legal-skip-link" href="#legal-content">{t("Skip to content")}</a>
       <header className="legal-header">
-        <a href="/" aria-label="JOHN CRM home">
+        <a href="/" aria-label={t("JOHN CRM home")}>
           <img src={johnCrmLogo} alt="JOHN CRM" />
         </a>
+        <div className="legal-header-actions">
+        {languageControl}
         <a className="legal-back-link" href="/">
-          <ArrowLeft size={15} strokeWidth={1.65} aria-hidden="true" />
-          Back to JOHN CRM
-        </a>
+          <ArrowLeft size={15} strokeWidth={1.65} aria-hidden="true" />{t("Back to JOHN CRM")}</a>
+        </div>
       </header>
 
       <main id="top">
@@ -99,13 +105,9 @@ export default function LegalPageLayout({
             <h1 id="legal-title">{title}</h1>
             <div className="legal-hero-bottom">
               <p className="legal-updated">{updated}</p>
-              <nav className="legal-tabs" data-page={page} aria-label="Legal documents">
-                <a href="/privacy-policy" aria-current={page === 'privacy' ? 'page' : undefined}>
-                  Privacy Policy
-                </a>
-                <a href="/terms-of-service" aria-current={page === 'terms' ? 'page' : undefined}>
-                  Terms of Service
-                </a>
+              <nav className="legal-tabs" data-page={page} aria-label={t("Legal documents")}>
+                <a href="/privacy-policy" aria-current={page === 'privacy' ? 'page' : undefined}>{t("Privacy Policy")}</a>
+                <a href="/terms-of-service" aria-current={page === 'terms' ? 'page' : undefined}>{t("Terms of Service")}</a>
               </nav>
             </div>
           </div>
@@ -114,15 +116,13 @@ export default function LegalPageLayout({
         <div key={page} className="legal-container legal-layout">
           <aside className="legal-sidebar">
             <div className="legal-desktop-contents">
-              <p className="legal-contents-label">On this page</p>
-              <nav className="legal-contents" aria-label="Table of contents">{contents}</nav>
+              <p className="legal-contents-label">{t("On this page")}</p>
+              <nav className="legal-contents" aria-label={t("Table of contents")}>{contents}</nav>
             </div>
             <details ref={mobileContents} className="legal-mobile-contents">
-              <summary>
-                On this page
-                <ChevronDown size={16} strokeWidth={1.65} aria-hidden="true" />
+              <summary>{t("On this page")}<ChevronDown size={16} strokeWidth={1.65} aria-hidden="true" />
               </summary>
-              <nav className="legal-contents" aria-label="Table of contents">{contents}</nav>
+              <nav className="legal-contents" aria-label={t("Table of contents")}>{contents}</nav>
             </details>
           </aside>
           <article id="legal-content" className="legal-article" tabIndex={-1}>

@@ -1,4 +1,5 @@
-import { LanguageContext } from './translations/language';
+import { LEGAL_COPY } from './translations/legal';
+import { LanguageContext, usePageTranslation, translate } from './translations/language';
 import {
   lazy,
   Suspense,
@@ -958,7 +959,7 @@ function HeaderSelector<Code extends string>({
         <div
           id={`${id}-options`}
           role="menu"
-          aria-label={`${label} options`}
+          aria-label={label}
           className={`header-selector__menu absolute left-1/2 -translate-x-1/2 ${
             fullWidth ? 'w-full' : 'min-w-[10.5rem]'
           }`}
@@ -2082,13 +2083,14 @@ const LEGAL_PHONE_HREF = 'tel:+85224852033';
 const LEGAL_ADDRESS = 'Unit 2, 3/F, Block B, Hoi Luen Industrial Centre, 55 Hoi Yuen Road, Kwun Tong, Kowloon, Hong Kong';
 
 function LegalContactBlock() {
+  const { t } = usePageTranslation(LEGAL_COPY);
   return (
     <div className="border-l-2 border-black pl-6 text-black">
       <p className="font-display text-2xl font-bold uppercase leading-none">{LEGAL_COMPANY}</p>
       <dl className="legal-contact-details">
-        <div><dt>Address</dt><dd>{LEGAL_ADDRESS}</dd></div>
-        <div><dt>Telephone</dt><dd><a href={LEGAL_PHONE_HREF}>{LEGAL_PHONE}</a></dd></div>
-        <div><dt>Email</dt><dd><a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a></dd></div>
+        <div><dt>{t("Address")}</dt><dd>{t(LEGAL_ADDRESS)}</dd></div>
+        <div><dt>{t("Telephone")}</dt><dd><a href={LEGAL_PHONE_HREF}>{LEGAL_PHONE}</a></dd></div>
+        <div><dt>{t("Email")}</dt><dd><a href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a></dd></div>
       </dl>
     </div>
   );
@@ -2103,10 +2105,11 @@ function LegalSection({
   title: string;
   children: ReactNode;
 }) {
+  const { t } = usePageTranslation(LEGAL_COPY);
   return (
     <section id={id} className="legal-section" aria-labelledby={`${id}-title`}>
       <h2 id={`${id}-title`}>
-        {title}
+        {t(title)}
       </h2>
       <div className="legal-section-body">{children}</div>
     </section>
@@ -2133,98 +2136,96 @@ const PRIVACY_NAV = [
 ] as const;
 
 function PrivacyPolicyContent() {
+  const { t } = usePageTranslation(LEGAL_COPY);
   return (
     <>
       <LegalSection id="who-we-are" title="1. Who we are">
-        <p>
-          John CRM ("<strong>John CRM</strong>", "<strong>we</strong>", "<strong>us</strong>") is a customer relationship management platform for professional service businesses, including insurance and financial advisory practices, operated by {LEGAL_COMPANY}, a company registered in Hong Kong ("<strong>the Service</strong>").
+        <p>{t("John CRM (\"")}<strong>John CRM</strong>{t('", "')}<strong>{t("we")}</strong>{t('", "')}<strong>{t("us")}</strong>{t("\") is a customer relationship management platform for professional service businesses, including insurance and financial advisory practices, operated by")}{' '}{LEGAL_COMPANY}{t(", a company registered in Hong Kong (\"")}<strong>{t("the Service")}</strong>{t('").')}
         </p>
+        <p>{t("This policy explains what personal data we collect, why we collect it, how we use and share it, and the choices available to you.")}</p>
         <p>
-          This policy explains what personal data we collect, why we collect it, how we use and share it, and the choices available to you.
-        </p>
-        <p>
-          <strong className="text-black">Contact:</strong>{' '}
+          <strong className="text-black">{t("Contact:")}</strong>{' '}
           <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>
             {LEGAL_CONTACT_EMAIL}
           </a>{' '}
-          · <a href={LEGAL_PHONE_HREF}>{LEGAL_PHONE}</a> · {LEGAL_ADDRESS}
+          · <a href={LEGAL_PHONE_HREF}>{LEGAL_PHONE}</a> · {t(LEGAL_ADDRESS)}
         </p>
       </LegalSection>
 
       <LegalSection id="roles" title="2. Our two roles: controller and processor">
-        <p>John CRM handles personal data in two distinct capacities:</p>
+        <p>{t("John CRM handles personal data in two distinct capacities:")}</p>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">As a data controller</strong> for <strong className="text-black">Account Data</strong>: information about you as a user of the Service (your login email, name, password hash, workspace settings, billing records, activity records). We decide how and why this data is processed.</li>
-          <li><strong className="text-black">As a data processor</strong> for <strong className="text-black">Customer Content</strong>: the data that you and your organization enter into or route through the Service about <em>your</em> clients and contacts (names, phone numbers, messages, uploaded documents, policy details, and similar). For Customer Content, <strong className="text-black">you or your organization are the data controller</strong>, and we process it only to provide the Service under your instructions and our agreement with you. You are responsible for having a lawful basis (and, where required, consent) to collect and process your clients' data, and for responding to your clients' privacy requests.</li>
+          <li><strong className="text-black">{t("As a data controller")}</strong>{' '}{t("for")}{' '}<strong className="text-black">{t("Account Data")}</strong>{t(": information about you as a user of the Service (your login email, name, password hash, workspace settings, billing records, activity records). We decide how and why this data is processed.")}</li>
+          <li><strong className="text-black">{t("As a data processor")}</strong>{' '}{t("for")}{' '}<strong className="text-black">{t("Customer Content")}</strong>{t(": the data that you and your organization enter into or route through the Service about")}{' '}<em>{t("your")}</em>{' '}{t("clients and contacts (names, phone numbers, messages, uploaded documents, policy details, and similar). For Customer Content,")}{' '}<strong className="text-black">{t("you or your organization are the data controller")}</strong>{t(", and we process it only to provide the Service under your instructions and our agreement with you. You are responsible for having a lawful basis (and, where required, consent) to collect and process your clients' data, and for responding to your clients' privacy requests.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="data-we-collect" title="3. Data we collect">
-        <h3 className="pt-2 font-display text-2xl font-bold uppercase leading-none text-black">3.1 Account Data (you as a user)</h3>
+        <h3 className="pt-2 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.1 Account Data (you as a user)")}</h3>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Registration details:</strong> email address, display name, password (stored as a salted bcrypt hash; we never store plaintext passwords), and preferred timezone and language.</li>
-          <li><strong className="text-black">Google sign in:</strong> if you sign in with Google, we receive your Google account email and basic profile identifiers.</li>
-          <li><strong className="text-black">Organization data:</strong> organization name, legal/contact information, logo, membership and role records, and team assignments.</li>
-          <li><strong className="text-black">Billing data:</strong> subscription and token purchase records, invoices, and adjustments. Payment card details are collected and processed by <strong className="text-black">Stripe</strong>  we never see or store full card numbers.</li>
-          <li><strong className="text-black">Connected account credentials:</strong> if you connect Gmail, Google Calendar, Telegram, Discord, WeChat, WhatsApp, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).</li>
-          <li><strong className="text-black">Usage and activity records:</strong> authenticated requests to the Service (endpoint, timestamp, status, IP address, active workspace) are logged for security and administration. Request bodies (message text, passwords, tokens) are <strong className="text-black">never</strong> stored in these logs. Activity records are retained for a short rolling window (currently 14 days) before deletion.</li>
-          <li><strong className="text-black">AI usage records:</strong> model used, token counts, and billing attribution for AI features.</li>
-          <li><strong className="text-black">Support access records:</strong> if John CRM staff access your workspace in view as mode (see section 6), the session is recorded in an append only audit log, and an access log is visible to your organization's administrators.</li>
+          <li><strong className="text-black">{t("Registration details:")}</strong>{' '}{t("email address, display name, password (stored as a salted bcrypt hash; we never store plaintext passwords), and preferred timezone and language.")}</li>
+          <li><strong className="text-black">{t("Google sign in:")}</strong>{' '}{t("if you sign in with Google, we receive your Google account email and basic profile identifiers.")}</li>
+          <li><strong className="text-black">{t("Organization data:")}</strong>{' '}{t("organization name, legal/contact information, logo, membership and role records, and team assignments.")}</li>
+          <li><strong className="text-black">{t("Billing data:")}</strong>{' '}{t("subscription and token purchase records, invoices, and adjustments. Payment card details are collected and processed by")}{' '}<strong className="text-black">Stripe</strong>{' '}{t("we never see or store full card numbers.")}</li>
+          <li><strong className="text-black">{t("Connected account credentials:")}</strong>{' '}{t("if you connect Gmail, Google Calendar, Telegram, Discord, WeChat, WhatsApp, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).")}</li>
+          <li><strong className="text-black">{t("Usage and activity records:")}</strong>{' '}{t("authenticated requests to the Service (endpoint, timestamp, status, IP address, active workspace) are logged for security and administration. Request bodies (message text, passwords, tokens) are")}{' '}<strong className="text-black">{t("never")}</strong>{' '}{t("stored in these logs. Activity records are retained for a short rolling window (currently 14 days) before deletion.")}</li>
+          <li><strong className="text-black">{t("AI usage records:")}</strong>{' '}{t("model used, token counts, and billing attribution for AI features.")}</li>
+          <li><strong className="text-black">{t("Support access records:")}</strong>{' '}{t("if John CRM staff access your workspace in view as mode (see section 6), the session is recorded in an append only audit log, and an access log is visible to your organization's administrators.")}</li>
         </ul>
-        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">3.2 Customer Content (data about your clients, controlled by you)</h3>
+        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.2 Customer Content (data about your clients, controlled by you)")}</h3>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Client profiles:</strong> names, phone numbers, email addresses, dates of birth, addresses, timezones, tags, pipeline status, notes, and, where you use these features, insurance/MPF portfolio details.</li>
-          <li><strong className="text-black">Messages and attachments:</strong> conversations sent and received through connected channels (WhatsApp, email, Telegram, WeChat, Discord, website chat widget), including images and files.</li>
-          <li><strong className="text-black">Uploaded documents:</strong> policy PDFs and knowledge base documents you upload, stored in private object storage and served only via short lived signed URLs after an ownership check.</li>
-          <li><strong className="text-black">Website chat visitor data:</strong> if you embed our chat widget, visitors' pre chat form details (e.g. name, email) and messages are collected on your behalf.</li>
-          <li><strong className="text-black">Consent records:</strong> opt in/opt out status for mass messaging, kept as a durable ledger so that contacts who decline are never messaged again.</li>
+          <li><strong className="text-black">{t("Client profiles:")}</strong>{' '}{t("names, phone numbers, email addresses, dates of birth, addresses, timezones, tags, pipeline status, notes, and, where you use these features, insurance/MPF portfolio details.")}</li>
+          <li><strong className="text-black">{t("Messages and attachments:")}</strong>{' '}{t("conversations sent and received through connected channels (WhatsApp, email, Telegram, WeChat, Discord, website chat widget), including images and files.")}</li>
+          <li><strong className="text-black">{t("Uploaded documents:")}</strong>{' '}{t("policy PDFs and knowledge base documents you upload, stored in private object storage and served only via short lived signed URLs after an ownership check.")}</li>
+          <li><strong className="text-black">{t("Website chat visitor data:")}</strong>{' '}{t("if you embed our chat widget, visitors' pre chat form details (e.g. name, email) and messages are collected on your behalf.")}</li>
+          <li><strong className="text-black">{t("Consent records:")}</strong>{' '}{t("opt in/opt out status for mass messaging, kept as a durable ledger so that contacts who decline are never messaged again.")}</li>
         </ul>
-        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">3.3 Cookies</h3>
-        <p>We use strictly necessary session cookies to keep you logged in. We do not use advertising or cross site tracking cookies.</p>
+        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.3 Cookies")}</h3>
+        <p>{t("We use strictly necessary session cookies to keep you logged in. We do not use advertising or cross site tracking cookies.")}</p>
       </LegalSection>
 
       <LegalSection id="how-we-use-data" title="4. How we use data">
-        <p>We use personal data to:</p>
+        <p>{t("We use personal data to:")}</p>
         <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
-          <li><strong className="text-black">Provide the Service</strong>  authentication, workspace management, message delivery and receipt, calendar scheduling, document storage and retrieval, and reporting.</li>
-          <li><strong className="text-black">Provide AI features</strong>  classifying inbound messages, drafting and sending replies, extracting text from uploaded documents (OCR), generating embeddings for document search, and generating content you request. See section 5.</li>
-          <li><strong className="text-black">Bill for the Service</strong>  processing subscriptions, token purchases, and usage based accounting via Stripe.</li>
-          <li><strong className="text-black">Secure and operate the Service</strong>  activity logging, fraud and abuse prevention, rate limiting, debugging, and platform monitoring (aggregate statistics).</li>
-          <li><strong className="text-black">Support you</strong>  responding to support requests, including consent gated view as access (section 6).</li>
-          <li><strong className="text-black">Comply with legal obligations</strong>  record keeping, responding to lawful requests from authorities.</li>
+          <li><strong className="text-black">{t("Provide the Service")}</strong>{' '}{t("authentication, workspace management, message delivery and receipt, calendar scheduling, document storage and retrieval, and reporting.")}</li>
+          <li><strong className="text-black">{t("Provide AI features")}</strong>{' '}{t("classifying inbound messages, drafting and sending replies, extracting text from uploaded documents (OCR), generating embeddings for document search, and generating content you request. See section 5.")}</li>
+          <li><strong className="text-black">{t("Bill for the Service")}</strong>{' '}{t("processing subscriptions, token purchases, and usage based accounting via Stripe.")}</li>
+          <li><strong className="text-black">{t("Secure and operate the Service")}</strong>{' '}{t("activity logging, fraud and abuse prevention, rate limiting, debugging, and platform monitoring (aggregate statistics).")}</li>
+          <li><strong className="text-black">{t("Support you")}</strong>{' '}{t("responding to support requests, including consent gated view as access (section 6).")}</li>
+          <li><strong className="text-black">{t("Comply with legal obligations")}</strong>{' '}{t("record keeping, responding to lawful requests from authorities.")}</li>
         </ol>
-        <p>We do <strong className="text-black">not</strong> sell personal data, and we do not use Customer Content for advertising.</p>
+        <p>{t("We do")}{' '}<strong className="text-black">{t("not")}</strong>{' '}{t("sell personal data, and we do not use Customer Content for advertising.")}</p>
       </LegalSection>
 
       <LegalSection id="ai-processing" title="5. AI processing">
-        <p>The Service includes AI features that process message content and documents:</p>
+        <p>{t("The Service includes AI features that process message content and documents:")}</p>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Message classification and auto replies:</strong> inbound client messages may be sent to third party AI model providers to classify the message topic and, where enabled by you, to draft or send a reply. Replies can be reviewed, edited, held, or disabled per conversation by your agents.</li>
-          <li><strong className="text-black">Document processing (OCR and retrieval):</strong> uploaded policy and knowledge base documents may be processed by Google Cloud Document AI (OCR) and Google Vertex AI (embeddings) so their content can be retrieved to answer questions. Documents transiting Google Cloud Storage for OCR are deleted after processing, with a 1 day automatic deletion backstop.</li>
-          <li><strong className="text-black">Model providers:</strong> depending on configuration, AI requests are routed to providers including OpenRouter, DeepSeek, Anthropic, and Google. If you supply your own API key ("bring your own key"), requests for that provider are made directly with your key.</li>
-          <li><strong className="text-black">No training:</strong> we do not use your data to train AI models. Our arrangements with AI providers are limited to inference (generating a response).</li>
+          <li><strong className="text-black">{t("Message classification and auto replies:")}</strong>{' '}{t("inbound client messages may be sent to third party AI model providers to classify the message topic and, where enabled by you, to draft or send a reply. Replies can be reviewed, edited, held, or disabled per conversation by your agents.")}</li>
+          <li><strong className="text-black">{t("Document processing (OCR and retrieval):")}</strong>{' '}{t("uploaded policy and knowledge base documents may be processed by Google Cloud Document AI (OCR) and Google Vertex AI (embeddings) so their content can be retrieved to answer questions. Documents transiting Google Cloud Storage for OCR are deleted after processing, with a 1 day automatic deletion backstop.")}</li>
+          <li><strong className="text-black">{t("Model providers:")}</strong>{' '}{t("depending on configuration, AI requests are routed to providers including OpenRouter, DeepSeek, Anthropic, and Google. If you supply your own API key (\"bring your own key\"), requests for that provider are made directly with your key.")}</li>
+          <li><strong className="text-black">{t("No training:")}</strong>{' '}{t("we do not use your data to train AI models. Our arrangements with AI providers are limited to inference (generating a response).")}</li>
         </ul>
-        <p>You are responsible for informing your clients, as required by applicable law, that AI assisted responses may be used in your communications with them.</p>
+        <p>{t("You are responsible for informing your clients, as required by applicable law, that AI assisted responses may be used in your communications with them.")}</p>
       </LegalSection>
 
       <LegalSection id="support-access" title="6. Support access (view as) and transparency">
-        <p>John CRM support staff may, with a stated reason, access your workspace in a <strong className="text-black">read only "view as" mode</strong> to troubleshoot issues. Safeguards:</p>
+        <p>{t("John CRM support staff may, with a stated reason, access your workspace in a")}{' '}<strong className="text-black">{t("read only \"view as\" mode")}</strong>{' '}{t("to troubleshoot issues. Safeguards:")}</p>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li>Your organization can <strong className="text-black">disable support access</strong> at any time in its settings; when disabled, new support sessions cannot start.</li>
-          <li>View as sessions are read only (no changes can be made), time limited (maximum 30 minutes), and every session is recorded in an append only audit log.</li>
-          <li>Your organization's administrators can see a log of John CRM staff access to your organization.</li>
+          <li>{t("Your organization can")}{' '}<strong className="text-black">{t("disable support access")}</strong>{' '}{t("at any time in its settings; when disabled, new support sessions cannot start.")}</li>
+          <li>{t("View as sessions are read only (no changes can be made), time limited (maximum 30 minutes), and every session is recorded in an append only audit log.")}</li>
+          <li>{t("Your organization's administrators can see a log of John CRM staff access to your organization.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="subprocessors" title="7. Who we share data with (subprocessors)">
-        <p>We share data only with service providers who help us operate the Service, under contracts restricting their use of the data:</p>
+        <p>{t("We share data only with service providers who help us operate the Service, under contracts restricting their use of the data:")}</p>
         <div className="overflow-x-auto border-y border-black/10">
           <table className="w-full min-w-[38rem] border-collapse text-left text-[13px] leading-6">
             <thead>
               <tr className="border-b border-black/10 font-mono text-[9px] tracking-[0.2em] uppercase text-black/40">
-                <th className="py-4 pr-5 font-medium">Provider</th>
-                <th className="py-4 pr-5 font-medium">Purpose</th>
-                <th className="py-4 font-medium">Location</th>
+                <th className="py-4 pr-5 font-medium">{t("Provider")}</th>
+                <th className="py-4 pr-5 font-medium">{t("Purpose")}</th>
+                <th className="py-4 font-medium">{t("Location")}</th>
               </tr>
             </thead>
             <tbody className="text-black/65">
@@ -2239,52 +2240,52 @@ function PrivacyPolicyContent() {
               ].map(([provider, purpose, location]) => (
                 <tr key={provider} className="border-b border-black/6 last:border-0">
                   <td className="py-4 pr-5 align-top font-medium text-black">{provider}</td>
-                  <td className="py-4 pr-5 align-top">{purpose}</td>
-                  <td className="py-4 align-top">{location}</td>
+                  <td className="py-4 pr-5 align-top">{t(purpose)}</td>
+                  <td className="py-4 align-top">{t(location)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <p>Messages you send and receive through third party channels (WhatsApp, Telegram, WeChat, Discord, email providers) are also processed by those platforms under <strong className="text-black">their own privacy policies</strong>; we do not control them.</p>
-        <p>We may also disclose data where required by law, to protect the rights and safety of users, or in connection with a merger or acquisition (in which case this policy will continue to apply to previously collected data).</p>
+        <p>{t("Messages you send and receive through third party channels (WhatsApp, Telegram, WeChat, Discord, email providers) are also processed by those platforms under")}{' '}<strong className="text-black">{t("their own privacy policies")}</strong>{t("; we do not control them.")}</p>
+        <p>{t("We may also disclose data where required by law, to protect the rights and safety of users, or in connection with a merger or acquisition (in which case this policy will continue to apply to previously collected data).")}</p>
       </LegalSection>
 
       <LegalSection id="international-transfers" title="8. International transfers">
-        <p>Our primary infrastructure is in Singapore. AI and document processing involves transfers to providers in the United States as listed above. Where required by applicable law, we rely on appropriate safeguards (such as contractual data protection commitments with our subprocessors) for these transfers.</p>
+        <p>{t("Our primary infrastructure is in Singapore. AI and document processing involves transfers to providers in the United States as listed above. Where required by applicable law, we rely on appropriate safeguards (such as contractual data protection commitments with our subprocessors) for these transfers.")}</p>
       </LegalSection>
 
       <LegalSection id="retention" title="9. Retention">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Account Data:</strong> retained while your account is active and for a reasonable period afterwards for record keeping, then deleted or anonymized.</li>
-          <li><strong className="text-black">Customer Content:</strong> retained under your organization's control while your subscription is active. On verified account/organization deletion, Customer Content is deleted, subject to the exceptions below.</li>
-          <li><strong className="text-black">Activity logs:</strong> rolling 14 day retention.</li>
-          <li><strong className="text-black">Billing and audit records:</strong> retained as required for accounting, tax, and dispute resolution obligations.</li>
-          <li><strong className="text-black">Executed contracts</strong> (where the contract feature is used): retained for at least 7 years after termination, in line with record keeping obligations.</li>
-          <li><strong className="text-black">OCR staging data:</strong> deleted after processing (1 day automatic backstop).</li>
-          <li><strong className="text-black">Backups:</strong> deleted data may persist in encrypted backups for a limited period before rotating out.</li>
+          <li><strong className="text-black">{t("Account Data:")}</strong>{' '}{t("retained while your account is active and for a reasonable period afterwards for record keeping, then deleted or anonymized.")}</li>
+          <li><strong className="text-black">{t("Customer Content:")}</strong>{' '}{t("retained under your organization's control while your subscription is active. On verified account/organization deletion, Customer Content is deleted, subject to the exceptions below.")}</li>
+          <li><strong className="text-black">{t("Activity logs:")}</strong>{' '}{t("rolling 14 day retention.")}</li>
+          <li><strong className="text-black">{t("Billing and audit records:")}</strong>{' '}{t("retained as required for accounting, tax, and dispute resolution obligations.")}</li>
+          <li><strong className="text-black">{t("Executed contracts")}</strong>{' '}{t("(where the contract feature is used): retained for at least 7 years after termination, in line with record keeping obligations.")}</li>
+          <li><strong className="text-black">{t("OCR staging data:")}</strong>{' '}{t("deleted after processing (1 day automatic backstop).")}</li>
+          <li><strong className="text-black">{t("Backups:")}</strong>{' '}{t("deleted data may persist in encrypted backups for a limited period before rotating out.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="security" title="10. Security">
-        <p>Measures we apply include: encryption in transit (TLS); encryption at rest for stored credentials and API keys (AES 256 GCM with per purpose keys); salted password hashing (bcrypt); private object storage reachable only through short lived signed URLs after ownership checks; workspace scoped data isolation enforced at the query layer; role based access control; append only, tamper evident staff audit logging; and login rate limiting. No system is perfectly secure; we will notify affected customers of a personal data breach as required by applicable law.</p>
+        <p>{t("Measures we apply include: encryption in transit (TLS); encryption at rest for stored credentials and API keys (AES 256 GCM with per purpose keys); salted password hashing (bcrypt); private object storage reachable only through short lived signed URLs after ownership checks; workspace scoped data isolation enforced at the query layer; role based access control; append only, tamper evident staff audit logging; and login rate limiting. No system is perfectly secure; we will notify affected customers of a personal data breach as required by applicable law.")}</p>
       </LegalSection>
 
       <LegalSection id="your-rights" title="11. Your rights">
-        <p>Depending on your jurisdiction (including under the Hong Kong PDPO), you may have rights to access, correct, or delete personal data we hold about you, to object to or restrict certain processing, and to data portability.</p>
+        <p>{t("Depending on your jurisdiction (including under the Hong Kong PDPO), you may have rights to access, correct, or delete personal data we hold about you, to object to or restrict certain processing, and to data portability.")}</p>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Users:</strong> contact us at <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> to exercise rights over your Account Data.</li>
-          <li><strong className="text-black">Clients of our customers:</strong> because your data is controlled by the business you interact with, please direct requests to that business. We will assist our customers in fulfilling such requests.</li>
+          <li><strong className="text-black">{t("Users:")}</strong>{' '}{t("contact us at")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>{' '}{t("to exercise rights over your Account Data.")}</li>
+          <li><strong className="text-black">{t("Clients of our customers:")}</strong>{' '}{t("because your data is controlled by the business you interact with, please direct requests to that business. We will assist our customers in fulfilling such requests.")}</li>
         </ul>
-        <p>We will respond within the timeframe required by applicable law. You may also have the right to lodge a complaint with your data protection authority (in Hong Kong, the Office of the Privacy Commissioner for Personal Data).</p>
+        <p>{t("We will respond within the timeframe required by applicable law. You may also have the right to lodge a complaint with your data protection authority (in Hong Kong, the Office of the Privacy Commissioner for Personal Data).")}</p>
       </LegalSection>
 
       <LegalSection id="children" title="12. Children">
-        <p>The Service is a business tool and is not directed at children. We do not knowingly collect personal data from anyone under 18 as users of the Service.</p>
+        <p>{t("The Service is a business tool and is not directed at children. We do not knowingly collect personal data from anyone under 18 as users of the Service.")}</p>
       </LegalSection>
 
       <LegalSection id="changes" title="13. Changes to this policy">
-        <p>We may update this policy from time to time. Material changes will be notified to organization administrators by email or in app notice before they take effect. The "Last updated" date at the top reflects the current version.</p>
+        <p>{t("We may update this policy from time to time. Material changes will be notified to organization administrators by email or in app notice before they take effect. The \"Last updated\" date at the top reflects the current version.")}</p>
       </LegalSection>
 
       <LegalSection id="contact" title="14. Contact">
@@ -2316,136 +2317,129 @@ const TERMS_NAV = [
 ] as const;
 
 function TermsOfServiceContent() {
+  const { t } = usePageTranslation(LEGAL_COPY);
   return (
     <>
       <LegalSection id="the-service" title="1. The Service">
-        <p>
-          These Terms of Service ("<strong>Terms</strong>") govern access to and use of the John CRM platform and related services (the "<strong>Service</strong>"), operated by {LEGAL_COMPANY} ("<strong>John CRM</strong>", "<strong>we</strong>", "<strong>us</strong>"). By creating an account, accepting an invitation, or using the Service, you agree to these Terms. If you use the Service on behalf of an organization, you represent that you have authority to bind that organization, and "<strong>Customer</strong>" or "<strong>you</strong>" refers to that organization.
-        </p>
-        <p>
-          John CRM is a customer relationship management platform for professional service businesses. It includes client and pipeline management, multi channel messaging (WhatsApp, email, Telegram, WeChat, Discord, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.
-        </p>
-        <p>
-          We may improve, add, or remove features of the Service over time. We will not materially reduce the core functionality of the Service during a paid subscription term without notice.
-        </p>
+        <p>{t("These Terms of Service (\"")}<strong>{t("Terms")}</strong>{t("\") govern access to and use of the John CRM platform and related services (the \"")}<strong>{t("Service")}</strong>{t("\"), operated by")}{' '}{LEGAL_COMPANY}{t(' ("')}<strong>John CRM</strong>{t('", "')}<strong>{t("we")}</strong>{t('", "')}<strong>{t("us")}</strong>{t("\"). By creating an account, accepting an invitation, or using the Service, you agree to these Terms. If you use the Service on behalf of an organization, you represent that you have authority to bind that organization, and \"")}<strong>{t("Customer")}</strong>{t("\" or \"")}<strong>{t("you")}</strong>{t("\" refers to that organization.")}</p>
+        <p>{t("John CRM is a customer relationship management platform for professional service businesses. It includes client and pipeline management, multi channel messaging (WhatsApp, email, Telegram, WeChat, Discord, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.")}</p>
+        <p>{t("We may improve, add, or remove features of the Service over time. We will not materially reduce the core functionality of the Service during a paid subscription term without notice.")}</p>
       </LegalSection>
 
       <LegalSection id="accounts" title="2. Accounts and access">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Invitation based provisioning.</strong> Accounts are currently created by invitation from an organization administrator or by John CRM. You must provide accurate information and keep your credentials secure. You are responsible for all activity under your account.</li>
-          <li><strong className="text-black">Roles.</strong> Organization owners and administrators control membership, roles, and permissions within their organization, and are responsible for the actions of their members.</li>
-          <li><strong className="text-black">Eligibility.</strong> The Service is for business use by users aged 18 or over. You may not use the Service if you are barred from doing so under applicable law.</li>
-          <li><strong className="text-black">Security.</strong> Notify us promptly at <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> if you suspect unauthorized access to your account.</li>
+          <li><strong className="text-black">{t("Invitation based provisioning.")}</strong>{' '}{t("Accounts are currently created by invitation from an organization administrator or by John CRM. You must provide accurate information and keep your credentials secure. You are responsible for all activity under your account.")}</li>
+          <li><strong className="text-black">{t("Roles.")}</strong>{' '}{t("Organization owners and administrators control membership, roles, and permissions within their organization, and are responsible for the actions of their members.")}</li>
+          <li><strong className="text-black">{t("Eligibility.")}</strong>{' '}{t("The Service is for business use by users aged 18 or over. You may not use the Service if you are barred from doing so under applicable law.")}</li>
+          <li><strong className="text-black">{t("Security.")}</strong>{' '}{t("Notify us promptly at")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>{' '}{t("if you suspect unauthorized access to your account.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="customer-content" title="3. Customer Content and data protection">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Your content, your responsibility.</strong> "Customer Content" means data you or your users submit to or route through the Service, including client records, messages, and uploaded documents. You retain all rights to Customer Content. You grant us a limited license to host, process, transmit, and display Customer Content solely to provide and support the Service.</li>
-          <li><strong className="text-black">Lawful basis and consent.</strong> You are solely responsible for ensuring you have the legal right, including any required notices and consents from your clients, to collect, store, and message the contacts you manage in the Service, and to process their data through the AI and messaging features you enable.</li>
-          <li><strong className="text-black">Privacy.</strong> Our processing of personal data is described in the <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">John CRM Privacy Policy</a>, which forms part of these Terms.</li>
-          <li><strong className="text-black">Regulated professionals.</strong> If you are subject to professional or regulatory obligations (for example as a licensed insurance intermediary or financial adviser), you are responsible for ensuring your use of the Service, including AI generated communications, complies with those obligations.</li>
+          <li><strong className="text-black">{t("Your content, your responsibility.")}</strong>{' '}{t("\"Customer Content\" means data you or your users submit to or route through the Service, including client records, messages, and uploaded documents. You retain all rights to Customer Content. You grant us a limited license to host, process, transmit, and display Customer Content solely to provide and support the Service.")}</li>
+          <li><strong className="text-black">{t("Lawful basis and consent.")}</strong>{' '}{t("You are solely responsible for ensuring you have the legal right, including any required notices and consents from your clients, to collect, store, and message the contacts you manage in the Service, and to process their data through the AI and messaging features you enable.")}</li>
+          <li><strong className="text-black">{t("Privacy.")}</strong>{' '}{t("Our processing of personal data is described in the")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">{t("John CRM Privacy Policy")}</a>{t(", which forms part of these Terms.")}</li>
+          <li><strong className="text-black">{t("Regulated professionals.")}</strong>{' '}{t("If you are subject to professional or regulatory obligations (for example as a licensed insurance intermediary or financial adviser), you are responsible for ensuring your use of the Service, including AI generated communications, complies with those obligations.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="acceptable-use" title="4. Acceptable use">
-        <p>You agree not to:</p>
+        <p>{t("You agree not to:")}</p>
         <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
-          <li>Send spam or unsolicited bulk messages, or message any contact who has opted out. The Service maintains a consent ledger; circumventing it is a material breach of these Terms.</li>
-          <li>Violate the terms of service of any connected third party platform (WhatsApp, Telegram, WeChat, Discord, Google, etc.).</li>
-          <li>Upload or transmit unlawful content, malware, or content that infringes the rights of others.</li>
-          <li>Use the Service to provide, or hold out AI output as, regulated advice without the required license and human review.</li>
-          <li>Probe, scan, or test the vulnerability of the Service, attempt to access other customers' data, or interfere with the operation of the Service.</li>
-          <li>Resell, sublicense, or white label the Service without a written agreement with us.</li>
-          <li>Use the Service to build a competing product, or scrape the Service by automated means outside documented interfaces.</li>
+          <li>{t("Send spam or unsolicited bulk messages, or message any contact who has opted out. The Service maintains a consent ledger; circumventing it is a material breach of these Terms.")}</li>
+          <li>{t("Violate the terms of service of any connected third party platform (WhatsApp, Telegram, WeChat, Discord, Google, etc.).")}</li>
+          <li>{t("Upload or transmit unlawful content, malware, or content that infringes the rights of others.")}</li>
+          <li>{t("Use the Service to provide, or hold out AI output as, regulated advice without the required license and human review.")}</li>
+          <li>{t("Probe, scan, or test the vulnerability of the Service, attempt to access other customers' data, or interfere with the operation of the Service.")}</li>
+          <li>{t("Resell, sublicense, or white label the Service without a written agreement with us.")}</li>
+          <li>{t("Use the Service to build a competing product, or scrape the Service by automated means outside documented interfaces.")}</li>
         </ol>
-        <p>We may suspend or restrict access immediately where we reasonably believe use of the Service threatens its security or integrity, breaches this section, or exposes us or other customers to liability. Where practical we will notify you and work with you to restore access.</p>
+        <p>{t("We may suspend or restrict access immediately where we reasonably believe use of the Service threatens its security or integrity, breaches this section, or exposes us or other customers to liability. Where practical we will notify you and work with you to restore access.")}</p>
       </LegalSection>
 
       <LegalSection id="third-party-services" title="5. Third party channels and services">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Independent platforms.</strong> Messaging channels and connected accounts (WhatsApp, Telegram, WeChat, Discord, Gmail, Google Calendar, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.</li>
-          <li><strong className="text-black">Unofficial integrations.</strong> Certain channel integrations (including WhatsApp and WeChat personal accounts) operate through connection methods that are not officially sanctioned by the platform operator. <strong className="text-black">The platform operator may restrict, suspend, or ban accounts connected this way at any time.</strong> The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.</li>
-          <li><strong className="text-black">Bring your own keys.</strong> If you connect your own AI provider API keys, your use of those providers is governed by your agreement with them, and their charges are your responsibility.</li>
-          <li><strong className="text-black">Connector endpoints.</strong> If you configure connectors to your own or third party HTTP APIs, you are responsible for having the right to call those APIs and for the data they return.</li>
+          <li><strong className="text-black">{t("Independent platforms.")}</strong>{' '}{t("Messaging channels and connected accounts (WhatsApp, Telegram, WeChat, Discord, Gmail, Google Calendar, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.")}</li>
+          <li><strong className="text-black">{t("Unofficial integrations.")}</strong>{' '}{t("Certain channel integrations (including WhatsApp and WeChat personal accounts) operate through connection methods that are not officially sanctioned by the platform operator.")}{' '}<strong className="text-black">{t("The platform operator may restrict, suspend, or ban accounts connected this way at any time.")}</strong>{' '}{t("The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.")}</li>
+          <li><strong className="text-black">{t("Bring your own keys.")}</strong>{' '}{t("If you connect your own AI provider API keys, your use of those providers is governed by your agreement with them, and their charges are your responsibility.")}</li>
+          <li><strong className="text-black">{t("Connector endpoints.")}</strong>{' '}{t("If you configure connectors to your own or third party HTTP APIs, you are responsible for having the right to call those APIs and for the data they return.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="ai-features" title="6. AI features">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Assistive, not authoritative.</strong> AI features classify messages, draft and (where you enable it) automatically send replies, and answer questions from documents you upload. AI output can be inaccurate, incomplete, or inappropriate for a given situation despite the safeguards built into the Service.</li>
-          <li><strong className="text-black">Your supervision.</strong> You are responsible for supervising AI assisted communications sent on your behalf, configuring the automation level appropriately (including per conversation controls and review queues), and correcting or disabling automation where needed.</li>
-          <li><strong className="text-black">No professional advice.</strong> AI output is not financial, insurance, legal, medical, or tax advice. Where the Service declines to state figures or defers to a human, that behavior is a safety feature and not a defect.</li>
-          <li><strong className="text-black">Usage based billing.</strong> AI features consume tokens under your plan or purchased balances (see <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#fees">section 7</a>).</li>
+          <li><strong className="text-black">{t("Assistive, not authoritative.")}</strong>{' '}{t("AI features classify messages, draft and (where you enable it) automatically send replies, and answer questions from documents you upload. AI output can be inaccurate, incomplete, or inappropriate for a given situation despite the safeguards built into the Service.")}</li>
+          <li><strong className="text-black">{t("Your supervision.")}</strong>{' '}{t("You are responsible for supervising AI assisted communications sent on your behalf, configuring the automation level appropriately (including per conversation controls and review queues), and correcting or disabling automation where needed.")}</li>
+          <li><strong className="text-black">{t("No professional advice.")}</strong>{' '}{t("AI output is not financial, insurance, legal, medical, or tax advice. Where the Service declines to state figures or defers to a human, that behavior is a safety feature and not a defect.")}</li>
+          <li><strong className="text-black">{t("Usage based billing.")}</strong>{' '}{t("AI features consume tokens under your plan or purchased balances (see")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#fees">{t("section 7")}</a>{t(').')}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="fees" title="7. Fees and payment">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Plans and contracts.</strong> Access is provided under the subscription or contract agreed with us (including enterprise agreements managed by our team). Fees, billing periods, and included allowances are as stated in your plan, order form, or contract.</li>
-          <li><strong className="text-black">Token balances.</strong> AI usage draws on included allowances and purchased token balances. Purchased balances are consumed on use and, except where required by law, are non refundable and expire per your plan terms.</li>
-          <li><strong className="text-black">Self serve purchases.</strong> Where self serve billing is enabled, payments are processed by Stripe. You authorize us to charge the payment method you provide.</li>
-          <li><strong className="text-black">Late payment.</strong> We may suspend the Service for accounts with overdue amounts after reasonable notice.</li>
-          <li><strong className="text-black">Taxes.</strong> Fees are exclusive of taxes; you are responsible for applicable taxes other than taxes on our income.</li>
+          <li><strong className="text-black">{t("Plans and contracts.")}</strong>{' '}{t("Access is provided under the subscription or contract agreed with us (including enterprise agreements managed by our team). Fees, billing periods, and included allowances are as stated in your plan, order form, or contract.")}</li>
+          <li><strong className="text-black">{t("Token balances.")}</strong>{' '}{t("AI usage draws on included allowances and purchased token balances. Purchased balances are consumed on use and, except where required by law, are non refundable and expire per your plan terms.")}</li>
+          <li><strong className="text-black">{t("Self serve purchases.")}</strong>{' '}{t("Where self serve billing is enabled, payments are processed by Stripe. You authorize us to charge the payment method you provide.")}</li>
+          <li><strong className="text-black">{t("Late payment.")}</strong>{' '}{t("We may suspend the Service for accounts with overdue amounts after reasonable notice.")}</li>
+          <li><strong className="text-black">{t("Taxes.")}</strong>{' '}{t("Fees are exclusive of taxes; you are responsible for applicable taxes other than taxes on our income.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="intellectual-property" title="8. Intellectual property">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li>The Service, including its software, design, and documentation, is owned by us or our licensors. We grant you a non exclusive, non transferable right to use the Service during your subscription for your internal business purposes.</li>
-          <li>You may not copy, modify, reverse engineer, or create derivative works of the Service except as permitted by law.</li>
-          <li><strong className="text-black">Feedback</strong> you provide may be used by us without restriction or obligation.</li>
-          <li><strong className="text-black">Aggregate data.</strong> We may use de identified, aggregated usage data to operate and improve the Service, provided it does not identify you or your clients.</li>
+          <li>{t("The Service, including its software, design, and documentation, is owned by us or our licensors. We grant you a non exclusive, non transferable right to use the Service during your subscription for your internal business purposes.")}</li>
+          <li>{t("You may not copy, modify, reverse engineer, or create derivative works of the Service except as permitted by law.")}</li>
+          <li><strong className="text-black">{t("Feedback")}</strong>{' '}{t("you provide may be used by us without restriction or obligation.")}</li>
+          <li><strong className="text-black">{t("Aggregate data.")}</strong>{' '}{t("We may use de identified, aggregated usage data to operate and improve the Service, provided it does not identify you or your clients.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="confidentiality" title="9. Confidentiality">
-        <p>Each party will protect the other's confidential information with at least reasonable care, use it only to perform under these Terms, and not disclose it except to personnel and contractors bound by confidentiality obligations, or where required by law (with prompt notice to the other party where lawful).</p>
+        <p>{t("Each party will protect the other's confidential information with at least reasonable care, use it only to perform under these Terms, and not disclose it except to personnel and contractors bound by confidentiality obligations, or where required by law (with prompt notice to the other party where lawful).")}</p>
       </LegalSection>
 
       <LegalSection id="termination" title="10. Term, suspension, and termination">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Term.</strong> These Terms apply from your first use of the Service and continue until your subscription ends or your account is terminated.</li>
-          <li><strong className="text-black">Termination by you.</strong> You may stop using the Service at any time; contractual commitments (minimum terms, outstanding fees) survive per your agreement with us.</li>
-          <li><strong className="text-black">Termination by us.</strong> We may terminate or suspend access for material breach that remains uncured after reasonable notice, for non payment, or where required by law. We may terminate accounts with immediate effect for serious abuse (<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">section 4</a>).</li>
-          <li><strong className="text-black">Effect of termination.</strong> On termination, your right to use the Service ends. Upon written request made within 30 days of termination, we will make Customer Content available for export in a reasonable format; after that period we may delete Customer Content, except for records we retain under our Privacy Policy (e.g. billing and audit records, executed contracts).</li>
+          <li><strong className="text-black">{t("Term.")}</strong>{' '}{t("These Terms apply from your first use of the Service and continue until your subscription ends or your account is terminated.")}</li>
+          <li><strong className="text-black">{t("Termination by you.")}</strong>{' '}{t("You may stop using the Service at any time; contractual commitments (minimum terms, outstanding fees) survive per your agreement with us.")}</li>
+          <li><strong className="text-black">{t("Termination by us.")}</strong>{' '}{t("We may terminate or suspend access for material breach that remains uncured after reasonable notice, for non payment, or where required by law. We may terminate accounts with immediate effect for serious abuse (")}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">{t("section 4")}</a>{t(').')}</li>
+          <li><strong className="text-black">{t("Effect of termination.")}</strong>{' '}{t("On termination, your right to use the Service ends. Upon written request made within 30 days of termination, we will make Customer Content available for export in a reasonable format; after that period we may delete Customer Content, except for records we retain under our Privacy Policy (e.g. billing and audit records, executed contracts).")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="warranties" title="11. Warranties and disclaimers">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li>We warrant that we will provide the Service with reasonable skill and care.</li>
-          <li><strong className="text-black">Otherwise, the Service is provided "as is" and "as available."</strong> To the maximum extent permitted by law, we disclaim all other warranties, express or implied, including merchantability, fitness for a particular purpose, and non infringement. We do not warrant that the Service will be uninterrupted, error free, or that AI output will be accurate; that messages will be delivered by third party platforms; or that third party platforms will not restrict your connected accounts.</li>
+          <li>{t("We warrant that we will provide the Service with reasonable skill and care.")}</li>
+          <li><strong className="text-black">{t("Otherwise, the Service is provided \"as is\" and \"as available.\"")}</strong>{' '}{t("To the maximum extent permitted by law, we disclaim all other warranties, express or implied, including merchantability, fitness for a particular purpose, and non infringement. We do not warrant that the Service will be uninterrupted, error free, or that AI output will be accurate; that messages will be delivered by third party platforms; or that third party platforms will not restrict your connected accounts.")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="liability" title="12. Limitation of liability">
-        <p>To the maximum extent permitted by law:</p>
+        <p>{t("To the maximum extent permitted by law:")}</p>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li>Neither party is liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, revenue, goodwill, or data, however arising.</li>
-          <li>Our total aggregate liability arising out of or related to the Service is limited to the fees you paid to us for the Service in the <strong className="text-black">12 months</strong> preceding the event giving rise to the claim.</li>
-          <li>Nothing in these Terms excludes liability that cannot be excluded by law (including for fraud, or death or personal injury caused by negligence).</li>
+          <li>{t("Neither party is liable for indirect, incidental, special, consequential, or punitive damages, or for loss of profits, revenue, goodwill, or data, however arising.")}</li>
+          <li>{t("Our total aggregate liability arising out of or related to the Service is limited to the fees you paid to us for the Service in the")}{' '}<strong className="text-black">{t("12 months")}</strong>{' '}{t("preceding the event giving rise to the claim.")}</li>
+          <li>{t("Nothing in these Terms excludes liability that cannot be excluded by law (including for fraud, or death or personal injury caused by negligence).")}</li>
         </ul>
       </LegalSection>
 
       <LegalSection id="indemnity" title="13. Indemnity">
-        <p>
-          You will indemnify and hold us harmless from third party claims arising out of (a) Customer Content, (b) your breach of <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#customer-content">section 3</a> (data protection) or <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">section 4</a> (acceptable use), or (c) your violation of applicable law or the rights of your clients or contacts, except to the extent caused by our breach of these Terms.
-        </p>
+        <p>{t("You will indemnify and hold us harmless from third party claims arising out of (a) Customer Content, (b) your breach of")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#customer-content">{t("section 3")}</a>{' '}{t("(data protection) or")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="#acceptable-use">{t("section 4")}</a>{' '}{t("(acceptable use), or (c) your violation of applicable law or the rights of your clients or contacts, except to the extent caused by our breach of these Terms.")}</p>
       </LegalSection>
 
       <LegalSection id="changes" title="14. Changes to the Service and these Terms">
-        <p>We may update these Terms from time to time. Material changes will be notified to organization administrators by email or in app notice at least 30 days before taking effect (except changes required by law, which may take effect sooner). Continued use of the Service after the effective date constitutes acceptance. If you do not accept a material change, you may terminate and receive a pro rata refund of prepaid, unused fees for the remaining term.</p>
+        <p>{t("We may update these Terms from time to time. Material changes will be notified to organization administrators by email or in app notice at least 30 days before taking effect (except changes required by law, which may take effect sooner). Continued use of the Service after the effective date constitutes acceptance. If you do not accept a material change, you may terminate and receive a pro rata refund of prepaid, unused fees for the remaining term.")}</p>
       </LegalSection>
 
       <LegalSection id="general" title="15. General">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">Governing law and venue.</strong> These Terms are governed by the laws of Hong Kong SAR, and the courts of Hong Kong have exclusive jurisdiction, without regard to conflict of law rules.</li>
-          <li><strong className="text-black">Entire agreement.</strong> These Terms, the <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">Privacy Policy</a>, and any signed order form or contract between us form the entire agreement and supersede prior discussions. A signed contract prevails over these Terms on conflict.</li>
-          <li><strong className="text-black">Assignment.</strong> You may not assign these Terms without our consent; we may assign them in connection with a merger, acquisition, or sale of assets.</li>
-          <li><strong className="text-black">Severability; waiver.</strong> If a provision is unenforceable, the rest remains in effect. Failure to enforce a provision is not a waiver.</li>
-          <li><strong className="text-black">Force majeure.</strong> Neither party is liable for delay or failure caused by events beyond its reasonable control.</li>
-          <li><strong className="text-black">Notices.</strong> We may notify you via the email address on your account or in app. Legal notices to us go to <a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a> and {LEGAL_ADDRESS}.</li>
+          <li><strong className="text-black">{t("Governing law and venue.")}</strong>{' '}{t("These Terms are governed by the laws of Hong Kong SAR, and the courts of Hong Kong have exclusive jurisdiction, without regard to conflict of law rules.")}</li>
+          <li><strong className="text-black">{t("Entire agreement.")}</strong>{' '}{t("These Terms, the")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href="/privacy-policy">{t("Privacy Policy")}</a>{t(", and any signed order form or contract between us form the entire agreement and supersede prior discussions. A signed contract prevails over these Terms on conflict.")}</li>
+          <li><strong className="text-black">{t("Assignment.")}</strong>{' '}{t("You may not assign these Terms without our consent; we may assign them in connection with a merger, acquisition, or sale of assets.")}</li>
+          <li><strong className="text-black">{t("Severability; waiver.")}</strong>{' '}{t("If a provision is unenforceable, the rest remains in effect. Failure to enforce a provision is not a waiver.")}</li>
+          <li><strong className="text-black">{t("Force majeure.")}</strong>{' '}{t("Neither party is liable for delay or failure caused by events beyond its reasonable control.")}</li>
+          <li><strong className="text-black">{t("Notices.")}</strong>{' '}{t("We may notify you via the email address on your account or in app. Legal notices to us go to")}{' '}<a className="underline decoration-black/20 underline-offset-4 hover:text-black" href={`mailto:${LEGAL_CONTACT_EMAIL}`}>{LEGAL_CONTACT_EMAIL}</a>{' '}{t("and")}{' '}{t(LEGAL_ADDRESS)}.</li>
         </ul>
       </LegalSection>
 
@@ -2457,9 +2451,11 @@ function TermsOfServiceContent() {
 }
 
 function LegalDocumentsPage({ initialPage }: { initialPage: LegalPage }) {
+  const { language, handleLanguageChange } = useSiteLanguage();
+  const t = (text: string) => translate(LEGAL_COPY, language, text);
   const [page, setPage] = useState(initialPage);
   const isPrivacy = page === 'privacy';
-  const title = isPrivacy ? 'Privacy Policy' : 'Terms of Service';
+  const title = t(isPrivacy ? 'Privacy Policy' : 'Terms of Service');
 
   useEffect(() => {
     const previousTitle = document.title;
@@ -2487,16 +2483,19 @@ function LegalDocumentsPage({ initialPage }: { initialPage: LegalPage }) {
   };
 
   return (
+    <LanguageContext.Provider value={language}>
     <LegalPageLayout
+      languageControl={<HeaderSelector id="legal-language" label={SITE_COPY[language].selectors.language} ariaLabel={SITE_COPY[language].selectors.language} options={LANGUAGE_OPTIONS} value={language} onChange={handleLanguageChange} />}
       page={page}
       title={title}
-      updated={isPrivacy ? 'Last updated: 3 August 2026' : 'Last updated: 4 August 2026'}
+      updated={t(isPrivacy ? 'Last updated: 3 August 2026' : 'Last updated: 4 August 2026')}
       sections={isPrivacy ? PRIVACY_NAV : TERMS_NAV}
-      footer={<Footer />}
+      footer={<Footer language={language} />}
       onNavigate={navigate}
     >
       {isPrivacy ? <PrivacyPolicyContent /> : <TermsOfServiceContent />}
     </LegalPageLayout>
+    </LanguageContext.Provider>
   );
 }
 

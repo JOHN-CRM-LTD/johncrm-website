@@ -1,0 +1,10 @@
+/* Chinese glyphs need more line spacing than the compact English display type. */
+.product-page:lang(zh) h1,
+.product-page:lang(zh) h2,
+.industry-page:lang(zh) h1,
+.industry-page:lang(zh) h2,
+.legal-site:lang(zh) h1,
+.legal-site:lang(zh) h2 {
+  line-height: 1.25;
+  letter-spacing: -.025em;
+}

@@ -14,6 +14,12 @@
   background: var(--landing-paper);
 }
 .legal-header img { display: block; width: auto; height: 23px; }
+.legal-header-actions { display: flex; align-items: center; gap: 16px; }
+.legal-header-actions .header-selector__menu { right: 0; left: auto; translate: none; }
+@media (max-width: 540px) {
+  .legal-header-actions { gap: 6px; }
+  .legal-header-actions .legal-back-link { padding-inline: 6px; font-size: 10px; gap: 5px; }
+}
 .legal-back-link {
   display: inline-flex;
   align-items: center;
