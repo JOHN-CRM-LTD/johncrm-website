@@ -2,6 +2,10 @@
 .brochure-root{font-family:Inter,"Segoe UI",Arial,sans-serif;color:#102128;background:#f7f5f0;font-synthesis:none;--ink:#102128;--paper:#f7f5f0;--accent:#216d89;--line:#e4ded5;--ui:#fffefa;--text:#102128;--muted:#68777c}
 *{box-sizing:border-box}.brochure-root{margin:0}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;color:inherit;cursor:pointer}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible{outline:3px solid #2a88aa;outline-offset:6px}.icon{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}.symbol-defs{position:absolute;width:0;height:0;overflow:hidden}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .skip{position:fixed;z-index:100;left:24px;top:-80px;background:#fffefa;padding:14px 20px;border:1px solid #216d89;border-radius:6px;font-size:14px}.skip:focus{top:18px}.story{height:1100svh}.stage{position:sticky;top:0;height:100svh;background:var(--paper);color:var(--text);isolation:isolate}
+/* Mobile toolbars collapse while scrolling, so the visible viewport can grow past
+   100svh and leave a foreign band below the stage. Cover exactly that band with
+   the stage's own tone; height is 0 whenever dvh equals svh (desktop, toolbar shown). */
+.story::after{content:"";position:fixed;left:0;right:0;bottom:0;height:calc(100dvh - 100svh);background:var(--paper);pointer-events:none}
 /* Only the wide diagram and CRM mockups are clipped; the phones are direct stage
    children so they can layer over the stage edge instead of being cut off. */
 .stage-clip{position:absolute;inset:0;overflow:clip;pointer-events:none}
