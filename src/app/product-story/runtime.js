@@ -202,14 +202,16 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  ];
  const media = matchMedia('(prefers-reduced-motion: reduce)');
  let reduced = media.matches, dimensions = {}, pending = false, frame = 0, lastProgress = 0, currentChapter = -1;
+ let touching = false, touchMeasure = false;
  const clamp = (v,a=0,b=1) => Math.max(a,Math.min(b,v));
  const lerp = (a,b,t) => a+(b-a)*t;
  const ease = (a,b,p) => { const t=clamp((p-a)/(b-a)); return t*t*(3-2*t); };
- const show = (el,opacity) => { el.style.opacity=opacity.toFixed(4); el.style.visibility=opacity<.001?'hidden':'visible'; };
+ // Redundant style writes are the main per-frame cost on mobile; skip unchanged ones.
+ const show = (el,opacity) => { const s=opacity.toFixed(4); if(el._shown===s)return; el._shown=s; el.style.opacity=s; el.style.visibility=opacity<.001?'hidden':'visible'; };
  const pose = (el,x,y,scale,opacity=1,rotate=0,tilt=0) => {
   show(el,opacity); el.style.transform=`translate(-50%,-50%) translate3d(${x}px,${y}px,0) perspective(1400px) rotateY(${tilt}deg) rotateZ(${rotate}deg) scale(${scale})`;
  };
- function accessibility(el,visible) { el.inert=!visible;el.setAttribute('aria-hidden',String(!visible)); }
+ function accessibility(el,visible) { if(el._a11y===visible)return; el._a11y=visible; el.inert=!visible;el.setAttribute('aria-hidden',String(!visible)); }
  function heading(el,amount) { show(el,amount);el.style.transform=`translateY(${reduced?0:14*(1-amount)}px)`;accessibility(el,amount>.5); }
  // A ~31-second tour: brisk scene changes, conversational message timing,
  // and a longer hold on the completed inventory and automation result.
@@ -270,16 +272,34 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  listen($('tour-start'),'click',startTour);
  listen($('tour-toggle'),'click',()=>{if(!tour)return;if(tour.paused){tour.paused=false;tour.last=performance.now();syncTourControl();tourFrame=requestAnimationFrame(tourTick)}else pauseTour()});
  listen(window,'wheel',stopTour,{passive:true});
- listen(window,'touchstart',e=>{if(!e.composedPath()[0].closest?.('button,a,.language-picker'))stopTour()},{passive:true});
+ listen(window,'touchstart',e=>{touching=true;if(!e.composedPath()[0].closest?.('button,a,.language-picker'))stopTour()},{passive:true});
+ // Mobile toolbars fire resize in the middle of the scroll gesture; measuring then
+ // (full layout reads plus a compensating scroll) is what made scrolling stutter.
+ // Defer that work until the gesture ends and coalesce bursts into one frame.
+ const afterTouch=()=>{touching=false;if(touchMeasure){touchMeasure=false;measure()}};
+ listen(window,'touchend',afterTouch,{passive:true});
+ listen(window,'touchcancel',afterTouch,{passive:true});
+ let resizeFrame=0;
+ listen(window,'resize',()=>{if(resizeFrame)return;if(touching){touchMeasure=true;return}resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;measure()})},{passive:true});
  listen(window,'pointerdown',e=>{if(e.target===document.documentElement)stopTour()},{passive:true});
  listen(window,'keydown',e=>{if(e.key==='Escape'||(['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(e.key)&&!e.composedPath()[0].closest?.('button,a,input,select')))stopTour()});
  listen(document,'visibilitychange',()=>{if(document.hidden)pauseTour()});
  const channels = all('[data-channel]'), files = all('[data-file]'), staffMessages=all('#staff-phone [data-message]');
  const retailMessages=all('#retail-phone [data-message]'),retailThread=$('retail-phone').querySelector('.phone-thread'),retailThreadInner=retailThread.querySelector('.phone-thread-inner');
  const retailTyping=retailThread.querySelector('.typing'),retailTypingDots=all('#retail-phone .typing i');
- let channelPaths = [], networkLayout;
- function makeNetwork(mobile) {
-  const compact=mobile&&dimensions.h<=720;
+ // Every element update() touches each frame, resolved once instead of per frame.
+ const stageEl=$('stage'),overviewEl=$('overview'),heroCrm=$('hero-crm'),retailPhone=$('retail-phone'),networkEl=$('network');
+ const connectionHeading=$('connection-heading'),knowledgeHeading=$('knowledge-heading'),teamHeading=$('team-heading');
+ const knowledgeEl=$('knowledge'),knowledgeReady=$('knowledge-ready');
+ // The kb wires are rebuilt inside makeNetwork, so they are bound there, not here.
+ let kbWireGhost=null,kbWire=null;
+ const staffPhone=$('staff-phone'),staffTyping=staffPhone.querySelector('.typing'),teamCrm=$('team-crm'),teamChat=teamCrm.querySelector('.chat-messages');
+ const inventoryResponse=$('inventory-response'),automationReceipt=$('automation-receipt'),workflowNote=$('workflow-note'),demoEl=$('demo');
+ const pageProgress=$('page-progress'),chapterNumber=$('chapter-number'),chapterDots=all('.chapter-dots button');
+ const brandLight=root.querySelector('.brand .light'),brandDark=root.querySelector('.brand .dark');
+ const knowledgeSlots=all('.knowledge-slot'),stockCells=all('[data-stock]');
+ let channelPaths = [], wireBranches = [], wireSignals = [], networkLayout, networkLayoutKey='';
+ function makeNetwork(mobile,compact) {
   // Mobile reads left to right: Webchat, Business API, WhatsApp, custom API.
   const mobileSlots=[0,2,1,3];
   networkLayout = mobile
@@ -308,10 +328,21 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   const kbPath=`M${n.hub[0]} ${n.hub[1]+(mobile?32:42)}V${n.kb[1]-64}`;
   $('wire-paths').innerHTML=paths.map((d,i)=>`<g class="wire-branch" data-branch="${i}"><path class="wire-ghost" d="${d}"/><path class="wire-live" pathLength="1" d="${d}" data-wire="${i}"/>${endpoints[i].map(([x,y])=>`<circle class="wire-terminal" cx="${x}" cy="${y}" r="2.5"/>`).join('')}<circle class="signal" r="2.5" data-signal="${i}"/></g>`).join('')+`<path class="wire-ghost" id="kb-wire-ghost" d="${kbPath}"/><path class="wire-live" id="kb-wire" pathLength="1" d="${kbPath}"/>`;
   channelPaths=all('[data-wire]').map(path=>({path,length:path.getTotalLength()}));
+ wireBranches=[...$('wire-paths').querySelectorAll('[data-branch]')];
+ wireSignals=[...$('wire-paths').querySelectorAll('[data-signal]')];
+ kbWireGhost=$('kb-wire-ghost');kbWire=$('kb-wire');
  }
  function measure() {
-  const preserve=dimensions.total && scrollY>=dimensions.top && scrollY<=dimensions.top+dimensions.total;
-  const w=document.documentElement.clientWidth,h=innerHeight,mobile=w<=760;
+  // Keep the scroll anchor while the user is between chapters, but never
+  // program-scroll during a touch gesture — that is what made mobile feel rough.
+  const preserve=!touching&&dimensions.total&&scrollY>=dimensions.top&&scrollY<=dimensions.top+dimensions.total;
+  const w=document.documentElement.clientWidth,mobile=w<=760;
+  // The sticky stage keeps a fixed 100svh box while mobile toolbars come and go;
+  // measure against that box instead of innerHeight so the phone always fits and
+  // the scroll range stays stable, instead of jumping with every toolbar change.
+  const h=stageEl.offsetHeight||innerHeight,compact=mobile&&h<=720;
+  const layoutKey=`${mobile}:${compact}`;
+  if(layoutKey!==networkLayoutKey){networkLayoutKey=layoutKey;makeNetwork(mobile,compact)}
   dimensions={w,h,mobile,top:host.getBoundingClientRect().top+scrollY,total:Math.max(1,$('story').offsetHeight-h)};
   dimensions.phoneScale=Math.min((w-52)/306,(h-157)/612,1.04);
   const retailThreadStyle=getComputedStyle(retailThread),retailSpace=retailThread.clientHeight-parseFloat(retailThreadStyle.paddingTop)-parseFloat(retailThreadStyle.paddingBottom);
@@ -324,12 +355,12 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   dimensions.appBottom=h-104;
   dimensions.staffScale=Math.min((w-60)/306,(dimensions.appBottom-dimensions.appTop)/612,.94);
   dimensions.staffPush=staffMessages[1].offsetHeight+(parseFloat(getComputedStyle($('staff-phone').querySelector('.phone-thread-inner')).rowGap)||0);
-  dimensions.appScale=mobile?Math.min((w-28)/366,1.06):Math.min((w-100)/1120,1.1);
-  $('team-crm').style.height=`${(dimensions.appBottom-dimensions.appTop)/dimensions.appScale}px`;
-  dimensions.netScale=mobile?Math.min((w-24)/420,(h-228)/(h<=720?610:690)):Math.min((w-90)/1100,(h-232)/650,1.02);
-  makeNetwork(mobile);
-  if(preserve)window.scrollTo({top:dimensions.top+lastProgress/100*dimensions.total,behavior:'instant'});
-  update();
+ dimensions.appScale=mobile?Math.min((w-28)/366,1.06):Math.min((w-100)/1120,1.1);
+ $('team-crm').style.height=`${(dimensions.appBottom-dimensions.appTop)/dimensions.appScale}px`;
+ dimensions.chatRange=Math.max(0,teamChat.scrollHeight-teamChat.clientHeight);
+ dimensions.netScale=mobile?Math.min((w-24)/420,(h-228)/(compact?610:690)):Math.min((w-90)/1100,(h-232)/650,1.02);
+ if(preserve)window.scrollTo({top:dimensions.top+lastProgress/100*dimensions.total,behavior:'instant'});
+ update();
  }
  function update() {
   pending=false;
@@ -338,25 +369,28 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   if(reduced) p=raw<14?0:raw<34?30.5:raw<46?43:raw<61?57:raw<73?68:raw<94?88:100;
   const {w,h,mobile}=dimensions;
   const entry=ease(10,17,p),retailOut=ease(31,36,p),networkIn=ease(32,37,p),networkOut=ease(58,63,p),knowledgeIn=ease(45,49,p);
-  const staffIn=ease(59,64,p),morph=ease(70,78,p),ending=ease(91,98,p);
-  const dark=ease(58,64,p)*(1-ease(91,98,p));
-  if(dark!==lastTone){lastTone=dark;onToneChange?.(dark)}
+ const staffIn=ease(59,64,p),morph=ease(70,78,p),ending=ease(91,98,p);
+ const dark=ease(58,64,p)*(1-ease(91,98,p));
+ // Recolour the scene only while the tone is actually changing, not on every frame.
+ if(dark!==lastTone){
+  lastTone=dark;onToneChange?.(dark);
   const mix=(a,b)=>a.map((v,i)=>Math.round(lerp(v,b[i],dark))).join(',');
   shell.style.setProperty('--paper',`rgb(${mix([247,245,240],[16,42,50])})`);
   shell.style.setProperty('--text',`rgb(${mix([16,33,40],[247,245,240])})`);
   shell.style.setProperty('--muted',`rgb(${mix([104,119,124],[160,183,186])})`);
-  root.querySelector('.brand .light').style.opacity=1-dark;root.querySelector('.brand .dark').style.opacity=dark;
-  show($('overview'),1-entry);$('overview').style.transform=`translateY(${-entry*35}px)`;accessibility($('overview'),entry<.5);
+  brandLight.style.opacity=1-dark;brandDark.style.opacity=dark;
+ }
+ show(overviewEl,1-entry);overviewEl.style.transform=`translateY(${-entry*35}px)`;accessibility(overviewEl,entry<.5);
   // The opening app exits before the phone conversation settles in the centre.
   const heroScale=mobile?Math.min((w-20)/720,(h-455)/570,.60):Math.min(w*.84/1120,(h-Math.max(122,h*.13)-110)/570,1.30);
   const hx=mobile?Math.max(80,24+1120*heroScale/2-w/2):w*.45+1120*heroScale/2-w/2,hy=mobile?h/2-125-570*heroScale/2:h/2-110-570*heroScale/2;
-  pose($('hero-crm'),hx+entry*(mobile?200:200),hy+entry*35,heroScale*(1-.06*entry),1-ease(10,16,p));
-  accessibility($('hero-crm'),p<14);
+ pose(heroCrm,hx+entry*(mobile?200:200),hy+entry*35,heroScale*(1-.06*entry),1-ease(10,16,p));
+ accessibility(heroCrm,p<14);
   const heroPhoneScale=mobile?Math.min(.50,(h-430)/612):Math.min(.84,(570*heroScale-92)/612);
   const phoneEnter=ease(10,19,p),phoneScale=lerp(heroPhoneScale,dimensions.phoneScale,phoneEnter)*(1-.72*retailOut);
   const px=lerp(mobile?Math.min(w*.29,w/2-306*heroPhoneScale/2-12):Math.min(w*.35,w/2-306*heroPhoneScale/2-24),0,phoneEnter),py=lerp(mobile?h/2-105-612*heroPhoneScale/2:h/2-88-612*heroPhoneScale/2,12,phoneEnter)-retailOut*35;
-  pose($('retail-phone'),px,py,phoneScale,1-retailOut);
-  accessibility($('retail-phone'),p>=14&&p<34);
+ pose(retailPhone,px,py,phoneScale,1-retailOut);
+ accessibility(retailPhone,p>=14&&p<34);
   const retailArrivals=retailEntranceRanges.map(([from,to])=>ease(from,to,p));
   retailMessages.forEach((el,i)=>{const a=Math.max(i<2?1-ease(8,12,p):0,retailArrivals[i]);show(el,a);el.style.transform=`translateY(${20*(1-a)}px) scale(${lerp(.92,1,a)})`;});
   // Measure translated bubble heights once; scroll the conversation with each new arrival.
@@ -372,38 +406,39 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   }
   // Channels draw outward. Document icons then move into the same connected hub.
   const netOpacity=networkIn*(1-networkOut),netY=mobile?h*.035-(h<=720?12:0):-h*.006;
-  pose($('network'),0,netY,dimensions.netScale*(1+.045*(1-networkIn)-.06*networkOut),netOpacity);
-  accessibility($('network'),p>=34&&p<61);
-  heading($('connection-heading'),networkIn*(1-ease(45,47,p))*(1-networkOut));
-  heading($('knowledge-heading'),ease(47,49,p)*(1-networkOut));
-  // Overlapping, linear draws keep the signals moving through every branch.
-  // The shared scroll motion supplies the easing; individual wires never pause mid-path.
-  channels.forEach((el,i)=>{const a=ease(35+i*.3,37+i*.3,p);show(el,a);el.style.transform=`translate(-50%,-50%) translateY(${10*(1-a)}px)`;const draw=clamp((p-(34.4+i*.3))/7.7);show($('wire-paths').querySelector(`[data-branch="${i}"]`),ease(34+i*.3,35+i*.3,p));channelPaths[i].path.style.strokeDashoffset=1-draw;const dot=$('wire-paths').querySelector(`[data-signal="${i}"]`);const pos=channelPaths[i].path.getPointAtLength(channelPaths[i].length*draw);dot.setAttribute('cx',pos.x);dot.setAttribute('cy',pos.y);show(dot,draw>0&&draw<1?1:0);});
-  show($('knowledge'),ease(44,47,p));show($('kb-wire-ghost'),ease(42.25,44,p));$('kb-wire').style.strokeDashoffset=1-clamp((p-42.25)/3.75);
-  files.forEach((el,i)=>{const appear=ease(45+i*.65,46.3+i*.65,p),ingest=ease(49.2+i*1.3,52+i*1.3,p);const n=networkLayout;el.style.left=`${lerp(n.fileX[i],n.destX[i],ingest)}px`;el.style.top=`${lerp(n.fileY,n.destY,ingest)-Math.sin(ingest*Math.PI)*33}px`;el.style.transform=`translate(-50%,-50%) scale(${lerp(1,.64,ingest)}) rotate(${Math.sin(ingest*Math.PI)*(i%2?7:-7)}deg)`;show(el,appear);show(el.querySelector('.file-caption'),1-ease(.05,.6,ingest));show(root.querySelectorAll('.knowledge-slot')[i],1-ease(.3,.9,ingest));});
-  show($('knowledge-ready'),ease(55.9,56.1,p));
-  // Staff phone shares the request with the expanding CRM conversation.
-  heading($('team-heading'),staffIn*(1-ending));
-  pose($('staff-phone'),-morph*(mobile?90:250),(dimensions.appTop+dimensions.appBottom-h)/2-morph*24,dimensions.staffScale*(1-.6*morph),staffIn*(1-ease(72,77,p)),-morph*7,morph*-12);
-  accessibility($('staff-phone'),p>=61&&p<75);
+ pose(networkEl,0,netY,dimensions.netScale*(1+.045*(1-networkIn)-.06*networkOut),netOpacity);
+ accessibility(networkEl,p>=34&&p<61);
+ heading(connectionHeading,networkIn*(1-ease(45,47,p))*(1-networkOut));
+ heading(knowledgeHeading,ease(47,49,p)*(1-networkOut));
+ // Overlapping, linear draws keep the signals moving through every branch.
+ // The shared scroll motion supplies the easing; individual wires never pause mid-path.
+ channels.forEach((el,i)=>{const a=ease(35+i*.3,37+i*.3,p);show(el,a);el.style.transform=`translate(-50%,-50%) translateY(${10*(1-a)}px)`;const draw=clamp((p-(34.4+i*.3))/7.7);show(wireBranches[i],ease(34+i*.3,35+i*.3,p));channelPaths[i].path.style.strokeDashoffset=1-draw;const dot=wireSignals[i];const pos=channelPaths[i].path.getPointAtLength(channelPaths[i].length*draw);dot.setAttribute('cx',pos.x);dot.setAttribute('cy',pos.y);show(dot,draw>0&&draw<1?1:0);});
+ show(knowledgeEl,ease(44,47,p));show(kbWireGhost,ease(42.25,44,p));kbWire.style.strokeDashoffset=1-clamp((p-42.25)/3.75);
+ files.forEach((el,i)=>{const appear=ease(45+i*.65,46.3+i*.65,p),ingest=ease(49.2+i*1.3,52+i*1.3,p);const n=networkLayout;const fx=lerp(n.fileX[i],n.destX[i],ingest),fy=lerp(n.fileY,n.destY,ingest)-Math.sin(ingest*Math.PI)*33;el.style.transform=`translate3d(${fx}px,${fy}px,0) translate(-50%,-50%) scale(${lerp(1,.64,ingest)}) rotate(${Math.sin(ingest*Math.PI)*(i%2?7:-7)}deg)`;show(el,appear);show(el.querySelector('.file-caption'),1-ease(.05,.6,ingest));show(knowledgeSlots[i],1-ease(.3,.9,ingest));});
+ show(knowledgeReady,ease(55.9,56.1,p));
+ // Staff phone shares the request with the expanding CRM conversation.
+ heading(teamHeading,staffIn*(1-ending));
+ pose(staffPhone,-morph*(mobile?90:250),(dimensions.appTop+dimensions.appBottom-h)/2-morph*24,dimensions.staffScale*(1-.6*morph),staffIn*(1-ease(72,77,p)),-morph*7,morph*-12);
+ accessibility(staffPhone,p>=61&&p<75);
   // Lift the stack from the first arrival, without parking it between messages.
   // Short bubble entrances share the measured lift so translated messages stay apart.
   const staffArrival=[ease(62.8,63.9,p),ease(64.8,65.9,p)];
   const pushedOffset=dimensions.staffPush*(1-ease(62.8,66,p));
   staffMessages.forEach((el,i)=>{const a=staffArrival[i];show(el,a);el.style.transform=`translate3d(0,${pushedOffset+18*(1-a)}px,0)`;});
-  show($('staff-phone').querySelector('.typing'),ease(68,69,p)*(1-ease(73,75,p)));
-  const appIn=ease(71,78,p),appOpacity=appIn*(1-ending);
-  pose($('team-crm'),lerp(mobile?36:125,0,appIn),(dimensions.appTop+dimensions.appBottom-h)/2+25*(1-appIn)-25*ending,dimensions.appScale*lerp(.66,1,appIn),appOpacity,0,lerp(9,0,appIn));
-  accessibility($('team-crm'),p>=75&&p<94);
-  const response=ease(77.5,80,p);show($('inventory-response'),response);$('inventory-response').style.transform=`translateY(${14*(1-response)}px)`;
-  all('[data-stock]').forEach((el,i)=>{const a=ease(79+i*1.1,80.5+i*1.1,p);show(el,a);el.style.transform=`translateY(${8*(1-a)}px)`;});
-  const chatScroll=$('team-crm').querySelector('.chat-messages');chatScroll.scrollTop=Math.max(0,chatScroll.scrollHeight-chatScroll.clientHeight)*ease(79,87,p);
-  const confirmation=ease(84,86.5,p);show($('automation-receipt'),confirmation);$('automation-receipt').style.transform=`translateY(${12*(1-confirmation)}px)`;
-  show($('workflow-note'),staffIn*(1-ending));
-  heading($('demo'),ending);
-  $('page-progress').style.transform=`scaleX(${raw/100})`;
-  let ch=0;chapters.forEach((c,i)=>{if(raw>=c.begin)ch=i});
-  if(ch!==currentChapter){currentChapter=ch;$('chapter-number').textContent=String(ch+1).padStart(2,'0');all('.chapter-dots button').forEach((el,i)=>{if(i===ch)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current')});}
+ show(staffTyping,ease(68,69,p)*(1-ease(73,75,p)));
+ const appIn=ease(71,78,p),appOpacity=appIn*(1-ending);
+ pose(teamCrm,lerp(mobile?36:125,0,appIn),(dimensions.appTop+dimensions.appBottom-h)/2+25*(1-appIn)-25*ending,dimensions.appScale*lerp(.66,1,appIn),appOpacity,0,lerp(9,0,appIn));
+ accessibility(teamCrm,p>=75&&p<94);
+ const response=ease(77.5,80,p);show(inventoryResponse,response);inventoryResponse.style.transform=`translateY(${14*(1-response)}px)`;
+ stockCells.forEach((el,i)=>{const a=ease(79+i*1.1,80.5+i*1.1,p);show(el,a);el.style.transform=`translateY(${8*(1-a)}px)`;});
+ const chatTarget=dimensions.chatRange*ease(79,87,p);
+ if(Math.abs(teamChat.scrollTop-chatTarget)>.25)teamChat.scrollTop=chatTarget;
+ const confirmation=ease(84,86.5,p);show(automationReceipt,confirmation);automationReceipt.style.transform=`translateY(${12*(1-confirmation)}px)`;
+ show(workflowNote,staffIn*(1-ending));
+ heading(demoEl,ending);
+ pageProgress.style.transform=`scaleX(${raw/100})`;
+ let ch=0;chapters.forEach((c,i)=>{if(raw>=c.begin)ch=i});
+ if(ch!==currentChapter){currentChapter=ch;chapterNumber.textContent=String(ch+1).padStart(2,'0');chapterDots.forEach((el,i)=>{if(i===ch)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current')});}
  }
  function queue(){if(!pending){pending=true;frame=requestAnimationFrame(update)}}
  function jump(point,instant=false){stopTour();lastProgress=point;window.scrollTo({top:dimensions.top+dimensions.total*point/100,behavior:reduced||instant?'instant':'smooth'});queue()}
@@ -413,7 +448,6 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  listen(root.querySelector('.skip'),'click',e=>{e.preventDefault();stopTour();shell.classList.add('reading');lastTone=0;onToneChange?.(0);$('readable').focus();window.scrollTo({top:0,behavior:'instant'})});
  listen($('back-animation'),'click',()=>{shell.classList.remove('reading');measure();jump(0,true);$('tour-start').focus({preventScroll:true})});
  listen(window,'scroll',()=>{if(!shell.classList.contains('reading'))queue()},{passive:true});
- listen(window,'resize',measure,{passive:true});
  listen(window,'hashchange',()=>navigateHash(location.hash));
 
  function chapterForHash(hash) {
