@@ -337,9 +337,11 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   // program-scroll during a touch gesture — that is what made mobile feel rough.
   const preserve=!touching&&dimensions.total&&scrollY>=dimensions.top&&scrollY<=dimensions.top+dimensions.total;
   const w=document.documentElement.clientWidth,mobile=w<=760;
-  // The sticky stage keeps a fixed 100svh box while mobile toolbars come and go;
-  // measure against that box instead of innerHeight so the phone always fits and
-  // the scroll range stays stable, instead of jumping with every toolbar change.
+  // The sticky stage is sized 100dvh so it always reaches the physical viewport
+  // bottom, even while mobile toolbars collapse mid-scroll. Measure against the
+  // live stage box (not innerHeight) so the phone always fits; toolbar changes
+  // land as a resize, which is deferred to the end of the touch gesture and then
+  // re-measured with the scroll anchor preserved.
   const h=stageEl.offsetHeight||innerHeight,compact=mobile&&h<=720;
   const layoutKey=`${mobile}:${compact}`;
   if(layoutKey!==networkLayoutKey){networkLayoutKey=layoutKey;makeNetwork(mobile,compact)}
