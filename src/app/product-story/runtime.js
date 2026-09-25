@@ -280,7 +280,7 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  listen(window,'touchend',afterTouch,{passive:true});
  listen(window,'touchcancel',afterTouch,{passive:true});
  let resizeFrame=0;
- listen(window,'resize',()=>{if(resizeFrame)return;if(touching){touchMeasure=true;return}resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;measure()})},{passive:true});
+ listen(window,'resize',()=>{viewportBand=viewportBounds();if(resizeFrame)return;if(touching){touchMeasure=true;return}resizeFrame=requestAnimationFrame(()=>{resizeFrame=0;measure()})},{passive:true});
  listen(window,'pointerdown',e=>{if(e.target===document.documentElement)stopTour()},{passive:true});
  listen(window,'keydown',e=>{if(e.key==='Escape'||(['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(e.key)&&!e.composedPath()[0].closest?.('button,a,input,select')))stopTour()});
  listen(document,'visibilitychange',()=>{if(document.hidden)pauseTour()});
@@ -299,6 +299,31 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  const brandLight=root.querySelector('.brand .light'),brandDark=root.querySelector('.brand .dark');
  const knowledgeSlots=all('.knowledge-slot'),stockCells=all('[data-stock]');
  let channelPaths = [], wireBranches = [], wireSignals = [], networkLayout, networkLayoutKey='';
+ // CSS viewport units re-resolve only after mobile toolbars settle, so a 100dvh
+ // stage lagged behind the toolbar animation and the timeline snapped down late.
+ // visualViewport reports the true visible height while the toolbar is still
+ // moving: drive the story and stage from it every frame, clamped to the
+ // [100svh, 100lvh] band so toolbar changes resize the stage but the on-screen
+ // keyboard (which shrinks far past svh) and pinch zoom never do.
+ const viewportSizer=document.createElement('div');
+ viewportSizer.style.cssText='position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;height:0';
+ root.appendChild(viewportSizer);
+ function viewportBounds(){
+  viewportSizer.style.height='100svh';const min=viewportSizer.offsetHeight||1;
+  viewportSizer.style.height='100lvh';const max=Math.max(viewportSizer.offsetHeight,min);
+  viewportSizer.style.height='0';return [min,max];
+ }
+ let viewportBand=viewportBounds(),viewportFrame=0,viewportSettle=0;
+ function trackViewport(){
+  const vv=window.visualViewport;if(!vv||vv.scale!==1)return;
+  const h=Math.min(Math.max(vv.height,viewportBand[0]),viewportBand[1]);
+  if(Math.abs(h-stageEl.offsetHeight)<1)return;
+  stageEl.style.height=`${h}px`;$('story').style.height=`${h*11}px`;
+  // Measuring mid-animation fights scroll momentum (instant re-anchor scrolls);
+  // let the toolbar settle first, then re-measure once.
+  clearTimeout(viewportSettle);viewportSettle=setTimeout(()=>{viewportSettle=0;measure()},180);
+ }
+ if(window.visualViewport)listen(window.visualViewport,'resize',()=>{if(viewportFrame)return;viewportFrame=requestAnimationFrame(()=>{viewportFrame=0;trackViewport()})},{passive:true});
  function makeNetwork(mobile,compact) {
   // Mobile reads left to right: Webchat, Business API, WhatsApp, custom API.
   const mobileSlots=[0,2,1,3];
@@ -342,7 +367,11 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   // live stage box (not innerHeight) so the phone always fits; toolbar changes
   // land as a resize, which is deferred to the end of the touch gesture and then
   // re-measured with the scroll anchor preserved.
-  const h=stageEl.offsetHeight||innerHeight,compact=mobile&&h<=720;
+  const h=stageEl.offsetHeight||innerHeight;
+  // Pin the compact layout choice to the stable small-viewport height: with a live
+  // stage height, a toolbar collapse could cross the 720px threshold mid-gesture
+  // and rebuild the whole network diagram.
+  const compact=mobile&&viewportBand[0]<=720;
   const layoutKey=`${mobile}:${compact}`;
   if(layoutKey!==networkLayoutKey){networkLayoutKey=layoutKey;makeNetwork(mobile,compact)}
   dimensions={w,h,mobile,top:host.getBoundingClientRect().top+scrollY,total:Math.max(1,$('story').offsetHeight-h)};
@@ -491,12 +520,14 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   }
  });
  setLanguage(initialLanguage);setReduced(reduced);
+ // Adopt the true visible height from the first paint, before any toolbar moves.
+ trackViewport();
  // Fonts and product images can change the message stack after the first measurement.
  const retailLayoutObserver=new ResizeObserver(measure);
  retailLayoutObserver.observe(retailThreadInner);
  navigateHash(location.hash);
  return {
   setLanguage,
-  destroy(){lifecycle.abort();retailLayoutObserver.disconnect();stopTour();cancelAnimationFrame(frame);},
+  destroy(){lifecycle.abort();retailLayoutObserver.disconnect();stopTour();cancelAnimationFrame(frame);clearTimeout(viewportSettle);},
  };
 }

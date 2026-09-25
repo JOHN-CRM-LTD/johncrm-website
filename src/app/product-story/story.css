@@ -5,7 +5,9 @@
    while scrolling, which grows the visible viewport past 100svh. 100dvh keeps the
    stage — and the timeline pinned to its bottom edge — flush with the real viewport,
    so the stage only lifts off the bottom when the story hands off to pricing. The
-   svh values are the fallback for engines without dynamic viewport units. */
+   runtime additionally tracks visualViewport so the height follows the toolbar
+   animation frame by frame instead of snapping after it settles; these rules are
+   the first paint and no-JS fallback. */
 .story{height:1100svh;height:1100dvh}.stage{position:sticky;top:0;height:100svh;height:100dvh;background:var(--paper);color:var(--text);isolation:isolate}
 /* Only the wide diagram and CRM mockups are clipped; the phones are direct stage
    children so they can layer over the stage edge instead of being cut off. */
