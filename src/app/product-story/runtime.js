@@ -131,11 +131,9 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   ['A better way to keep','用更好嘅方式','用更好的方式'],
   ['business moving.','推動業務向前','推动业务向前'],
   ['Let’s build your connected workspace.','一齊建立你嘅互通工作空間','一起建立你的互通工作空间'],
-  ['Illustrative workflow · configured inventory API · sample data','流程示範 · 已設定庫存 API · 範例數據','流程演示 · 已配置库存 API · 示例数据'],
-  ['Scroll to explore','捲動探索','滚动探索'],
-  ['Back to the beginning','返回開場','返回开场'],
-  ['Return to beginning','返回開場','返回开场'],
-  ['Next scene','下一幕','下一幕'],
+ ['Illustrative workflow · configured inventory API · sample data','流程示範 · 已設定庫存 API · 範例數據','流程演示 · 已配置库存 API · 示例数据'],
+ ['Back to the beginning','返回開場','返回开场'],
+ ['Return to beginning','返回開場','返回开场'],
   ['Skip animation and read the brochure','略過動畫，閱讀文字版','跳过动画，阅读文字版'],
   ['Back to animation','返回動畫','返回动画'],
   ['Revenue beyond business hours.','營收增長，不限營業時間。','营收增长，不限营业时间。'],
@@ -167,7 +165,7 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   ['JOHN CRM · See the conversation move.','JOHN CRM · 讓對話推動業務','JOHN CRM · 让对话推动业务']
  ].map(([en,hk,cn])=>[en,{'zh-HK':hk,'zh-CN':cn}]));
  const t=text=>language==='en'?text:(translations.get(text)?.[language]??text);
- const languageExcluded='.language-picker,#next-button,#tour-toggle,#chapter-number,script,style,svg';
+ const languageExcluded='.language-picker,#tour-toggle,#chapter-number,script,style,svg';
  const originalText=[];
  const walker=document.createTreeWalker(shell,NodeFilter.SHOW_TEXT);
  while(walker.nextNode()){
@@ -202,7 +200,6 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   {name:'connections',point:43,begin:34}, {name:'knowledge',point:57,begin:46},
   {name:'team',point:88,begin:61}, {name:'demo',point:100,begin:94}
  ];
- const stops = [0,30.5,43,57,68,88,100];
  const media = matchMedia('(prefers-reduced-motion: reduce)');
  let reduced = media.matches, dimensions = {}, pending = false, frame = 0, lastProgress = 0, currentChapter = -1;
  const clamp = (v,a=0,b=1) => Math.max(a,Math.min(b,v));
@@ -407,13 +404,10 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   $('page-progress').style.transform=`scaleX(${raw/100})`;
   let ch=0;chapters.forEach((c,i)=>{if(raw>=c.begin)ch=i});
   if(ch!==currentChapter){currentChapter=ch;$('chapter-number').textContent=String(ch+1).padStart(2,'0');all('.chapter-dots button').forEach((el,i)=>{if(i===ch)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current')});}
-  $('next-button').setAttribute('aria-label',t(raw>98?'Explore plans':'Next scene'));
-  root.querySelector('.next-label').textContent=t(raw>98?'Explore plans':'Scroll to explore');
  }
  function queue(){if(!pending){pending=true;frame=requestAnimationFrame(update)}}
  function jump(point,instant=false){stopTour();lastProgress=point;window.scrollTo({top:dimensions.top+dimensions.total*point/100,behavior:reduced||instant?'instant':'smooth'});queue()}
  all('[data-stop]').forEach(el=>listen(el,'click',e=>{e.preventDefault();const chapter=chapters.find(c=>c.name===el.dataset.stop);if(chapter){history.replaceState(null,'',`#${chapter.name}`);jump(chapter.point)}}));
- listen($('next-button'),'click',()=>{const next=stops.find(s=>s>lastProgress+1);if(next===undefined){stopTour();onNavigate('pricing')}else jump(next)});
  function setReduced(value){reduced=value;shell.classList.toggle('reduced',value);queue()}
  listen(media,'change',e=>setReduced(e.matches));
  listen(root.querySelector('.skip'),'click',e=>{e.preventDefault();stopTour();shell.classList.add('reading');lastTone=0;onToneChange?.(0);$('readable').focus();window.scrollTo({top:0,behavior:'instant'})});
