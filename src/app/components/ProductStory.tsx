@@ -1,12 +1,13 @@
 import { useLayoutEffect, useRef } from 'react';
 import markup from '../product-story/story.html?raw';
 import styles from '../product-story/story.css?raw';
+import phoneStyles from '../product-story/phone-frame.css?raw';
 import productPhoto from '../../assets/product-demo/red-sweatshirt.jpg';
 import { mountProductStory, type StoryController, type StoryLanguage } from '../product-story/runtime.js';
 import { createSectionTransition } from '../../lib/sectionTransition';
 import { createHomePageEntrance } from '../../lib/homePageEntrance';
 
-const storyMarkup = `<style>${styles}</style>${markup.replace('__RETAIL_PHOTO_URL__', productPhoto)}`;
+const storyMarkup = `<style>${styles}\n${phoneStyles}</style>${markup.replace('__RETAIL_PHOTO_URL__', productPhoto)}`;
 const languages = { EN: 'en', HK: 'zh-HK', CN: 'zh-CN' } as const;
 
 function navigateTo(section: 'pricing' | 'contact') {

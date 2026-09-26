@@ -74,7 +74,7 @@ test('uses the JOHN CRM SVG in every site logo placement', () => {
   const logoSections = [
     appSource.slice(appSource.indexOf('function LoadingScreen'), appSource.indexOf('/* ----------------------------------- nav')),
     appSource.slice(appSource.indexOf('function Nav('), appSource.indexOf('/* ----------------------------- hero + dashboard')),
-    appSource.slice(appSource.indexOf('function Footer()'), appSource.indexOf('/* ----------------------------------- app')),
+    appSource.slice(appSource.indexOf('function Footer('), appSource.indexOf('/* ----------------------------------- app')),
   ];
 
   logoSections.forEach((section) => assert.match(section, /src=\{johnCrmLogo\}/));

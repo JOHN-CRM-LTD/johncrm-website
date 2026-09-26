@@ -181,7 +181,7 @@ html:has(.landing-site) { scroll-behavior: auto; }
   .landing-site .site-header[data-menu-open='true'] > div.absolute { top: 72px; height: calc(100dvh - 72px); background: var(--landing-paper); border: 0; }
   .landing-site .site-header [role='menu'] { z-index: 60; }
   .landing-site .site-header button[aria-haspopup='menu'] { padding-block: 16px; }
-  .landing-site .site-header button[aria-label$='menu'] { padding: 10px; margin-right: -10px; }
+  .landing-site .site-header .mobile-nav-toggle { padding: 10px; margin-right: -10px; }
   .landing-site #pricing, .landing-site #contact { padding-block: 72px; }
   .landing-site #contact { padding-top: 16px; }
   .pricing-heading-layout { flex-direction: column; align-items: flex-start; gap: 28px; }

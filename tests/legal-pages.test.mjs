@@ -17,7 +17,7 @@ test('the router serves a dedicated terms of service page', () => {
   assert.match(source, /path === '\/terms-of-service'/);
   assert.match(source, /<TermsOfServicePage \/>/);
   assert.match(source, /\{ label: 'Terms', ariaLabel: 'Terms of Service' \}/);
-  assert.match(source, /const FOOTER_LINK_HREFS = \['\/privacy-policy', '\/terms-of-service', '#top'\]/);
+  assert.match(source, /const FOOTER_LINK_HREFS = \['\/privacy-policy', '\/terms-of-service', '\/docs'\]/);
   assert.match(source, /<LegalDocumentsPage initialPage="terms" \/>/);
   assert.match(source, /document\.title = `\$\{title\} · JOHN CRM`/);
 });

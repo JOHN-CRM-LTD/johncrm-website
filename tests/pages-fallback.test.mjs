@@ -18,6 +18,31 @@ test('production build emits a GitHub Pages fallback for deep links', async () =
 
   assert.equal(fallbackHtml, indexHtml, '404.html should bootstrap the same SPA as index.html');
 
+  const manifest = JSON.parse(await readFile(new URL('../dist/.vite/manifest.json', import.meta.url), 'utf8'));
+  const docsEntry = Object.values(manifest).find(entry => entry.src === 'src/app/docs/DocsPage.tsx');
+  assert.ok(docsEntry?.css?.length, 'the lazy documentation entry must include its production styles');
+  for (const [path, title] of [
+    ['docs', 'Getting started'],
+    ['docs/john-support', 'John Support'],
+    ['docs/conversations', 'Conversations & webchat'],
+    ['docs/knowledge-base', 'Knowledge Base'],
+    ['docs/automations', 'Automations'],
+    ['docs/users-and-access', 'Users & access'],
+  ]) {
+    const html = await readFile(new URL(`../dist/${path}/index.html`, import.meta.url), 'utf8');
+    const escapedTitle = title.replaceAll('&', '&amp;');
+    assert.ok(html.includes(`<title>${escapedTitle} · JOHN CRM Documentation</title>`), `${path} must have an article title`);
+    assert.match(html, /<h1\b[^>]*>[\s\S]+?<\/h1>/, 'article headings must exist without JavaScript');
+    assert.ok((html.match(/<section\b/g) ?? []).length >= 3, `${path} must contain the complete article`);
+    assert.match(html, /<meta name="description" content="[^"\n]{30,}"/);
+    assert.match(html, /<script\b[^>]*type="module"[^>]*src="\/assets\//);
+    for (const stylesheet of docsEntry.css) assert.ok(html.includes(`href="/${stylesheet}"`), 'docs CSS must be present before JavaScript');
+    assert.match(html, /src="\/docs\/johncrm\.svg"/);
+    assert.doesNotMatch(html, /(?:src|href)="\/src\//, 'SSR must not leak development asset URLs');
+    assert.match(html, /href="\/#contact"/);
+    assert.match(html, /href="\/#pricing"/);
+  }
+
   for (const [slug, title, topic] of [
     ['retail', 'Retail', 'clothing reservations'],
     ['healthcare', 'Healthcare', 'existing database'],

@@ -9,6 +9,7 @@
 .landing-site .site-header .industries-menu__panel a { display: flex; align-items: center; gap: 15px; padding: 16px 12px; border-radius: 10px; color: #102a32; font: 400 14px/1.4 Inter, sans-serif; text-transform: none; letter-spacing: 0; transition: background 180ms ease; }
 .landing-site .site-header .industries-menu__panel a:is(:hover, :focus-visible, [aria-current='page']) { background: #edf3f1; }
 .industries-menu__panel a > svg { flex-shrink: 0; color: #216d89; }
+.support-menu .industries-menu__panel a[aria-current] { background: #edf3f1; }
 .industries-menu__panel strong { display: block; font-weight: 500; }
 .industries-menu__panel small { display: block; margin-top: 4px; color: #62747b; font-size: 11px; }
 .industries-menu__arrow { margin-left: auto; opacity: 0; transform: translate(-3px, 3px); transition: opacity 180ms ease, transform 180ms ease; }

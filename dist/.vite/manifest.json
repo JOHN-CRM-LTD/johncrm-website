@@ -1,0 +1,122 @@
+{
+  "_users-Du86pT3f.js": {
+    "file": "assets/users-Du86pT3f.js",
+    "name": "users",
+    "imports": [
+      "index.html"
+    ]
+  },
+  "index.html": {
+    "file": "assets/index-CdF_xxuE.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "src/app/components/IndustryPage.tsx",
+      "src/app/docs/DocsPage.tsx"
+    ],
+    "css": [
+      "assets/index-DHuhwRtC.css"
+    ],
+    "assets": [
+      "assets/johncrm-Cr6Y5gq2.svg",
+      "assets/red-sweatshirt-C5CHuOdt.jpg",
+      "assets/john-ai-DfQDHFvG.webp",
+      "assets/automations-DxXBeqZj.webp",
+      "assets/integrations-C5SbvFz0.webp",
+      "assets/webchat-Ch3uZTZ7.png"
+    ]
+  },
+  "src/app/components/IndustryPage.tsx": {
+    "file": "assets/IndustryPage-CT2Pdd2Y.js",
+    "name": "IndustryPage",
+    "src": "src/app/components/IndustryPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_users-Du86pT3f.js",
+      "index.html"
+    ],
+    "css": [
+      "assets/IndustryPage-BxZ1v6Iz.css"
+    ],
+    "assets": [
+      "assets/retail-Bs14tP8Y.webp",
+      "assets/healthcare-BJMxc18x.webp",
+      "assets/insurance-B_w8I4B7.webp",
+      "assets/education-BIS7bWUV.webp"
+    ]
+  },
+  "src/app/docs/DocsPage.tsx": {
+    "file": "assets/DocsPage-D6NMdRxT.js",
+    "name": "DocsPage",
+    "src": "src/app/docs/DocsPage.tsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_users-Du86pT3f.js",
+      "index.html"
+    ],
+    "css": [
+      "assets/DocsPage-Dov3a-Xe.css"
+    ]
+  },
+  "src/assets/crm-ai-content.png": {
+    "file": "assets/crm-ai-content-DuIgDtQw.png",
+    "src": "src/assets/crm-ai-content.png"
+  },
+  "src/assets/crm-chat.png": {
+    "file": "assets/crm-chat-BkrD--QX.png",
+    "src": "src/assets/crm-chat.png"
+  },
+  "src/assets/crm-clients.png": {
+    "file": "assets/crm-clients-BFWzw2Ba.png",
+    "src": "src/assets/crm-clients.png"
+  },
+  "src/assets/crm-dashboard.png": {
+    "file": "assets/crm-dashboard-Cn2NsFVU.png",
+    "src": "src/assets/crm-dashboard.png"
+  },
+  "src/assets/crm-pipeline.png": {
+    "file": "assets/crm-pipeline-wDOHzWSh.png",
+    "src": "src/assets/crm-pipeline.png"
+  },
+  "src/assets/industries/education.webp": {
+    "file": "assets/education-BIS7bWUV.webp",
+    "src": "src/assets/industries/education.webp"
+  },
+  "src/assets/industries/healthcare.webp": {
+    "file": "assets/healthcare-BJMxc18x.webp",
+    "src": "src/assets/industries/healthcare.webp"
+  },
+  "src/assets/industries/insurance.webp": {
+    "file": "assets/insurance-B_w8I4B7.webp",
+    "src": "src/assets/industries/insurance.webp"
+  },
+  "src/assets/industries/retail.webp": {
+    "file": "assets/retail-Bs14tP8Y.webp",
+    "src": "src/assets/industries/retail.webp"
+  },
+  "src/assets/integrations/webchat.png": {
+    "file": "assets/webchat-Ch3uZTZ7.png",
+    "src": "src/assets/integrations/webchat.png"
+  },
+  "src/assets/johncrm.svg": {
+    "file": "assets/johncrm-Cr6Y5gq2.svg",
+    "src": "src/assets/johncrm.svg"
+  },
+  "src/assets/product-demo/red-sweatshirt.jpg": {
+    "file": "assets/red-sweatshirt-C5CHuOdt.jpg",
+    "src": "src/assets/product-demo/red-sweatshirt.jpg"
+  },
+  "src/assets/products/automations.webp": {
+    "file": "assets/automations-DxXBeqZj.webp",
+    "src": "src/assets/products/automations.webp"
+  },
+  "src/assets/products/integrations.webp": {
+    "file": "assets/integrations-C5SbvFz0.webp",
+    "src": "src/assets/products/integrations.webp"
+  },
+  "src/assets/products/john-ai.webp": {
+    "file": "assets/john-ai-DfQDHFvG.webp",
+    "src": "src/assets/products/john-ai.webp"
+  }
+}

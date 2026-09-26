@@ -41,6 +41,7 @@ import ProductStory from './components/ProductStory';
 import ProductMenu, { PRODUCTS, type ProductSlug } from './components/ProductMenu';
 import ProductPage from './components/ProductPage';
 import IndustriesMenu from './components/IndustriesMenu';
+import SupportMenu from './components/SupportMenu';
 import { INDUSTRIES, type IndustrySlug } from './industries/catalog';
 import LegalPageLayout, { type LegalPage } from './components/LegalPageLayout';
 import '../styles/product-landing.css';
@@ -48,6 +49,7 @@ import { MotionLines, MotionPage, Reveal } from './components/SectionMotion';
 
 const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
 const IndustryPage = lazy(() => import('./components/IndustryPage'));
+const DocsPage = lazy(() => import('./docs/DocsPage'));
 
 /* --------------------------------- contact --------------------------------- */
 
@@ -163,7 +165,6 @@ const NAV_LINKS = [
   // Reviews section is hidden until we have real testimonials.
   // { key: 'clients', href: '#clients' },
   { key: 'pricing', href: '#pricing' },
-  { key: 'contact', href: '#contact' },
 ] as const;
 
 const LANGUAGE_OPTIONS = [
@@ -435,7 +436,7 @@ type SiteCopy = {
 const SITE_COPY: Record<LanguageCode, SiteCopy> = {
   EN: {
     selectors: { language: 'Language' },
-    navigation: { features: 'Product', pricing: 'Pricing', contact: 'Contact' },
+    navigation: { features: 'Product', pricing: 'Pricing' },
     actions: { contactSales: 'Contact Sales', login: 'Login', tryForFree: 'Try for Free' },
     hero: {
       title: ['THE', 'Assistant', 'That Never', 'Sleeps'],
@@ -579,7 +580,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
   },
   CN: {
     selectors: { language: '语言' },
-    navigation: { features: '产品', pricing: '定价', contact: '联系' },
+    navigation: { features: '产品', pricing: '定价' },
     actions: { contactSales: '联系销售', login: '登录', tryForFree: '免费试用' },
     hero: {
       title: ['永不休眠的', '智能助手'],
@@ -721,7 +722,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
   },
   HK: {
     selectors: { language: '語言' },
-    navigation: { features: '產品', pricing: '定價', contact: '聯繫' },
+    navigation: { features: '產品', pricing: '定價' },
     actions: { contactSales: '聯絡銷售', login: '登入', tryForFree: '免費試用' },
     hero: {
       title: ['永不休眠的', '智慧助手'],
@@ -1015,6 +1016,7 @@ function Nav({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const backdropRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const dragRef = useRef({
     pointerId: -1,
     active: false,
@@ -1058,15 +1060,30 @@ function Nav({
     setShown(false);
     clearTimeout(closeTimer.current);
     closeTimer.current = setTimeout(() => setRendered(false), 340);
+    menuTriggerRef.current?.focus();
   }, []);
 
   useEffect(() => {
     if (!open) return;
+    const desktop = window.matchMedia('(min-width: 900px)');
+    const onDesktop = () => {
+      if (desktop.matches) { closeMenu(); setRendered(false); }
+    };
+    desktop.addEventListener('change', onDesktop);
+    const frame = requestAnimationFrame(() => drawerRef.current?.querySelector<HTMLButtonElement>('button')?.focus());
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') closeMenu();
+      if (event.key === 'Tab') {
+        const controls = [menuTriggerRef.current, ...Array.from(drawerRef.current?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') ?? [])]
+          .filter((element): element is HTMLElement => Boolean(element && element.getClientRects().length));
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+      }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => { cancelAnimationFrame(frame); desktop.removeEventListener('change', onDesktop); window.removeEventListener('keydown', onKeyDown); };
   }, [open, closeMenu]);
 
   const releaseDrawer = (commit: boolean) => {
@@ -1181,6 +1198,7 @@ function Nav({
         <nav className="hidden items-center gap-10 md:flex">
           <ProductMenu language={language} />
           <IndustriesMenu language={language} />
+          <SupportMenu language={language} home={!productPage} />
           {NAV_LINKS.filter((l) => l.key !== 'features').map((l) => (
             <a
               key={l.key}
@@ -1216,9 +1234,10 @@ function Nav({
         </div>
 
         <button
-          className="md:hidden"
+          ref={menuTriggerRef}
+          className="mobile-nav-toggle md:hidden"
           onClick={() => (open ? closeMenu() : openMenu())}
-          aria-label={open ? 'Close menu' : 'Open menu'}
+          aria-label={language === 'EN' ? open ? 'Close menu' : 'Open menu' : language === 'CN' ? open ? '关闭菜单' : '打开菜单' : open ? '關閉選單' : '開啟選單'}
           aria-expanded={open}
           aria-controls="mobile-navigation"
         >
@@ -1241,7 +1260,7 @@ function Nav({
             ref={drawerRef}
             role="dialog"
             aria-modal="true"
-            aria-label="Menu"
+            aria-label={language === 'EN' ? 'Menu' : language === 'CN' ? '菜单' : '選單'}
             data-open={shown}
             onPointerDown={onDrawerPointerDown}
             onPointerMove={onDrawerPointerMove}
@@ -1278,12 +1297,15 @@ function Nav({
               <div className="mobile-nav-item" style={{ '--i': 2 } as React.CSSProperties}>
                 <IndustriesMenu language={language} mobile onNavigate={closeMenu} />
               </div>
+              <div className="mobile-nav-item" style={{ '--i': 3 } as React.CSSProperties}>
+                <SupportMenu language={language} home={!productPage} mobile onNavigate={closeMenu} />
+              </div>
               {NAV_LINKS.filter((l) => l.key !== 'features').map((l, index) => (
                 <a
                   key={l.key}
                   href={productPage ? `/${l.href}` : l.href}
                   onClick={closeMenu}
-                  style={{ '--i': 3 + index } as React.CSSProperties}
+                  style={{ '--i': 4 + index } as React.CSSProperties}
                   className="mobile-nav-item border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
                 >
                   {copy.navigation[l.key]}
@@ -2237,7 +2259,7 @@ function Contact({ language }: { language: LanguageCode }) {
 
 /* ---------------------------------- footer --------------------------------- */
 
-const FOOTER_LINK_HREFS = ['/privacy-policy', '/terms-of-service', '#top'] as const;
+const FOOTER_LINK_HREFS = ['/privacy-policy', '/terms-of-service', '/docs'] as const;
 
 function Footer({ language = 'EN' }: { language?: LanguageCode }) {
   const links = SITE_COPY[language].footer.links;
@@ -2756,8 +2778,33 @@ function currentPath() {
   return window.location.pathname.replace(/\/+$/, '') || '/';
 }
 
+/** Shared, synchronously renderable shell for browser and static documentation. */
+export function DocumentationShell({ children }: { children: ReactNode }) {
+  const { language, handleLanguageChange } = useSiteLanguage();
+  return (
+    <LanguageContext.Provider value={language}>
+      <div className="landing-site documentation-site">
+        <Nav language={language} onLanguageChange={handleLanguageChange} productPage />
+        {children}
+        <Footer language={language} />
+      </div>
+    </LanguageContext.Provider>
+  );
+}
+
+function DocumentationPage({ path }: { path: string }) {
+  return (
+    <DocumentationShell>
+      <Suspense fallback={<main className="min-h-screen pt-40 text-center" aria-busy="true" />}>
+        <DocsPage path={path} />
+      </Suspense>
+    </DocumentationShell>
+  );
+}
+
 export default function App() {
   const path = currentPath();
+  if (path === '/docs' || path.startsWith('/docs/')) return <DocumentationPage path={path} />;
   if (path === '/privacy-policy') return <PrivacyPolicyPage />;
   if (path === '/terms-of-service') return <TermsOfServicePage />;
   const product = PRODUCTS.find(({ slug }) => path === `/product/${slug}`);
