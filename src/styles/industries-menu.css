@@ -30,6 +30,7 @@
   .landing-site .site-header > div:first-child > .md\:flex { display: none; }
   .landing-site .site-header > div:first-child > button.md\:hidden { display: block; padding: 10px; }
   .landing-site .site-header #mobile-navigation { display: block; top: 88px; height: calc(100dvh - 88px); background: #f7f5f0; }
+  .landing-site .site-header #mobile-navigation-backdrop { display: block; top: 88px; }
   .landing-site .site-header[data-menu-open='true'] { --story-dark: 0; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,7 @@
 import { LEGAL_COPY } from './translations/legal';
 import { LanguageContext, usePageTranslation, translate } from './translations/language';
 import {
+  Fragment,
   lazy,
   Suspense,
   useCallback,
@@ -170,6 +171,13 @@ const LANGUAGE_OPTIONS = [
   { code: 'CN', label: '简体中文' },
   { code: 'HK', label: '繁體中文' },
 ] as const satisfies readonly HeaderSelectorOption<LanguageCode>[];
+
+// Compact labels for the mobile drawer's inline language switcher.
+const MOBILE_NAV_LANGUAGE_SHORT: Record<LanguageCode, string> = {
+  EN: 'EN',
+  CN: '简中',
+  HK: '繁中',
+};
 
 // v1 also saved automatic defaults; v2 stores only deliberate dropdown choices.
 const LANGUAGE_PREFERENCE_STORAGE_KEY = 'johncrm:language:v2';
@@ -999,7 +1007,26 @@ function Nav({
   productPage?: boolean;
 }) {
   const [scrolled, setScrolled] = useState(false);
+  // `open` is the logical state; `rendered` keeps the drawer mounted while the
+  // exit animation plays; `shown` drives the enter/exit transitions.
   const [open, setOpen] = useState(false);
+  const [rendered, setRendered] = useState(false);
+  const [shown, setShown] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const drawerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({
+    pointerId: -1,
+    active: false,
+    locked: false,
+    startX: 0,
+    startY: 0,
+    lastX: 0,
+    lastT: 0,
+    velocity: 0,
+    dx: 0,
+  });
+  const suppressClick = useRef(false);
   const copy = SITE_COPY[language];
 
   useEffect(() => {
@@ -1010,19 +1037,143 @@ function Nav({
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = rendered ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [open]);
+  }, [rendered]);
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  const openMenu = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+    setRendered(true);
+    // Wait two frames so the drawer paints off-screen before the slide-in transition starts.
+    requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)));
+  };
+
+  const closeMenu = useCallback(() => {
+    setOpen(false);
+    setShown(false);
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setRendered(false), 340);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open, closeMenu]);
+
+  const releaseDrawer = (commit: boolean) => {
+    const drag = dragRef.current;
+    const drawer = drawerRef.current;
+    const backdrop = backdropRef.current;
+    if (!drag.active) return;
+    drag.active = false;
+    if (!drawer || !drag.locked) {
+      drag.locked = false;
+      return;
+    }
+    const dx = drag.dx;
+    const width = drawer.offsetWidth || 1;
+    const flick = drag.velocity > 0.45 && dx > 24;
+    drag.locked = false;
+    drag.dx = 0;
+    drawer.style.transition = '';
+    drawer.style.transform = '';
+    if (backdrop) {
+      backdrop.style.transition = '';
+      backdrop.style.opacity = '';
+    }
+    if (commit && (dx > width * 0.3 || dx > 72 || flick)) closeMenu();
+  };
+
+  const onDrawerPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse') return;
+    const drag = dragRef.current;
+    drag.active = true;
+    drag.locked = false;
+    drag.pointerId = event.pointerId;
+    drag.startX = event.clientX;
+    drag.startY = event.clientY;
+    drag.lastX = event.clientX;
+    drag.lastT = performance.now();
+    drag.velocity = 0;
+    drag.dx = 0;
+  };
+
+  const onDrawerPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag.active || event.pointerId !== drag.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.locked) {
+      const adx = Math.abs(dx);
+      const ady = Math.abs(dy);
+      if (adx < 10 && ady < 10) return;
+      if (adx <= ady) {
+        // Vertical intent: let the drawer's content scroll instead.
+        drag.active = false;
+        return;
+      }
+      drag.locked = true;
+      try {
+        drawerRef.current?.setPointerCapture(event.pointerId);
+      } catch {
+        // Some browsers reject capture for synthetic or unsupported pointers.
+      }
+    }
+    const drawer = drawerRef.current;
+    if (!drawer) return;
+    const now = performance.now();
+    const dt = now - drag.lastT;
+    if (dt > 0) drag.velocity = (event.clientX - drag.lastX) / dt;
+    drag.lastX = event.clientX;
+    drag.lastT = now;
+    const pulled = Math.max(0, dx);
+    const width = drawer.offsetWidth || 1;
+    // Rubber-band past the fully-open position so the drag feels physical.
+    const visual = pulled > width ? width + (pulled - width) * 0.15 : pulled;
+    drag.dx = pulled;
+    drawer.style.transition = 'none';
+    drawer.style.transform = `translateX(${visual}px)`;
+    const backdrop = backdropRef.current;
+    if (backdrop) {
+      backdrop.style.transition = 'none';
+      backdrop.style.opacity = String(Math.max(0, 1 - pulled / width));
+    }
+  };
+
+  const onDrawerPointerEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerId !== dragRef.current.pointerId) return;
+    if (dragRef.current.locked && dragRef.current.dx > 8) suppressClick.current = true;
+    releaseDrawer(true);
+  };
+
+  const onDrawerPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerId !== dragRef.current.pointerId) return;
+    releaseDrawer(false);
+  };
+
+  const onDrawerClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!suppressClick.current) return;
+    suppressClick.current = false;
+    event.preventDefault();
+    event.stopPropagation();
+  };
 
   return (
     <header
       className="site-header"
-      data-floating={scrolled && !open}
-      data-menu-open={open}
+      data-floating={scrolled && !rendered}
+      data-menu-open={rendered}
     >
-      <div className="mx-auto flex h-full max-w-[85rem] items-center justify-between px-6 lg:px-10">
+      <div className="relative z-10 mx-auto flex h-full max-w-[85rem] items-center justify-between px-6 lg:px-10">
         <a href={productPage ? '/#top' : '#top'} className="flex items-center" aria-label="JOHN CRM home">
           <img src={johnCrmLogo} alt="JOHN CRM" className="h-5 w-auto shrink-0" />
         </a>
@@ -1066,7 +1217,7 @@ function Nav({
 
         <button
           className="md:hidden"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => (open ? closeMenu() : openMenu())}
           aria-label={open ? 'Close menu' : 'Open menu'}
           aria-expanded={open}
           aria-controls="mobile-navigation"
@@ -1075,48 +1226,88 @@ function Nav({
         </button>
       </div>
 
-{open && (
-        <div id="mobile-navigation" className="absolute left-0 right-0 top-16 h-[calc(100dvh-4rem)] overflow-y-auto border-b border-black/6 bg-white md:hidden">
-          <div className="flex flex-col px-6 py-6">
-            <ProductMenu language={language} mobile onNavigate={() => setOpen(false)} />
-            <IndustriesMenu language={language} mobile onNavigate={() => setOpen(false)} />
-            {NAV_LINKS.filter((l) => l.key !== 'features').map((l) => (
-              <a
-                key={l.key}
-                href={productPage ? `/${l.href}` : l.href}
-                onClick={() => setOpen(false)}
-                className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
+      {rendered && (
+        <>
+          <div
+            id="mobile-navigation-backdrop"
+            ref={backdropRef}
+            aria-hidden="true"
+            data-open={shown}
+            onClick={closeMenu}
+            className="mobile-nav-backdrop fixed inset-x-0 bottom-0 top-16 z-0 bg-black/25 md:hidden"
+          />
+          <div
+            id="mobile-navigation"
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu"
+            data-open={shown}
+            onPointerDown={onDrawerPointerDown}
+            onPointerMove={onDrawerPointerMove}
+            onPointerUp={onDrawerPointerEnd}
+            onPointerCancel={onDrawerPointerCancel}
+            onClickCapture={onDrawerClickCapture}
+            className="mobile-nav-drawer absolute right-0 top-16 z-10 h-[calc(100dvh-4rem)] w-[min(21rem,88vw)] overflow-y-auto overscroll-contain border-l border-black/8 bg-white md:hidden"
+          >
+            <div className="flex flex-col px-6 py-6">
+              <div
+                className="mobile-nav-item mobile-nav-languages"
+                style={{ '--i': 0 } as React.CSSProperties}
+                role="group"
+                aria-label={copy.selectors.language}
               >
-                {copy.navigation[l.key]}
+                {LANGUAGE_OPTIONS.map((option, index) => (
+                  <Fragment key={option.code}>
+                    {index > 0 && <span className="mobile-nav-language__divider" aria-hidden="true" />}
+                    <button
+                      type="button"
+                      onClick={() => onLanguageChange(option.code)}
+                      aria-pressed={language === option.code}
+                      data-active={language === option.code}
+                      className="mobile-nav-language__button"
+                    >
+                      {MOBILE_NAV_LANGUAGE_SHORT[option.code]}
+                    </button>
+                  </Fragment>
+                ))}
+              </div>
+              <div className="mobile-nav-item" style={{ '--i': 1 } as React.CSSProperties}>
+                <ProductMenu language={language} mobile onNavigate={closeMenu} />
+              </div>
+              <div className="mobile-nav-item" style={{ '--i': 2 } as React.CSSProperties}>
+                <IndustriesMenu language={language} mobile onNavigate={closeMenu} />
+              </div>
+              {NAV_LINKS.filter((l) => l.key !== 'features').map((l, index) => (
+                <a
+                  key={l.key}
+                  href={productPage ? `/${l.href}` : l.href}
+                  onClick={closeMenu}
+                  style={{ '--i': 3 + index } as React.CSSProperties}
+                  className="mobile-nav-item border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
+                >
+                  {copy.navigation[l.key]}
+                </a>
+              ))}
+              <a
+                href="https://app.johncrm.com/"
+                onClick={closeMenu}
+                style={{ '--i': 5 } as React.CSSProperties}
+                className="mobile-nav-item border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
+              >
+                {copy.actions.login}
               </a>
-            ))}
-            <div className="border-b border-black/5">
-              <HeaderSelector
-                id="mobile-language"
-                label={copy.selectors.language}
-                ariaLabel={copy.selectors.language}
-                options={LANGUAGE_OPTIONS}
-                value={language}
-                onChange={onLanguageChange}
-                fullWidth
-              />
+              <a
+                href={productPage ? '/#contact' : '#contact'}
+                onClick={closeMenu}
+                style={{ '--i': 6 } as React.CSSProperties}
+                className="mobile-nav-item mt-6 bg-black px-5 py-4 text-center font-mono text-[11px] tracking-[0.25em] uppercase text-white"
+              >
+                {copy.actions.contactSales}
+              </a>
             </div>
-            <a
-              href="https://app.johncrm.com/"
-              onClick={() => setOpen(false)}
-              className="border-b border-black/5 py-4 font-mono text-[11px] tracking-[0.25em] uppercase text-black/60"
-            >
-              {copy.actions.login}
-            </a>
-            <a
-              href={productPage ? '/#contact' : '#contact'}
-              onClick={() => setOpen(false)}
-              className="mt-6 bg-black px-5 py-4 text-center font-mono text-[11px] tracking-[0.25em] uppercase text-white"
-            >
-              {copy.actions.contactSales}
-            </a>
           </div>
-        </div>
+        </>
       )}
     </header>
   );

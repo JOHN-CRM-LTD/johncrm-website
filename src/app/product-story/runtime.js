@@ -56,7 +56,7 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   ['Choose language','選擇語言','选择语言'],
   ['Language','語言','语言'],
   ['A question. A helpful answer.','有問題，即刻幫到你','有问题，及时为你解答'],
-  ['Connected to your world.','連接你嘅業務','连接你的业务'],
+  ['Connected to your databases.','連接你嘅數據庫','连接你的数据库'],
   ['Your knowledge. Put to work.','將你嘅知識，用喺工作上','让你的知识，发挥作用'],
   ['Keep your team in the loop.','團隊資訊，隨時同步','团队信息，随时同步'],
   ['JOHN CRM · Retail workspace','JOHN CRM · 零售工作空間','JOHN CRM · 零售工作空间'],
