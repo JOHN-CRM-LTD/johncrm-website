@@ -7,8 +7,11 @@
    so the stage only lifts off the bottom when the story hands off to pricing. The
    runtime additionally tracks visualViewport so the height follows the toolbar
    animation frame by frame instead of snapping after it settles; these rules are
-   the first paint and no-JS fallback. */
-.story{height:1100svh;height:1100dvh}.stage{position:sticky;top:0;height:100svh;height:100dvh;background:var(--paper);color:var(--text);isolation:isolate}
+   the first paint and no-JS fallback. The story's scroll travel is also capped:
+   beyond 900px of stage height each extra pixel of viewport only stretched the
+   percent-based choreography into more wheel travel, which made tall windows
+   feel slow. */
+.story{height:calc(100svh + 10*min(100svh,900px));height:calc(100dvh + 10*min(100dvh,900px))}.stage{position:sticky;top:0;height:100svh;height:100dvh;background:var(--paper);color:var(--text);isolation:isolate}
 /* Only the wide diagram and CRM mockups are clipped; the phones are direct stage
    children so they can layer over the stage edge instead of being cut off. */
 .stage-clip{position:absolute;inset:0;overflow:clip;pointer-events:none}

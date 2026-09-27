@@ -204,6 +204,9 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
   {name:'connections',point:43,begin:34}, {name:'knowledge',point:57,begin:46},
   {name:'team',point:88,begin:61}, {name:'demo',point:100,begin:94}
  ];
+ // Hold states: the chapter points plus the staff-request breather — the centres
+ // of the stable plateaus listed above, where a settled scene reads cleanly.
+ const holds=[0,30.5,43,57,68,88,100];
  const media = matchMedia('(prefers-reduced-motion: reduce)');
  let reduced = media.matches, dimensions = {}, pending = false, frame = 0, lastProgress = 0, currentChapter = -1;
  let touching = false, touchMeasure = false;
@@ -313,16 +316,26 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  viewportSizer.style.cssText='position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;height:0';
  root.appendChild(viewportSizer);
  function viewportBounds(){
-  viewportSizer.style.height='100svh';const min=viewportSizer.offsetHeight||1;
-  viewportSizer.style.height='100lvh';const max=Math.max(viewportSizer.offsetHeight,min);
+  // Browsers without svh/lvh drop both declarations, leaving the sizer at 0;
+  // falling back to innerHeight keeps those (embedded webviews) on a sane band
+  // instead of collapsing the stage to the ||1 minimum.
+  viewportSizer.style.height='100svh';const min=viewportSizer.offsetHeight||innerHeight;
+  viewportSizer.style.height='100lvh';const max=Math.max(viewportSizer.offsetHeight||innerHeight,min);
   viewportSizer.style.height='0';return [min,max];
  }
  let viewportBand=viewportBounds(),viewportFrame=0,viewportSettle=0;
+ // The choreography is percent-based, so the scroll travel is the only thing a
+ // tall window stretches: at 11×viewport a portrait monitor needed far more wheel
+ // travel per scene than the landscape density the story was timed around. Cap
+ // each scroll stage beyond 900px so every viewport at or below that (landscape
+ // desktops, phones) keeps its current feel and taller ones stop feeling slow.
+ const STAGE_SPAN=10,STAGE_CAP=900;
+ const storyScrollHeight=h=>h+STAGE_SPAN*Math.min(h,STAGE_CAP);
  function trackViewport(){
   const vv=window.visualViewport;if(!vv||vv.scale!==1)return;
   const h=Math.min(Math.max(vv.height,viewportBand[0]),viewportBand[1]);
   if(Math.abs(h-stageEl.offsetHeight)<1)return;
-  stageEl.style.height=`${h}px`;$('story').style.height=`${h*11}px`;
+  stageEl.style.height=`${h}px`;$('story').style.height=`${storyScrollHeight(h)}px`;
   // Measuring mid-animation fights scroll momentum (instant re-anchor scrolls);
   // let the toolbar settle first, then re-measure once.
   clearTimeout(viewportSettle);viewportSettle=setTimeout(()=>{viewportSettle=0;measure()},180);
@@ -482,7 +495,40 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  listen(media,'change',e=>setReduced(e.matches));
  listen(root.querySelector('.skip'),'click',e=>{e.preventDefault();stopTour();shell.classList.add('reading');lastTone=0;onToneChange?.(0);$('readable').focus();window.scrollTo({top:0,behavior:'instant'})});
  listen($('back-animation'),'click',()=>{shell.classList.remove('reading');measure();jump(0,true);$('tour-start').focus({preventScroll:true})});
- listen(window,'scroll',()=>{if(!shell.classList.contains('reading'))queue()},{passive:true});
+ // Hold states: once a gesture has fully settled near a plateau, park exactly on
+ // it so the scene rests readable instead of mid-transition. The magnet assists
+ // farther in the direction of travel than it pulls back, so it finishes the
+ // reader's flick instead of dragging against it; it stays quiet during touches,
+ // tours and the reading view, and never fires mid-momentum (only after the last
+ // scroll event, plus this deferral, has passed).
+ let holdTimer=0,scrollSign=1,lastY=scrollY,scrollbarHold=false;
+ const HOLD_ASSIST=4.5,HOLD_RETURN=2.5;
+ function scheduleHold(){clearTimeout(holdTimer);holdTimer=setTimeout(considerHold,220)}
+ function considerHold(){
+  holdTimer=0;
+  if(touching||tour||scrollbarHold||shell.classList.contains('reading'))return;
+  if(scrollY<dimensions.top||scrollY>dimensions.top+dimensions.total)return;
+  const p=clamp((scrollY-dimensions.top)/dimensions.total)*100;
+  let ahead=-1,aheadGap=Infinity,behind=-1,behindGap=Infinity;
+  holds.forEach(hold=>{const gap=(hold-p)*scrollSign;
+   if(gap>=0&&gap<aheadGap){ahead=hold;aheadGap=gap}
+   else if(gap<0&&-gap<behindGap){behind=hold;behindGap=-gap}});
+  const target=aheadGap<=HOLD_ASSIST?ahead:behindGap<=HOLD_RETURN?behind:-1;
+  if(target<0)return;
+  const top=dimensions.top+dimensions.total*target/100;
+  if(Math.abs(top-scrollY)>2){lastProgress=target;window.scrollTo({top,behavior:reduced?'instant':'smooth'})}
+ }
+ // A scrollbar drag stops firing scroll events while the handle is still held:
+ // wait for release before considering a hold, like native snap does.
+ listen(window,'pointerdown',e=>{if(e.target===document.documentElement)scrollbarHold=true},{passive:true});
+ const releaseScrollbar=()=>{if(scrollbarHold){scrollbarHold=false;scheduleHold()}};
+ listen(window,'pointerup',releaseScrollbar,{passive:true});
+ listen(window,'pointercancel',releaseScrollbar,{passive:true});
+ listen(window,'scroll',()=>{
+  if(scrollY!==lastY){scrollSign=scrollY>lastY?1:-1;lastY=scrollY}
+  if(!shell.classList.contains('reading'))queue();
+  scheduleHold();
+ },{passive:true});
  listen(window,'hashchange',()=>navigateHash(location.hash));
 
  function chapterForHash(hash) {
@@ -532,6 +578,6 @@ export function mountProductStory(root, {host, language: initialLanguage='en', o
  navigateHash(location.hash);
  return {
   setLanguage,
-  destroy(){lifecycle.abort();retailLayoutObserver.disconnect();stopTour();cancelAnimationFrame(frame);clearTimeout(viewportSettle);},
+  destroy(){lifecycle.abort();retailLayoutObserver.disconnect();stopTour();cancelAnimationFrame(frame);clearTimeout(viewportSettle);clearTimeout(holdTimer);},
  };
 }
