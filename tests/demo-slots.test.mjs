@@ -2,7 +2,15 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-const { formatSlotTime, groupSlotsByDay, parseSlotsResponse } = await import('../src/lib/demo-slots.ts');
+const {
+  buildWeekGrid,
+  formatSlotTime,
+  groupSlotsByDay,
+  monthRangeLabel,
+  parseSlotsResponse,
+  timeZoneLabel,
+  weekdayLabels,
+} = await import('../src/lib/demo-slots.ts');
 const source = await readFile(new URL('../src/app/App.tsx', import.meta.url), 'utf8');
 
 const TEN_AM_HKT = '2026-11-02T02:00:00.000Z';
@@ -49,6 +57,35 @@ test('slots group by the visitor’s own calendar day', () => {
 
 test('slot times format per locale', () => {
   assert.equal(formatSlotTime(FIVE_THIRTY_PM_HKT, 'Asia/Hong_Kong', 'en-US'), '5:30 PM');
+});
+
+test('the calendar fills whole Sunday-to-Saturday weeks around the bookable days', () => {
+  // Saturday 31 October and Tuesday 3 November 2026, with no slots on the days between.
+  const days = groupSlotsByDay(['2026-10-31T02:00:00.000Z', '2026-11-03T02:00:00.000Z'], 'Asia/Hong_Kong', 'en-US');
+  const cells = buildWeekGrid(days);
+
+  assert.equal(cells.length, 14);
+  assert.equal(cells[0].key, '2026-10-25');
+  assert.equal(cells[13].key, '2026-11-07');
+  assert.deepEqual(
+    cells.filter((cell) => cell.day).map((cell) => cell.dayNumber),
+    [31, 3],
+  );
+  assert.deepEqual(buildWeekGrid([]), []);
+});
+
+test('calendar headings start on Sunday and name the months the slots span', () => {
+  assert.equal(weekdayLabels('en-US')[0], 'Sun');
+  assert.equal(weekdayLabels('en-US')[6], 'Sat');
+
+  const acrossMonths = groupSlotsByDay(['2026-10-31T02:00:00.000Z', '2026-11-03T02:00:00.000Z'], 'Asia/Hong_Kong', 'en-US');
+  assert.match(monthRangeLabel(acrossMonths, 'Asia/Hong_Kong', 'en-US'), /^Oct\s*.\s*Nov 2026$/);
+  const oneMonth = groupSlotsByDay([TEN_AM_HKT, NEXT_DAY_TEN_AM_HKT], 'Asia/Hong_Kong', 'en-US');
+  assert.equal(monthRangeLabel(oneMonth, 'Asia/Hong_Kong', 'en-US'), 'Nov 2026');
+});
+
+test('time zones get a readable name', () => {
+  assert.equal(timeZoneLabel('America/Toronto', 'en-US'), 'Eastern Time');
 });
 
 test('booking goes to the Apps Script backend, with Web3Forms as the fallback', () => {

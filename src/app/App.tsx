@@ -326,6 +326,7 @@ type SiteCopy = {
       priceKey: PricedPlanKey;
       blurb: string;
       features: readonly string[];
+      tokenNote: string;
       inverted?: boolean;
     }[];
   };
@@ -346,6 +347,10 @@ type SiteCopy = {
       slotLoading: string;
       slotZoneNote: string;
       slotHkt: string;
+      slotPlaceholder: string;
+      slotDialogTitle: string;
+      slotConfirm: string;
+      slotClose: string;
       slotRequired: string;
       slotTaken: string;
       fallbackLabel: string;
@@ -433,12 +438,13 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: 'For owner-run shops and small teams that need every enquiry answered.',
           features: [
             'WhatsApp Business API and website chat, both included',
-            'AI replies in the customer’s language, including English, Cantonese and Mandarin',
+            'AI replies in any language',
             'Knowledge base from PDF, Word, Excel, CSV and website import',
             'AI drafts with an approval queue',
             'Website chat leads saved to client profiles, with email notifications',
             'Monthly monitoring and maintenance',
           ],
+          tokenNote: 'Token usage is capped on this plan. Custom limits are available on Enterprise.',
         },
         {
           name: 'PRO',
@@ -446,15 +452,14 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: 'For teams ready to put follow up on autopilot.',
           features: [
             'Everything in PLUS',
-            'Adds Telegram, Messenger, Instagram, WeChat and Discord',
-            'Price sheets and contract templates in the knowledge base',
+            'Connect your existing API Endpoints',
             'Automations written in plain language and simulated before going live',
-            'Bulk campaigns and templates with a consent record',
             'Human handoff: AI pauses on legal threats and flags complaints',
             'Voice note transcription and image understanding',
-            'Staff calendar and appointments',
+            'Internal staff AI assistant',
             'Monthly engineering review and AI fine-tuning',
           ],
+          tokenNote: 'Token usage is capped on this plan. Custom limits are available on Enterprise.',
           inverted: true,
         },
         {
@@ -470,6 +475,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
             'Customer identity verification before personal data is released',
             'Milestone-based delivery and NDA',
           ],
+          tokenNote: 'Custom token limits, set to your project.',
         },
       ],
     },
@@ -497,8 +503,12 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         slotDate: 'Date',
         slotTime: 'Time',
         slotLoading: 'Loading available times…',
-        slotZoneNote: 'Times shown in {timeZone}. Demos run 10:00 AM to 6:00 PM HKT.',
+        slotZoneNote: 'Times shown in {timeZone}.',
         slotHkt: 'HKT',
+        slotPlaceholder: 'Choose a date and time',
+        slotDialogTitle: 'Pick a time',
+        slotConfirm: 'Confirm',
+        slotClose: 'Close',
         slotRequired: 'Please pick a time for your demo.',
         slotTaken: 'That time was just taken. Please pick another.',
         fallbackLabel: 'Preferred Time (Optional)',
@@ -588,12 +598,13 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '适合需要及时回复每条咨询的小型商户与团队。',
           features: [
             'WhatsApp Business API 与网页聊天，两者均包含',
-            'AI 以客户的语言回复，包括英语、粤语和普通话',
+            'AI 可用任何语言回复',
             '知识库支持 PDF、Word、Excel、CSV 及网站导入',
             'AI 草稿与审批队列',
             '网页聊天线索自动存入客户档案，并发送邮件通知',
             '每月系统监控与维护',
           ],
+          tokenNote: '本方案的 Token 用量设有上限。如需自定义额度，请选择企业版。',
         },
         {
           name: 'PRO',
@@ -601,15 +612,14 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '为准备将跟进工作全自动化的团队而设。',
           features: [
             '包含 PLUS 全部功能',
-            '增加 Telegram、Messenger、Instagram、微信和 Discord',
-            '知识库可导入价格表与合同模板',
+            '连接您现有的 API 端点',
             '用日常语言编写自动化流程，上线前可模拟运行',
-            '批量营销与模板，并保留同意记录',
             '人工交接：AI 遇法律威胁即暂停，并标记投诉',
             '语音消息转写与图像理解',
-            '员工日历与预约管理',
+            '内部员工 AI 助手',
             '每月工程审查与 AI 调优',
           ],
+          tokenNote: '本方案的 Token 用量设有上限。如需自定义额度，请选择企业版。',
           inverted: true,
         },
         {
@@ -625,6 +635,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
             '发布个人资料前先验证客户身份',
             '按里程碑交付并签署保密协议',
           ],
+          tokenNote: '按项目需求自定义 Token 额度。',
         },
       ],
     },
@@ -652,8 +663,12 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         slotDate: '日期',
         slotTime: '时间',
         slotLoading: '正在加载可预约时间…',
-        slotZoneNote: '时间以 {timeZone} 显示。演示时段为香港时间上午 10:00 至下午 6:00。',
+        slotZoneNote: '时间以 {timeZone} 显示。',
         slotHkt: '香港时间',
+        slotPlaceholder: '选择日期和时间',
+        slotDialogTitle: '选择时间',
+        slotConfirm: '确认',
+        slotClose: '关闭',
         slotRequired: '请选择演示时间。',
         slotTaken: '该时间刚被预约，请选择其他时间。',
         fallbackLabel: '期望时间（可选）',
@@ -742,12 +757,13 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '適合需要及時回覆每個查詢的小型商戶與團隊。',
           features: [
             'WhatsApp Business API 與網頁聊天，兩者均包含',
-            'AI 以客戶的語言回覆，包括英語、粵語和普通話',
+            'AI 可用任何語言回覆',
             '知識庫支援 PDF、Word、Excel、CSV 及網站匯入',
             'AI 草稿與審批隊列',
             '網頁聊天潛在客戶自動存入客戶檔案，並發送電郵通知',
             '每月系統監控與維護',
           ],
+          tokenNote: '本方案的 Token 用量設有上限。如需自訂額度，請選用企業版。',
         },
         {
           name: 'PRO',
@@ -755,15 +771,14 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '為準備將跟進工作全自動化的團隊而設。',
           features: [
             '包含 PLUS 全部功能',
-            '增加 Telegram、Messenger、Instagram、微信和 Discord',
-            '知識庫可匯入價格表與合約範本',
+            '連接您現有的 API 端點',
             '用日常語言編寫自動化流程，上線前可模擬運行',
-            '批量行銷與模板，並保留同意記錄',
             '人手交接：AI 遇法律威脅即暫停，並標記投訴',
             '語音訊息轉寫與圖像理解',
-            '員工日曆與預約管理',
+            '內部員工 AI 助手',
             '每月工程審查與 AI 調校',
           ],
+          tokenNote: '本方案的 Token 用量設有上限。如需自訂額度，請選用企業版。',
           inverted: true,
         },
         {
@@ -779,6 +794,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
             '發放個人資料前先驗證客戶身份',
             '按里程碑交付並簽署保密協議',
           ],
+          tokenNote: '按項目需求自訂 Token 額度。',
         },
       ],
     },
@@ -806,8 +822,12 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         slotDate: '日期',
         slotTime: '時間',
         slotLoading: '正在載入可預約時間…',
-        slotZoneNote: '時間以 {timeZone} 顯示。示範時段為香港時間上午 10:00 至下午 6:00。',
+        slotZoneNote: '時間以 {timeZone} 顯示。',
         slotHkt: '香港時間',
+        slotPlaceholder: '選擇日期和時間',
+        slotDialogTitle: '選擇時間',
+        slotConfirm: '確認',
+        slotClose: '關閉',
         slotRequired: '請選擇示範時間。',
         slotTaken: '該時間剛被預約，請選擇其他時間。',
         fallbackLabel: '期望時間（可選）',
@@ -1828,22 +1848,24 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                         <span className={smallPriceClass}>{copy.fromBefore}</span>
                       )}
                       <span className="font-display text-6xl font-black leading-none">
-                        {formatCurrencyPrice(currency, setup)}
+                        {formatCurrencyPrice(currency, monthly ?? setup)}
                       </span>
+                      {monthly !== undefined && (
+                        <span className={smallPriceClass}>{copy.perMonth}</span>
+                      )}
                       {monthly === undefined && copy.fromAfter && (
                         <span className={smallPriceClass}>{copy.fromAfter}</span>
                       )}
                     </div>
                     <p className={`mt-2 ${noteClass}`}>
-                      {monthly === undefined ? copy.enterpriseNote : copy.setupLabel}
+                      {monthly === undefined ? copy.enterpriseNote : copy.monthlyLabel}
                     </p>
                     {monthly !== undefined && (
                       <>
-                        <div className="pricing-monthly mt-4 font-display text-2xl font-bold leading-tight">
-                          + {formatCurrencyPrice(currency, monthly)}{' '}
-                          <span className={smallPriceClass}>{copy.perMonth}</span>
+                        <div className="pricing-setup mt-4 font-display text-2xl font-bold leading-tight">
+                          + {formatCurrencyPrice(currency, setup)}
                         </div>
-                        <p className={`mt-1 ${noteClass}`}>{copy.monthlyLabel}</p>
+                        <p className={`mt-1 ${noteClass}`}>{copy.setupLabel}</p>
                       </>
                     )}
                   </div>
@@ -1854,7 +1876,7 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                   >
                     {p.blurb}
                   </p>
-                  <ul className="mt-8 flex flex-col gap-3">
+                  <ul className="pricing-features mt-6 flex flex-col gap-3 pt-6">
                     {p.features.map((f) => (
                       <li key={f} className="flex items-start gap-3">
                         <Check
@@ -1870,6 +1892,7 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                       </li>
                     ))}
                   </ul>
+                  <p className={`pricing-token-note mt-6 pt-5 ${noteClass}`}>{p.tokenNote}</p>
                 </Reveal>
               );
             })}
@@ -2049,6 +2072,13 @@ async function sendViaWeb3Forms(fields: Record<string, FormDataEntryValue>) {
   if (!res.ok || !data.success) throw new Error(data.message || `Request failed (${res.status})`);
 }
 
+/** Fits the box to what's typed. CSS caps the height, and it scrolls from there. */
+function growTextarea(event: React.FormEvent<HTMLTextAreaElement>) {
+  const box = event.currentTarget;
+  box.style.height = 'auto';
+  box.style.height = `${box.scrollHeight + box.offsetHeight - box.clientHeight}px`;
+}
+
 function Contact({ language }: { language: LanguageCode }) {
   const [status, setStatus] = useState<ContactStatus>('idle');
   const [devError, setDevError] = useState<string | null>(null);
@@ -2178,8 +2208,7 @@ function Contact({ language }: { language: LanguageCode }) {
               </Reveal>
           </div>
 
-          {/* min-w-0 stops the scrolling date strip from widening the whole grid. */}
-          <Reveal delay={150} className="min-w-0">
+          <Reveal delay={150}>
             <div className="contact-panel border border-black/8 bg-[#FAFAF8] p-10">
               {status === 'sent' ? (
                 <div className="flex min-h-[28rem] flex-col items-center justify-center text-center">
@@ -2265,6 +2294,10 @@ function Contact({ language }: { language: LanguageCode }) {
                           value={selectedSlot}
                           onChange={handleSelectSlot}
                           locale={locale}
+                          placeholder={copy.form.slotPlaceholder}
+                          dialogTitle={copy.form.slotDialogTitle}
+                          confirmLabel={copy.form.slotConfirm}
+                          closeLabel={copy.form.slotClose}
                           dateLabel={copy.form.slotDate}
                           timeLabel={copy.form.slotTime}
                           timeZoneNote={copy.form.slotZoneNote}
@@ -2288,6 +2321,7 @@ function Contact({ language }: { language: LanguageCode }) {
                     <textarea
                       rows={3}
                       name="message"
+                      onInput={growTextarea}
                       placeholder={copy.form.messagePlaceholder}
                       className="mt-2 w-full resize-none border-b border-black/6 bg-transparent pb-4 text-[14px] outline-none transition-colors placeholder:text-black/15 focus:border-black/30"
                     />
