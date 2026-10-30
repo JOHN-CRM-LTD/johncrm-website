@@ -71,8 +71,10 @@ const SALES_SUBJECT = '[Demo Request] JOHN CRM';
 
 // Google Apps Script web app that runs as biz.johncrm, so it can read that calendar's
 // free/busy, add the event and send the email. See integrations/demo-booking/README.md.
-// The URL is public by design. While it's empty the form uses the Web3Forms path below.
-const DEMO_BOOKING_URL = import.meta.env.VITE_DEMO_BOOKING_URL || '';
+// The URL is public by design. VITE_DEMO_BOOKING_URL still overrides it for local testing.
+const DEMO_BOOKING_URL =
+  import.meta.env.VITE_DEMO_BOOKING_URL ||
+  'https://script.google.com/macros/s/AKfycbzZWug-MXuRYmyEhIfNYq0eaT7TaJFtl6ygXskgx5BWObyq3aeHf2wVh54dmla4nr3luQ/exec';
 
 // Web3Forms carries requests when the booking backend can't be reached, which includes
 // visitors in mainland China, where Google is blocked. It has no recipient field and
