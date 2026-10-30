@@ -104,31 +104,18 @@ html:has(.landing-site) { scroll-behavior: auto; }
 
 /* Round both the track and the active segment, keeping a visible inset. */
 .pricing-heading-layout { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
-.landing-site .billing-toggle { position: relative; isolation: isolate; margin-top: 0; padding: 5px; gap: 3px; border: 1px solid var(--landing-line); border-radius: 14px; background: #eeefea; }
-.landing-site .billing-toggle::before {
-  content: '';
-  position: absolute;
-  inset: 5px auto 5px 0;
-  width: var(--billing-indicator-width, 0px);
-  transform: translateX(var(--billing-indicator-x, 0px));
-  border-radius: 9px;
-  background: var(--button-background);
-  box-shadow: 0 2px 5px #10212810;
-  pointer-events: none;
-  transition: transform 320ms cubic-bezier(.22, 1, .36, 1), width 320ms cubic-bezier(.22, 1, .36, 1);
-}
-.landing-site .billing-toggle button { position: relative; z-index: 1; min-height: 42px; padding: 10px 20px; border-radius: 9px; background: transparent; color: var(--landing-muted); font-size: 13px; font-weight: 500; white-space: nowrap; transition: color 200ms ease; }
-.landing-site .billing-toggle button[aria-pressed='true'] { color: white; }
-.landing-site .billing-toggle button[aria-pressed='false']:hover { color: var(--landing-ink); }
 .pricing-grid { gap: 20px; }
 .landing-site .pricing-card { min-width: 0; padding: 36px 30px 30px; border: 1px solid var(--landing-line); border-radius: var(--radius-panel); background: #fffefa; }
 .landing-site .pricing-card.bg-black { border-color: #102a32; background: #102a32; }
 .landing-site .pricing-badge { left: 28px; border-radius: 8px; border-color: #456069; background: #254650; font-size: 11px; font-weight: 500; line-height: 1.4; }
 .landing-site .pricing-name { color: #51666d; font-size: 14px; font-weight: 600; }
 .landing-site .pricing-card.bg-black .pricing-name { color: #c1d0d2; }
-.landing-site .pricing-price { flex-wrap: wrap; column-gap: 7px; row-gap: 10px; min-height: 58px; }
+.landing-site .pricing-price { flex-wrap: wrap; column-gap: 7px; row-gap: 10px; }
+@media (min-width: 1024px) { .landing-site .pricing-cost { min-height: 172px; } }
+.landing-site #pricing .pricing-cost-note { font-size: 12px; line-height: 1.5; }
+.landing-site .pricing-monthly .font-mono { color: var(--landing-muted); font-size: 12px; white-space: nowrap; }
+.landing-site .pricing-card.bg-black .pricing-monthly .font-mono { color: #b5c8cc; }
 .landing-site .pricing-price .font-display { font-size: clamp(40px, 4vw, 58px); }
-.landing-site .pricing-price .enterprise-price { font-size: clamp(36px, 3.3vw, 46px); }
 .landing-site .pricing-price .font-mono { color: var(--landing-muted); font-size: 12px; white-space: nowrap; }
 .landing-site .pricing-card.bg-black .pricing-price .font-mono { color: #b5c8cc; }
 .landing-site #pricing p, .landing-site #pricing li, .landing-site #pricing li span { font-size: 13px; line-height: 1.65; }
@@ -136,16 +123,13 @@ html:has(.landing-site) { scroll-behavior: auto; }
 .landing-site #pricing p[class*='text-white/'], .landing-site #pricing li span[class*='text-white/'] { color: #c1d0d2; }
 .landing-site #pricing li svg { color: var(--landing-accent); margin-top: 5px; }
 .landing-site #pricing .pricing-card.bg-black li svg { color: #aad5de; }
-.landing-site .pricing-cta { border: 1px solid #c8d2d0; border-radius: var(--radius-control); padding: 14px 16px; color: var(--landing-ink); font-size: 13px; font-weight: 600; transition: background-color 180ms ease, border-color 180ms ease; }
-.landing-site .pricing-cta:hover { background: #e9f1f0; border-color: #9ab8bf; opacity: 1; }
-.landing-site .pricing-card.bg-black .pricing-cta { background: #fffefa; border-color: #fffefa; color: #102a32; }
-.landing-site .pricing-card.bg-black .pricing-cta:hover { background: #dbeef1; border-color: #dbeef1; }
 
 /* Full, softly outlined fields make the contact form feel part of the product. */
 .landing-site .contact-panel { padding: clamp(24px, 3.2vw, 44px); border: 1px solid var(--landing-line); border-radius: var(--radius-panel); background: #fffefa; }
 .landing-site .contact-panel form { gap: 22px; }
 .landing-site #contact label > span,
-.landing-site #contact #team-size-label { color: #4c626b; font-size: 12px; font-weight: 500; }
+.landing-site #contact #team-size-label,
+.landing-site #contact #demo-slot-label { color: #4c626b; font-size: 12px; font-weight: 500; }
 .landing-site #contact input:not([type='hidden']):not([type='checkbox']),
 .landing-site #contact textarea,
 .landing-site #contact [role='combobox'] { border: 1px solid #d9dfdc; border-radius: var(--radius-control); background: white; padding: 13px 15px; min-height: 48px; color: var(--landing-ink); font-size: 14px; line-height: 1.5; transition: border-color 180ms ease, box-shadow 180ms ease; }
@@ -162,6 +146,21 @@ html:has(.landing-site) { scroll-behavior: auto; }
 .landing-site #contact .contact-success-icon { color: var(--landing-accent); background: #e9f1f0; border-color: #cbdcdb; }
 .landing-site #contact .max-w-sm > div > .font-mono { color: var(--landing-muted); font-size: 11px; }
 .landing-site #contact .max-w-sm > div > .font-display { font-size: 15px; letter-spacing: -.02em; }
+.landing-site #contact label > span.demo-slot-note,
+.demo-slot-note { display: block; margin-top: 10px; color: #6b7a80; font-size: 12px; font-weight: 400; line-height: 1.5; }
+.demo-slot-picker { min-width: 0; }
+.demo-slot-days { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: thin; }
+.demo-slot-times { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; margin-top: 8px; padding: 2px; }
+.demo-slot-day, .demo-slot-time { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 1px solid #d9dfdc; border-radius: var(--radius-control); background: white; color: var(--landing-ink); font-size: 13px; line-height: 1.35; }
+.demo-slot-day { flex: none; min-width: 76px; min-height: 56px; padding: 8px 12px; }
+.demo-slot-day span { color: var(--landing-muted); font-size: 12px; }
+.demo-slot-day strong { font-weight: 600; }
+.demo-slot-time { min-height: 44px; padding: 8px; font-weight: 500; }
+.demo-slot-time small { color: var(--landing-muted); font-size: 11px; font-weight: 400; }
+.demo-slot-day:hover, .demo-slot-time:hover { border-color: #9aafb2; }
+.demo-slot-day:focus-visible, .demo-slot-time:focus-visible { border-color: var(--landing-accent); outline: 2px solid var(--landing-accent); outline-offset: 1px; }
+.demo-slot-day[aria-checked='true'], .demo-slot-time[aria-checked='true'] { border-color: transparent; background: var(--button-background); color: white; }
+.demo-slot-day[aria-checked='true'] span, .demo-slot-time[aria-checked='true'] small { color: #d5e2e4; }
 .landing-site > footer, .legal-site > footer { background: var(--landing-paper); }
 .landing-site > footer .font-mono, .legal-site > footer .font-mono { font-size: 14px; }
 .landing-site > footer a, .legal-site > footer a { color: var(--landing-muted); }
@@ -170,7 +169,6 @@ html:has(.landing-site) { scroll-behavior: auto; }
 @media (max-width: 1023px) {
   .pricing-grid { gap: 28px; }
   .landing-site .pricing-price .font-display { font-size: 48px; }
-  .landing-site .pricing-price .enterprise-price { font-size: 42px; }
 }
 @media (max-width: 767px) {
   .landing-details > section { scroll-margin-top: 72px; }
@@ -186,11 +184,9 @@ html:has(.landing-site) { scroll-behavior: auto; }
   .landing-site #contact { padding-top: 16px; }
   .pricing-heading-layout { flex-direction: column; align-items: flex-start; gap: 28px; }
   .landing-site .pricing-card { padding: 32px 26px 26px; }
-  .landing-site .billing-toggle button { padding-inline: 17px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .landing-site .site-header, .landing-site .pricing-cta,
-  .landing-site .billing-toggle::before, .landing-site .billing-toggle button,
+  .landing-site .site-header,
   .landing-site #contact :is(input, textarea, [role='combobox']) { transition: none; }
 }
 @media print { .landing-site .site-header, .landing-details, .landing-site > footer { display: none; } }

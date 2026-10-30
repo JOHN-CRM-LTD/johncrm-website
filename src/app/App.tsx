@@ -6,7 +6,6 @@ import {
   Suspense,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -37,6 +36,7 @@ import heroAscii from '../assets/hero-ascii.txt?raw';
 import { useAsciiIntro } from '../lib/useAsciiIntro';
 import johnCrmLogo from '../assets/johncrm.svg';
 import { prefersReducedMotion, useAsciiTextRipple } from '../lib/useAsciiTextRipple';
+import DemoSlotPicker from './components/DemoSlotPicker';
 import ProductStory from './components/ProductStory';
 import ProductMenu, { PRODUCTS, type ProductSlug } from './components/ProductMenu';
 import ProductPage from './components/ProductPage';
@@ -46,6 +46,17 @@ import { INDUSTRIES, type IndustrySlug } from './industries/catalog';
 import LegalPageLayout, { type LegalPage } from './components/LegalPageLayout';
 import '../styles/product-landing.css';
 import { MotionLines, MotionPage, Reveal } from './components/SectionMotion';
+import {
+  detectInitialCurrency,
+  lookupVisitorCurrency,
+  type CurrencyCode,
+} from '../lib/currency';
+import {
+  BOOKING_TIME_ZONE,
+  formatSlotDateTime,
+  parseSlotsResponse,
+  visitorTimeZone,
+} from '../lib/demo-slots';
 
 const heroAsciiWithoutBackgroundDots = heroAscii.replaceAll('.', ' ');
 const IndustryPage = lazy(() => import('./components/IndustryPage'));
@@ -53,15 +64,21 @@ const DocsPage = lazy(() => import('./docs/DocsPage'));
 
 /* --------------------------------- contact --------------------------------- */
 
-// Sales enquiries use a dedicated `+sales` sub-address and `[Demo Request]`
-// subject prefix so the sales mailbox can filter demo requests.
+// The `[Demo Request]` subject prefix lets the sales mailbox filter demo requests.
 const APP_LOGIN_URL = 'https://app.johncrm.com/g/login';
-const SALES_CONTACT_EMAIL = 'biz.johncrm+sales@gmail.com';
+const SALES_CONTACT_EMAIL = 'biz.johncrm@gmail.com';
 const SALES_SUBJECT = '[Demo Request] JOHN CRM';
 
-// Web3Forms has no recipient field — it delivers only to the address that
-// registered the access key. So this key MUST be created while signed up as
-// SALES_CONTACT_EMAIL, or submissions go somewhere nobody reads.
+// Google Apps Script web app that runs as biz.johncrm, so it can read that calendar's
+// free/busy, add the event and send the email. See integrations/demo-booking/README.md.
+// The URL is public by design. While it's empty the form uses the Web3Forms path below.
+const DEMO_BOOKING_URL = import.meta.env.VITE_DEMO_BOOKING_URL || '';
+
+// Web3Forms carries requests when the booking backend can't be reached, which includes
+// visitors in mainland China, where Google is blocked. It has no recipient field and
+// delivers only to the address that registered the access key, so this key MUST be
+// created under biz.johncrm@gmail.com or a sub-address of it, or submissions go
+// somewhere nobody reads.
 //
 // Hardcoded on purpose: Vite inlines VITE_* into the bundle, so a CI secret would
 // end up equally readable in the deployed JS. Web3Forms keys are public by design.
@@ -208,117 +225,11 @@ function detectInitialLanguage(): LanguageCode {
   return 'EN';
 }
 
-type CurrencyCode = 'USD' | 'CNY' | 'HKD' | 'EUR' | 'AUD';
-type BillingCycle = 'monthly' | 'annual';
-type PricedPlanKey = 'starter' | 'growth';
-type CurrencyPriceBook = Record<PricedPlanKey, Record<BillingCycle, number>>;
+type PricedPlanKey = 'starter' | 'growth' | 'enterprise';
+type PlanPrice = { setup: number; monthly?: number };
+type CurrencyPriceBook = Record<PricedPlanKey, PlanPrice>;
 
-const REGION_CURRENCY: Partial<Record<string, CurrencyCode>> = {
-  HK: 'HKD',
-  AU: 'AUD',
-  CN: 'CNY',
-  AD: 'EUR',
-  AT: 'EUR',
-  BE: 'EUR',
-  BG: 'EUR',
-  CY: 'EUR',
-  DE: 'EUR',
-  EE: 'EUR',
-  ES: 'EUR',
-  FI: 'EUR',
-  FR: 'EUR',
-  GR: 'EUR',
-  HR: 'EUR',
-  IE: 'EUR',
-  IT: 'EUR',
-  LT: 'EUR',
-  LU: 'EUR',
-  LV: 'EUR',
-  MC: 'EUR',
-  ME: 'EUR',
-  MT: 'EUR',
-  NL: 'EUR',
-  PT: 'EUR',
-  SI: 'EUR',
-  SK: 'EUR',
-  SM: 'EUR',
-  VA: 'EUR',
-  XK: 'EUR',
-};
-
-const TIME_ZONE_CURRENCY: Partial<Record<string, CurrencyCode>> = {
-  'Asia/Hong_Kong': 'HKD',
-  'Asia/Shanghai': 'CNY',
-  'Asia/Urumqi': 'CNY',
-  'Antarctica/Macquarie': 'AUD',
-  'Pacific/Norfolk': 'AUD',
-  'Atlantic/Azores': 'EUR',
-  'Atlantic/Canary': 'EUR',
-  'Atlantic/Madeira': 'EUR',
-  'Europe/Amsterdam': 'EUR',
-  'Europe/Andorra': 'EUR',
-  'Europe/Athens': 'EUR',
-  'Europe/Berlin': 'EUR',
-  'Europe/Bratislava': 'EUR',
-  'Europe/Brussels': 'EUR',
-  'Europe/Dublin': 'EUR',
-  'Europe/Helsinki': 'EUR',
-  'Europe/Lisbon': 'EUR',
-  'Europe/Ljubljana': 'EUR',
-  'Europe/Luxembourg': 'EUR',
-  'Europe/Madrid': 'EUR',
-  'Europe/Malta': 'EUR',
-  'Europe/Mariehamn': 'EUR',
-  'Europe/Monaco': 'EUR',
-  'Europe/Nicosia': 'EUR',
-  'Europe/Paris': 'EUR',
-  'Europe/Podgorica': 'EUR',
-  'Europe/Riga': 'EUR',
-  'Europe/Rome': 'EUR',
-  'Europe/San_Marino': 'EUR',
-  'Europe/Sofia': 'EUR',
-  'Europe/Tallinn': 'EUR',
-  'Europe/Vatican': 'EUR',
-  'Europe/Vienna': 'EUR',
-  'Europe/Vilnius': 'EUR',
-  'Europe/Zagreb': 'EUR',
-};
-
-function currencyForTimeZone(timeZone: string | undefined): CurrencyCode | null {
-  if (!timeZone) return null;
-  if (timeZone.startsWith('Australia/')) return 'AUD';
-  return TIME_ZONE_CURRENCY[timeZone] ?? null;
-}
-
-function currencyForRegion(region: string | undefined): CurrencyCode | null {
-  if (!region) return null;
-  return REGION_CURRENCY[region.toUpperCase()] ?? null;
-}
-
-function detectInitialCurrency(): CurrencyCode {
-  if (typeof window === 'undefined') return 'USD';
-
-  // Timezone is a useful location signal and does not send the visitor's IP to a third party.
-  try {
-    const timezoneCurrency = currencyForTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
-    if (timezoneCurrency) return timezoneCurrency;
-  } catch {
-    // Fall through to the browser locale when Intl timezone data is unavailable.
-  }
-
-  const locales = navigator.languages?.length ? navigator.languages : [navigator.language];
-  for (const locale of locales) {
-    try {
-      const localeCurrency = currencyForRegion(new Intl.Locale(locale).region);
-      if (localeCurrency) return localeCurrency;
-    } catch {
-      // Ignore malformed or unsupported locale values.
-    }
-  }
-
-  return 'USD';
-}
-
+// HKD is the list price. The rest are converted and rounded by hand, not live rates.
 const CURRENCY_PRICING: Record<
   CurrencyCode,
   { symbol: string; prices: CurrencyPriceBook }
@@ -326,42 +237,54 @@ const CURRENCY_PRICING: Record<
   USD: {
     symbol: '$',
     prices: {
-      starter: { monthly: 349, annual: 299 },
-      growth: { monthly: 479, annual: 399 },
+      starter: { setup: 1250, monthly: 230 },
+      growth: { setup: 3580, monthly: 610 },
+      enterprise: { setup: 8700 },
     },
   },
   CNY: {
     symbol: '¥',
     prices: {
-      starter: { monthly: 2499, annual: 2099 },
-      growth: { monthly: 3449, annual: 2849 },
+      starter: { setup: 8950, monthly: 1650 },
+      growth: { setup: 25600, monthly: 4380 },
+      enterprise: { setup: 62300 },
     },
   },
   HKD: {
     symbol: 'HK$',
     prices: {
-      starter: { monthly: 2729, annual: 2269 },
-      growth: { monthly: 3749, annual: 3119 },
+      starter: { setup: 9800, monthly: 1800 },
+      growth: { setup: 28000, monthly: 4800 },
+      enterprise: { setup: 68000 },
     },
   },
   EUR: {
     symbol: '€',
     prices: {
-      starter: { monthly: 319, annual: 269 },
-      growth: { monthly: 439, annual: 369 },
+      starter: { setup: 1150, monthly: 210 },
+      growth: { setup: 3270, monthly: 560 },
+      enterprise: { setup: 7950 },
     },
   },
   AUD: {
     symbol: 'A$',
     prices: {
-      starter: { monthly: 529, annual: 449 },
-      growth: { monthly: 729, annual: 599 },
+      starter: { setup: 1900, monthly: 350 },
+      growth: { setup: 5430, monthly: 925 },
+      enterprise: { setup: 13200 },
+    },
+  },
+  CAD: {
+    symbol: 'C$',
+    prices: {
+      starter: { setup: 1730, monthly: 320 },
+      growth: { setup: 4940, monthly: 840 },
+      enterprise: { setup: 12000 },
     },
   },
 };
 
-function formatCurrencyPrice(currency: CurrencyCode, price: number | null) {
-  if (price === null) return null;
+function formatCurrencyPrice(currency: CurrencyCode, price: number) {
   return `${CURRENCY_PRICING[currency].symbol}${price.toLocaleString('en-US')}`;
 }
 
@@ -392,18 +315,18 @@ type SiteCopy = {
   pricing: {
     label: string;
     heading: readonly string[];
-    monthly: string;
-    annual: string;
     mostPopular: string;
     perMonth: string;
-    enterprise: string;
+    setupLabel: string;
+    monthlyLabel: string;
+    fromBefore: string;
+    fromAfter: string;
+    enterpriseNote: string;
     plans: readonly {
       name: string;
-      priceKey?: PricedPlanKey;
+      priceKey: PricedPlanKey;
       blurb: string;
       features: readonly string[];
-      cta: string;
-      ctaHref: string;
       inverted?: boolean;
     }[];
   };
@@ -418,10 +341,22 @@ type SiteCopy = {
       teamSizePlaceholder: string;
       message: string;
       messagePlaceholder: string;
+      slotLabel: string;
+      slotDate: string;
+      slotTime: string;
+      slotLoading: string;
+      slotZoneNote: string;
+      slotHkt: string;
+      slotRequired: string;
+      slotTaken: string;
+      fallbackLabel: string;
+      fallbackPlaceholder: string;
+      fallbackNote: string;
       submit: string;
       sending: string;
       sentTitle: string;
       sentBody: string;
+      sentBooked: string;
       errorBefore: string;
       errorAfter: string;
       privacyBefore: string;
@@ -485,26 +420,26 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     pricing: {
       label: 'Pricing',
       heading: ['Transparent', 'Pricing'],
-      monthly: 'Monthly',
-      annual: 'Annual save 17%',
       mostPopular: 'Most Popular',
-      perMonth: '/ mo',
-      enterprise: 'Enterprise',
+      perMonth: '/ month',
+      setupLabel: 'One-off setup & deployment',
+      monthlyLabel: 'Maintenance & token allowance',
+      fromBefore: 'From',
+      fromAfter: '',
+      enterpriseNote: 'Scoped by project requirements, milestone-based acceptance',
       plans: [
         {
           name: 'PLUS',
           priceKey: 'starter',
-          blurb: 'For small teams getting their first pipeline in order.',
+          blurb: 'For owner-run shops and small teams that need every enquiry answered.',
           features: [
-            'Up to 1,000 contacts',
-            'Shared inbox: email & web chat',
-            'Pipeline board',
-            'Basic analytics',
-            '2 team seats',
-            'Standard support',
+            'WhatsApp Business API and website chat, both included',
+            'AI replies in the customer’s language, including English, Cantonese and Mandarin',
+            'Knowledge base from PDF, Word, Excel, CSV and website import',
+            'AI drafts with an approval queue',
+            'Website chat leads saved to client profiles, with email notifications',
+            'Monthly monitoring and maintenance',
           ],
-          cta: 'Start Free Trial',
-          ctaHref: APP_LOGIN_URL,
         },
         {
           name: 'PRO',
@@ -512,30 +447,30 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: 'For teams ready to put follow up on autopilot.',
           features: [
             'Everything in PLUS',
-            'WhatsApp, WhatsApp Business and Webchat',
-            'AI drafts with approval queue',
-            'Knowledge base answers (RAG)',
-            'Bulk campaigns & templates',
-            '10 team seats',
-            'Priority support',
+            'Adds Telegram, Messenger, Instagram, WeChat and Discord',
+            'Price sheets and contract templates in the knowledge base',
+            'Automations written in plain language and simulated before going live',
+            'Bulk campaigns and templates with a consent record',
+            'Human handoff: AI pauses on legal threats and flags complaints',
+            'Voice note transcription and image understanding',
+            'Staff calendar and appointments',
+            'Monthly engineering review and AI fine-tuning',
           ],
-          cta: 'Start Free Trial',
-          ctaHref: APP_LOGIN_URL,
           inverted: true,
         },
         {
-          name: 'Custom',
+          name: 'Enterprise',
+          priceKey: 'enterprise',
           blurb: 'For organizations with security and scale requirements.',
           features: [
             'Everything in PRO',
-            'SSO / SAML',
-            'Custom integrations',
-            'Unlimited seats',
-            'Dedicated CSM',
-            '99.9% uptime SLA',
+            'Phone voice AI',
+            'Private cloud deployment',
+            'Read access to internal systems through API integrations',
+            'Role-based access, custom groups and audit logs',
+            'Customer identity verification before personal data is released',
+            'Milestone-based delivery and NDA',
           ],
-          cta: 'Contact Sales',
-          ctaHref: SALES_MAILTO,
         },
       ],
     },
@@ -559,11 +494,23 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         teamSizePlaceholder: 'Select team size',
         message: 'Message (Optional)',
         messagePlaceholder: 'What does your current pipeline look like?',
+        slotLabel: 'Pick a Time',
+        slotDate: 'Date',
+        slotTime: 'Time',
+        slotLoading: 'Loading available times…',
+        slotZoneNote: 'Times shown in {timeZone}. Demos run 10:00 AM to 6:00 PM HKT.',
+        slotHkt: 'HKT',
+        slotRequired: 'Please pick a time for your demo.',
+        slotTaken: 'That time was just taken. Please pick another.',
+        fallbackLabel: 'Preferred Time (Optional)',
+        fallbackPlaceholder: 'Tuesday afternoon, Hong Kong time',
+        fallbackNote: 'Online booking isn’t available right now. Tell us when suits you and we’ll confirm by email.',
         submit: 'Book a Demo',
         sending: 'Sending…',
         sentTitle: 'Received',
-        sentBody:
-          'We’ll get back to you within two hours during business days. Check your inbox for a confirmation.',
+        sentBody: 'We’ll email you to confirm a time, within two hours during business days.',
+        sentBooked:
+          'Your demo is booked for {slot}. A calendar invite with the Google Meet link is on its way to your inbox.',
         errorBefore: 'We couldn’t send that. Try again, or email us directly at ',
         errorAfter: '.',
         privacyBefore: 'By submitting you agree to our ',
@@ -628,26 +575,26 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     pricing: {
       label: '定价',
       heading: ['透明', '定价'],
-      monthly: '月付',
-      annual: '年付优惠 17%',
       mostPopular: '最受欢迎',
       perMonth: '/ 月',
-      enterprise: '企业版',
+      setupLabel: '一次性设置与部署',
+      monthlyLabel: '维护与 Token 额度',
+      fromBefore: '',
+      fromAfter: '起',
+      enterpriseNote: '按项目需求报价，按里程碑验收',
       plans: [
         {
           name: 'PLUS',
           priceKey: 'starter',
-          blurb: '适合初次搭建销售管道的小团队。',
+          blurb: '适合需要及时回复每条咨询的小型商户与团队。',
           features: [
-            '最多 1,000 位联系人',
-            '共享收件箱，电子邮件与网页聊天',
-            '管道看板',
-            '基础分析',
-            '2 个团队席位',
-            '标准支持',
+            'WhatsApp Business API 与网页聊天，两者均包含',
+            'AI 以客户的语言回复，包括英语、粤语和普通话',
+            '知识库支持 PDF、Word、Excel、CSV 及网站导入',
+            'AI 草稿与审批队列',
+            '网页聊天线索自动存入客户档案，并发送邮件通知',
+            '每月系统监控与维护',
           ],
-          cta: '开始免费试用',
-          ctaHref: APP_LOGIN_URL,
         },
         {
           name: 'PRO',
@@ -655,30 +602,30 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '为准备将跟进工作全自动化的团队而设。',
           features: [
             '包含 PLUS 全部功能',
-            'WhatsApp、WhatsApp Business 和网页聊天',
-            'AI 草稿与审批队列',
-            '知识库问答（RAG）',
-            '批量营销与模板',
-            '10 个团队席位',
-            '优先支持',
+            '增加 Telegram、Messenger、Instagram、微信和 Discord',
+            '知识库可导入价格表与合同模板',
+            '用日常语言编写自动化流程，上线前可模拟运行',
+            '批量营销与模板，并保留同意记录',
+            '人工交接：AI 遇法律威胁即暂停，并标记投诉',
+            '语音消息转写与图像理解',
+            '员工日历与预约管理',
+            '每月工程审查与 AI 调优',
           ],
-          cta: '开始免费试用',
-          ctaHref: APP_LOGIN_URL,
           inverted: true,
         },
         {
-          name: '定制版',
+          name: '企业版',
+          priceKey: 'enterprise',
           blurb: '为有安全与规模化需求的组织而设。',
           features: [
             '包含 PRO 全部功能',
-            'SSO / SAML',
-            '定制集成',
-            '无限席位',
-            '专属客户成功经理',
-            '99.9% 在线率 SLA',
+            '电话语音 AI',
+            '私有云部署',
+            '通过 API 集成读取内部系统数据',
+            '基于角色的权限、自定义群组与审计日志',
+            '发布个人资料前先验证客户身份',
+            '按里程碑交付并签署保密协议',
           ],
-          cta: '联系销售',
-          ctaHref: SALES_MAILTO,
         },
       ],
     },
@@ -702,10 +649,22 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         teamSizePlaceholder: '请选择团队规模',
         message: '留言（可选）',
         messagePlaceholder: '您目前的销售管道是什么样的？',
+        slotLabel: '选择时间',
+        slotDate: '日期',
+        slotTime: '时间',
+        slotLoading: '正在加载可预约时间…',
+        slotZoneNote: '时间以 {timeZone} 显示。演示时段为香港时间上午 10:00 至下午 6:00。',
+        slotHkt: '香港时间',
+        slotRequired: '请选择演示时间。',
+        slotTaken: '该时间刚被预约，请选择其他时间。',
+        fallbackLabel: '期望时间（可选）',
+        fallbackPlaceholder: '例如：周二下午（香港时间）',
+        fallbackNote: '在线预约暂不可用。请告诉我们您方便的时间，我们会通过邮件确认。',
         submit: '预约演示',
         sending: '发送中…',
         sentTitle: '已收到',
-        sentBody: '我们将在工作日 2 小时内回复您，请查收确认邮件。',
+        sentBody: '我们将在工作日 2 小时内通过邮件与您确认时间。',
+        sentBooked: '您的演示已预约在 {slot}。包含 Google Meet 链接的日历邀请即将发送至您的邮箱。',
         errorBefore: '发送失败，请重试，或直接发邮件至 ',
         errorAfter: '。',
         privacyBefore: '提交即表示您同意我们的',
@@ -770,26 +729,26 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     pricing: {
       label: '定價',
       heading: ['透明', '定價'],
-      monthly: '月付',
-      annual: '年付優惠 17%',
       mostPopular: '最受歡迎',
       perMonth: '/ 月',
-      enterprise: '企業版',
+      setupLabel: '一次性設定與部署',
+      monthlyLabel: '維護與 Token 額度',
+      fromBefore: '',
+      fromAfter: '起',
+      enterpriseNote: '按項目需求報價，按里程碑驗收',
       plans: [
         {
           name: 'PLUS',
           priceKey: 'starter',
-          blurb: '適合初次搭建銷售管道的小團隊。',
+          blurb: '適合需要及時回覆每個查詢的小型商戶與團隊。',
           features: [
-            '最多 1,000 位聯絡人',
-            '共享收件箱，電子郵件與網頁聊天',
-            '管道看板',
-            '基礎分析',
-            '2 個團隊席位',
-            '標準支援',
+            'WhatsApp Business API 與網頁聊天，兩者均包含',
+            'AI 以客戶的語言回覆，包括英語、粵語和普通話',
+            '知識庫支援 PDF、Word、Excel、CSV 及網站匯入',
+            'AI 草稿與審批隊列',
+            '網頁聊天潛在客戶自動存入客戶檔案，並發送電郵通知',
+            '每月系統監控與維護',
           ],
-          cta: '開始免費試用',
-          ctaHref: APP_LOGIN_URL,
         },
         {
           name: 'PRO',
@@ -797,30 +756,30 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           blurb: '為準備將跟進工作全自動化的團隊而設。',
           features: [
             '包含 PLUS 全部功能',
-            'WhatsApp、WhatsApp Business 和網頁聊天',
-            'AI 草稿與審批隊列',
-            '知識庫問答（RAG）',
-            '批量行銷與模板',
-            '10 個團隊席位',
-            '優先支援',
+            '增加 Telegram、Messenger、Instagram、微信和 Discord',
+            '知識庫可匯入價格表與合約範本',
+            '用日常語言編寫自動化流程，上線前可模擬運行',
+            '批量行銷與模板，並保留同意記錄',
+            '人手交接：AI 遇法律威脅即暫停，並標記投訴',
+            '語音訊息轉寫與圖像理解',
+            '員工日曆與預約管理',
+            '每月工程審查與 AI 調校',
           ],
-          cta: '開始免費試用',
-          ctaHref: APP_LOGIN_URL,
           inverted: true,
         },
         {
-          name: '定製版',
+          name: '企業版',
+          priceKey: 'enterprise',
           blurb: '為有安全與規模化需求的組織而設。',
           features: [
             '包含 PRO 全部功能',
-            'SSO / SAML',
-            '定製整合',
-            '無限席位',
-            '專屬客戶成功經理',
-            '99.9% 在線率 SLA',
+            '電話語音 AI',
+            '私有雲部署',
+            '透過 API 整合讀取內部系統數據',
+            '基於角色的權限、自訂群組與審計記錄',
+            '發放個人資料前先驗證客戶身份',
+            '按里程碑交付並簽署保密協議',
           ],
-          cta: '聯絡銷售',
-          ctaHref: SALES_MAILTO,
         },
       ],
     },
@@ -844,10 +803,22 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         teamSizePlaceholder: '請選擇團隊規模',
         message: '留言（可選）',
         messagePlaceholder: '您目前的銷售管道是怎樣的？',
+        slotLabel: '選擇時間',
+        slotDate: '日期',
+        slotTime: '時間',
+        slotLoading: '正在載入可預約時間…',
+        slotZoneNote: '時間以 {timeZone} 顯示。示範時段為香港時間上午 10:00 至下午 6:00。',
+        slotHkt: '香港時間',
+        slotRequired: '請選擇示範時間。',
+        slotTaken: '該時間剛被預約，請選擇其他時間。',
+        fallbackLabel: '期望時間（可選）',
+        fallbackPlaceholder: '例如：星期二下午（香港時間）',
+        fallbackNote: '網上預約暫時未能使用。請告訴我們您方便的時間，我們會以電郵確認。',
         submit: '預約示範',
         sending: '發送中…',
         sentTitle: '已收到',
-        sentBody: '我們將在工作日 2 小時內回覆您，請查收確認郵件。',
+        sentBody: '我們將在工作日 2 小時內以電郵與您確認時間。',
+        sentBooked: '您的示範已預約在 {slot}。包含 Google Meet 連結的日曆邀請即將發送至您的郵箱。',
         errorBefore: '發送失敗，請重試，或直接發電郵至 ',
         errorAfter: '。',
         privacyBefore: '提交即表示您同意我們的',
@@ -1809,27 +1780,8 @@ function Reviews() {
 /* --------------------------------- pricing --------------------------------- */
 
 function Pricing({ currency, language }: { currency: CurrencyCode; language: LanguageCode }) {
-  const [annual, setAnnual] = useState(true);
-  const billingToggleRef = useRef<HTMLDivElement>(null);
   const pricing = CURRENCY_PRICING[currency];
   const copy = SITE_COPY[language].pricing;
-
-  useLayoutEffect(() => {
-    const toggle = billingToggleRef.current;
-    const activeButton = toggle?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
-    if (!toggle || !activeButton) return;
-
-    const updateIndicator = () => {
-      const { offsetLeft, offsetWidth } = activeButton;
-      toggle.style.setProperty('--billing-indicator-x', `${offsetLeft}px`);
-      toggle.style.setProperty('--billing-indicator-width', `${offsetWidth}px`);
-    };
-
-    updateIndicator();
-    const observer = new ResizeObserver(updateIndicator);
-    toggle.querySelectorAll('button').forEach((button) => observer.observe(button, { box: 'border-box' }));
-    return () => observer.disconnect();
-  }, [annual, language]);
 
   return (
     <section id="pricing" tabIndex={-1} data-motion-section className="bg-[#F8F8F6] py-32">
@@ -1845,35 +1797,17 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
               <MotionLines lines={copy.heading} />
             </h2>
           </Reveal>
-
-          <Reveal delay={100}>
-            <div ref={billingToggleRef} className="billing-toggle mt-10 inline-flex border border-black/10 bg-white p-1">
-              {(
-                [
-                  { key: false, label: copy.monthly },
-                  { key: true, label: copy.annual },
-                ] as const
-              ).map((t) => (
-                <button
-                  key={t.label}
-                  type="button"
-                  aria-pressed={annual === t.key}
-                  onClick={() => setAnnual(t.key)}
-                  className="px-5 py-2 font-mono text-[9px] tracking-[0.2em] uppercase"
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </Reveal>
         </div>
 
         <div className="mt-12">
           <div className="pricing-grid grid lg:grid-cols-3">
             {copy.plans.map((p, index) => {
-              const price = p.priceKey ? pricing.prices[p.priceKey][annual ? 'annual' : 'monthly'] : null;
-              const formattedPrice = formatCurrencyPrice(currency, price);
+              const { setup, monthly } = pricing.prices[p.priceKey];
               const inv = p.inverted;
+              const smallPriceClass = `font-mono text-[9px] tracking-[0.15em] uppercase ${
+                inv ? 'text-white/35' : 'text-black/30'
+              }`;
+              const noteClass = `pricing-cost-note ${inv ? 'text-white/45' : 'text-black/40'}`;
               return (
                 <Reveal
                   key={p.name}
@@ -1895,32 +1829,39 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                   >
                     {p.name}
                   </div>
-                  <div className="pricing-price mt-6 flex items-baseline gap-2">
-                    {formattedPrice !== null ? (
+                  <div className="pricing-cost mt-6">
+                    <div className="pricing-price flex items-baseline gap-2">
+                      {monthly === undefined && copy.fromBefore && (
+                        <span className={smallPriceClass}>{copy.fromBefore}</span>
+                      )}
+                      <span className="font-display text-6xl font-black leading-none">
+                        {formatCurrencyPrice(currency, setup)}
+                      </span>
+                      {monthly === undefined && copy.fromAfter && (
+                        <span className={smallPriceClass}>{copy.fromAfter}</span>
+                      )}
+                    </div>
+                    <p className={`mt-2 ${noteClass}`}>
+                      {monthly === undefined ? copy.enterpriseNote : copy.setupLabel}
+                    </p>
+                    {monthly !== undefined && (
                       <>
-                        <span className="font-display text-6xl font-black leading-none">
-                          {formattedPrice}
-                        </span>
-                        <span
-                          className={`font-mono text-[9px] tracking-[0.15em] uppercase ${
-                            inv ? 'text-white/35' : 'text-black/30'
-                          }`}
-                        >
-                          {copy.perMonth}
-                        </span>
+                        <div className="pricing-monthly mt-4 font-display text-2xl font-bold leading-tight">
+                          + {formatCurrencyPrice(currency, monthly)}{' '}
+                          <span className={smallPriceClass}>{copy.perMonth}</span>
+                        </div>
+                        <p className={`mt-1 ${noteClass}`}>{copy.monthlyLabel}</p>
                       </>
-                    ) : (
-                      <span className="enterprise-price font-display text-6xl font-black uppercase leading-none">{copy.enterprise}</span>
                     )}
                   </div>
                   <p
-                    className={`mt-4 text-[12px] leading-relaxed ${
+                    className={`mt-6 text-[12px] leading-relaxed ${
                       inv ? 'text-white/45' : 'text-black/40'
                     }`}
                   >
                     {p.blurb}
                   </p>
-                  <ul className="mb-10 mt-8 flex flex-col gap-3">
+                  <ul className="mt-8 flex flex-col gap-3">
                     {p.features.map((f) => (
                       <li key={f} className="flex items-start gap-3">
                         <Check
@@ -1936,16 +1877,6 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
                       </li>
                     ))}
                   </ul>
-                  <a
-                    href={p.ctaHref ?? '#contact'}
-                    className={`pricing-cta mt-auto block py-4 text-center font-mono text-[10px] tracking-[0.25em] uppercase transition-opacity hover:opacity-80 ${
-                      inv
-                        ? 'bg-white text-black'
-                        : 'border border-black/15 text-black/70 hover:border-black/40'
-                    }`}
-                  >
-                    {p.cta}
-                  </a>
                 </Reveal>
               );
             })}
@@ -2083,28 +2014,131 @@ function TeamSizeCombobox({ placeholder }: { placeholder: string }) {
 }
 
 type ContactStatus = 'idle' | 'sending' | 'sent' | 'error';
+type SlotsStatus = 'loading' | 'ready' | 'unavailable';
+type BookingOutcome = { ok: boolean; code?: string };
+
+const BOOKING_LOCALES: Record<LanguageCode, string> = { EN: 'en-US', CN: 'zh-CN', HK: 'zh-HK' };
+const SLOTS_TIMEOUT_MS = 10_000;
+const BOOKING_TIMEOUT_MS = 30_000;
+
+async function fetchDemoSlots() {
+  const res = await fetch(`${DEMO_BOOKING_URL}?action=slots`, {
+    signal: AbortSignal.timeout(SLOTS_TIMEOUT_MS),
+  });
+  return parseSlotsResponse(await res.json(), Date.now());
+}
+
+async function bookDemoSlot(booking: Record<string, FormDataEntryValue>): Promise<BookingOutcome> {
+  try {
+    // text/plain keeps this a simple request. Apps Script can't answer a CORS preflight.
+    const res = await fetch(DEMO_BOOKING_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(booking),
+      signal: AbortSignal.timeout(BOOKING_TIMEOUT_MS),
+    });
+    return (await res.json()) as BookingOutcome;
+  } catch (err) {
+    console.error('Demo booking request failed:', err);
+    return { ok: false, code: 'unreachable' };
+  }
+}
+
+async function sendViaWeb3Forms(fields: Record<string, FormDataEntryValue>) {
+  // JSON is the client-side format Web3Forms documents. Their API rejects
+  // non-browser user agents, so this has to run from the browser.
+  const res = await fetch(WEB3FORMS_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(fields),
+  });
+  const data = (await res.json()) as { success?: boolean; message?: string };
+  if (!res.ok || !data.success) throw new Error(data.message || `Request failed (${res.status})`);
+}
 
 function Contact({ language }: { language: LanguageCode }) {
   const [status, setStatus] = useState<ContactStatus>('idle');
   const [devError, setDevError] = useState<string | null>(null);
+  const [slots, setSlots] = useState<string[]>([]);
+  const [slotsStatus, setSlotsStatus] = useState<SlotsStatus>(DEMO_BOOKING_URL ? 'loading' : 'unavailable');
+  const [selectedSlot, setSelectedSlot] = useState('');
+  const [slotMessage, setSlotMessage] = useState<string | null>(null);
+  const [bookedSlot, setBookedSlot] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
   const copy = SITE_COPY[language].contact;
+  const locale = BOOKING_LOCALES[language];
+
+  const loadSlots = useCallback(async () => {
+    setSlotsStatus('loading');
+    try {
+      const nextSlots = await fetchDemoSlots();
+      setSlots(nextSlots);
+      setSlotsStatus(nextSlots.length ? 'ready' : 'unavailable');
+    } catch (err) {
+      console.error('Loading demo slots failed:', err);
+      setSlotsStatus('unavailable');
+    }
+  }, []);
+
+  // Slots go stale and each load calls the calendar, so wait until the form is nearly in view.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!DEMO_BOOKING_URL || !section) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        void loadSlots();
+      },
+      { rootMargin: '600px 0px' },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [loadSlots]);
+
+  const handleSelectSlot = useCallback((slot: string) => {
+    setSelectedSlot(slot);
+    if (slot) setSlotMessage(null);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = event.currentTarget;
-    setStatus('sending');
+    const fields = Object.fromEntries(new FormData(form));
     setDevError(null);
 
+    if (slotsStatus === 'ready' && !selectedSlot) {
+      setSlotMessage(copy.form.slotRequired);
+      return;
+    }
+
+    setStatus('sending');
+    setSlotMessage(null);
+
     try {
-      // JSON is the client-side format Web3Forms documents. Their API rejects
-      // non-browser user agents, so this has to run from the browser.
-      const res = await fetch(WEB3FORMS_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(Object.fromEntries(new FormData(form))),
-      });
-      const data = (await res.json()) as { success?: boolean; message?: string };
-      if (!res.ok || !data.success) throw new Error(data.message || `Request failed (${res.status})`);
+      if (slotsStatus === 'ready') {
+        const outcome = await bookDemoSlot({ ...fields, slot: selectedSlot, language });
+        if (outcome.ok) {
+          setBookedSlot(selectedSlot);
+          setStatus('sent');
+          form.reset();
+          return;
+        }
+        if (outcome.code === 'slot_taken') {
+          setSelectedSlot('');
+          setSlotMessage(copy.form.slotTaken);
+          setStatus('idle');
+          await loadSlots();
+          return;
+        }
+        if (outcome.code === 'invalid' || outcome.code === 'rate_limited') {
+          throw new Error(`Booking refused: ${outcome.code}`);
+        }
+        // The backend is down or full, so keep the lead through the other path.
+        fields.preferred_time = `${formatSlotDateTime(selectedSlot, BOOKING_TIME_ZONE, 'en-US')} HKT`;
+      }
+
+      await sendViaWeb3Forms(fields);
       setStatus('sent');
       form.reset();
     } catch (err) {
@@ -2117,7 +2151,7 @@ function Contact({ language }: { language: LanguageCode }) {
   };
 
   return (
-    <section id="contact" tabIndex={-1} className="scroll-mt-16 bg-white py-32" data-motion-section>
+    <section id="contact" ref={sectionRef} tabIndex={-1} className="scroll-mt-16 bg-white py-32" data-motion-section>
       <div className="mx-auto max-w-[85rem] px-6 lg:px-10">
         <div className="grid gap-16 lg:grid-cols-[2fr_3fr] lg:gap-14">
           <div>
@@ -2151,7 +2185,8 @@ function Contact({ language }: { language: LanguageCode }) {
               </Reveal>
           </div>
 
-          <Reveal delay={150}>
+          {/* min-w-0 stops the scrolling date strip from widening the whole grid. */}
+          <Reveal delay={150} className="min-w-0">
             <div className="contact-panel border border-black/8 bg-[#FAFAF8] p-10">
               {status === 'sent' ? (
                 <div className="flex min-h-[28rem] flex-col items-center justify-center text-center">
@@ -2160,7 +2195,12 @@ function Contact({ language }: { language: LanguageCode }) {
                   </div>
                   <div className="mt-6 font-display text-4xl font-black uppercase">{copy.form.sentTitle}</div>
                   <p className="mt-3 max-w-xs text-[12px] leading-relaxed text-black/40">
-                    {copy.form.sentBody}
+                    {bookedSlot
+                      ? copy.form.sentBooked.replace(
+                          '{slot}',
+                          formatSlotDateTime(bookedSlot, visitorTimeZone(), locale),
+                        )
+                      : copy.form.sentBody}
                   </p>
                 </div>
               ) : (
@@ -2200,6 +2240,54 @@ function Contact({ language }: { language: LanguageCode }) {
                     </span>
                     <TeamSizeCombobox placeholder={copy.form.teamSizePlaceholder} />
                   </div>
+                  {slotsStatus === 'unavailable' ? (
+                    <label className="block">
+                      <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30">
+                        {copy.form.fallbackLabel}
+                      </span>
+                      <input
+                        type="text"
+                        name="preferred_time"
+                        maxLength={200}
+                        placeholder={copy.form.fallbackPlaceholder}
+                        className="mt-2 w-full border-b border-black/6 bg-transparent pb-4 text-[14px] outline-none transition-colors placeholder:text-black/15 focus:border-black/30"
+                      />
+                      <span className="demo-slot-note">{copy.form.fallbackNote}</span>
+                    </label>
+                  ) : (
+                    <div className="block">
+                      <span
+                        id="demo-slot-label"
+                        className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30"
+                      >
+                        {copy.form.slotLabel}
+                      </span>
+                      {slotsStatus === 'loading' ? (
+                        <p role="status" className="demo-slot-note">
+                          {copy.form.slotLoading}
+                        </p>
+                      ) : (
+                        <DemoSlotPicker
+                          slots={slots}
+                          value={selectedSlot}
+                          onChange={handleSelectSlot}
+                          locale={locale}
+                          dateLabel={copy.form.slotDate}
+                          timeLabel={copy.form.slotTime}
+                          timeZoneNote={copy.form.slotZoneNote}
+                          hktLabel={copy.form.slotHkt}
+                        />
+                      )}
+                    </div>
+                  )}
+                  {slotMessage && (
+                    <p
+                      role="alert"
+                      className="border border-black/15 bg-white px-4 py-3 text-[12px] leading-relaxed text-black/60"
+                    >
+                      {slotMessage}
+                    </p>
+                  )}
                   <label className="block">
                     <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30">
                       {copy.form.message}
@@ -2233,7 +2321,7 @@ function Contact({ language }: { language: LanguageCode }) {
                   )}
                   <button
                     type="submit"
-                    disabled={status === 'sending'}
+                    disabled={status === 'sending' || slotsStatus === 'loading'}
                     className="mt-2 w-full bg-black py-5 font-mono text-[10px] tracking-[0.3em] uppercase text-white transition-opacity hover:opacity-80 disabled:opacity-40"
                   >
                     {status === 'sending' ? copy.form.sending : copy.form.submit}
@@ -2395,6 +2483,11 @@ function PrivacyPolicyContent() {
         </ul>
         <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.3 Cookies")}</h3>
         <p>{t("We use strictly necessary session cookies to keep you logged in. We do not use advertising or cross site tracking cookies.")}</p>
+        <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.4 Website visitors")}</h3>
+        <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
+          <li><strong className="text-black">{t("Demo bookings:")}</strong>{' '}{t("if you book a demo on our website, we receive your name, company, work email, team size, message and chosen time. These are stored in the Google Calendar and Gmail account we use to arrange the demo, and Google sends you the calendar invite.")}</li>
+          <li><strong className="text-black">{t("Country lookup for pricing:")}</strong>{' '}{t("when our website loads, your browser asks Cloudflare which country you are in, so we can show prices in your currency. Cloudflare sees your IP address as part of that request. We receive only the country code and do not store it.")}</li>
+        </ul>
       </LegalSection>
 
       <LegalSection id="how-we-use-data" title="4. How we use data">
@@ -2449,7 +2542,8 @@ function PrivacyPolicyContent() {
                 ['OpenRouter / DeepSeek / Anthropic / Google', 'AI inference (classification, drafting, verification)', 'United States'],
                 ['Stripe', 'Payment processing', 'United States / global'],
                 ['Google', 'OAuth sign in, Gmail sending/receiving, Calendar (where you connect them)', 'Global'],
-                ['Cloudflare', 'Network security and content delivery', 'Global'],
+                ['Google (website bookings)', 'Calendar and email for demo bookings made on our website', 'Global'],
+                ['Cloudflare', 'Network security, content delivery and country lookup for website pricing', 'Global'],
               ].map(([provider, purpose, location]) => (
                 <tr key={provider} className="border-b border-black/6 last:border-0">
                   <td className="py-4 pr-5 align-top font-medium text-black">{provider}</td>
@@ -2701,7 +2795,7 @@ function LegalDocumentsPage({ initialPage }: { initialPage: LegalPage }) {
       languageControl={<HeaderSelector id="legal-language" label={SITE_COPY[language].selectors.language} ariaLabel={SITE_COPY[language].selectors.language} options={LANGUAGE_OPTIONS} value={language} onChange={handleLanguageChange} />}
       page={page}
       title={title}
-      updated={t(isPrivacy ? 'Last updated: 3 August 2026' : 'Last updated: 4 August 2026')}
+      updated={t(isPrivacy ? 'Last updated: 30 October 2026' : 'Last updated: 4 August 2026')}
       sections={isPrivacy ? PRIVACY_NAV : TERMS_NAV}
       footer={<Footer language={language} />}
       onNavigate={navigate}
@@ -2750,7 +2844,17 @@ function useSiteLanguage() {
 
 function LandingPage({ product, industry }: { product?: ProductSlug; industry?: IndustrySlug }) {
   const { language, handleLanguageChange } = useSiteLanguage();
-  const [currency] = useState<CurrencyCode>(detectInitialCurrency);
+  const [currency, setCurrency] = useState<CurrencyCode>(detectInitialCurrency);
+
+  useEffect(() => {
+    let cancelled = false;
+    void lookupVisitorCurrency().then((visitorCurrency) => {
+      if (!cancelled && visitorCurrency) setCurrency(visitorCurrency);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <LanguageContext.Provider value={language}>
