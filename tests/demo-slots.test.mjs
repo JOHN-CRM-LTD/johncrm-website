@@ -88,6 +88,15 @@ test('time zones get a readable name', () => {
   assert.equal(timeZoneLabel('America/Toronto', 'en-US'), 'Eastern Time');
 });
 
+test('a failed slot lookup retries once, then offers Try again beside the text box', () => {
+  assert.match(source, /SLOTS_TIMEOUT_MS = 15_000/);
+  assert.match(source, /await fetchDemoSlots\(\)\.catch\(async \(\) => \{[\s\S]{0,160}return fetchDemoSlots\(\);/);
+  assert.match(source, /onClick=\{\(\) => void loadSlots\(\)\} className="demo-slot-retry"/);
+  for (const label of ['Try again', '重试', '重試']) {
+    assert.ok(source.includes(`slotRetry: '${label}'`), label);
+  }
+});
+
 test('booking goes to the Apps Script backend, with Web3Forms as the fallback', () => {
   assert.match(source, /SALES_CONTACT_EMAIL = 'biz\.johncrm@gmail\.com'/);
   assert.match(source, /'Content-Type': 'text\/plain;charset=utf-8'/);

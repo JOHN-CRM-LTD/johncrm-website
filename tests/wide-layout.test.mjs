@@ -7,7 +7,7 @@ test('uses the wider 85rem desktop container across the site', async () => {
 
   assert.equal(
     (source.match(/max-w-\[85rem\]/g) ?? []).length,
-    8,
+    7,
     'expected the header, page sections, showcase, and footer to share the 85rem container',
   );
   assert.doesNotMatch(source, /max-w-7xl/);

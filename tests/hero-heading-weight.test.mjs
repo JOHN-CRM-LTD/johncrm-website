@@ -7,6 +7,6 @@ test('hero heading uses the lighter extra-bold weight', async () => {
 
   assert.match(
     source,
-    /className="font-display font-extrabold uppercase leading-\[0\.88\] tracking-tight"/,
+    /className=\{`font-display font-extrabold uppercase tracking-tight \$\{\s*language === 'EN' \? 'leading-\[0\.88\]' : 'leading-\[1\.15\]'/,
   );
 });

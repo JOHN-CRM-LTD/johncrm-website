@@ -62,7 +62,7 @@ test('hero presents the AI agent platform message', () => {
 
   assert.match(
     appSource,
-    /description:\s*'#1 AI Agent Platform for Automating messages\. Manage your site, WhatsApp, WeChat, Telegram and more in one place\.'/,
+    /description:\s*'#1 AI Agent Platform for Automating messages\. Manage your site, WhatsApp, Telegram and more in one place\.'/,
   );
   assert.match(heroSource, /\{copy\.hero\.description\}/);
   assert.doesNotMatch(appSource, /Every customer conversation in one inbox/);

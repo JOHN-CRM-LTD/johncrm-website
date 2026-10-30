@@ -50,6 +50,36 @@ test('plan features carry the current wording in every language', () => {
   }
 });
 
+test('WeChat is gone from the site copy and legal pages', async () => {
+  const legalSource = await readFile(new URL('../src/app/translations/legal.ts', import.meta.url), 'utf8');
+  for (const source of [appSource, legalSource]) {
+    assert.doesNotMatch(source, /wechat|微信/i);
+  }
+});
+
+test('Instagram and Discord are on request in every language', () => {
+  for (const note of [
+    'Instagram and Discord can be added on request.',
+    'Instagram 和 Discord 可按需开通。',
+    'Instagram 和 Discord 可按需開通。',
+  ]) {
+    assert.ok(appSource.includes(`channelNote: '${note}'`), note);
+  }
+  assert.ok(appSource.includes('with Instagram and Discord on request'));
+  assert.match(appSource, /\{copy\.channelNote\}/);
+});
+
+test('Enterprise describes private network access, separate from the PRO API line', () => {
+  for (const feature of [
+    'Read-only access to systems on your private network',
+    '只读访问您私有网络内的系统',
+    '唯讀存取您私有網絡內的系統',
+  ]) {
+    assert.ok(appSource.includes(`'${feature}'`), feature);
+  }
+  assert.doesNotMatch(appSource, /Read access to internal systems/);
+});
+
 test('priced plans explain the setup and monthly fees in every language', () => {
   for (const label of ['One-off setup & deployment', '一次性设置与部署', '一次性設定與部署']) {
     assert.ok(appSource.includes(`setupLabel: '${label}'`), label);
