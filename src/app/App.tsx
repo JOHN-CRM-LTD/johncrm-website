@@ -91,7 +91,6 @@ const SALES_MAILTO = `mailto:${SALES_CONTACT_EMAIL}?subject=${encodeURIComponent
 )}&body=${encodeURIComponent(
   [
     'Company:',
-    'Team size:',
     'What you want to automate:',
     '',
     'Sent from johncrm.com',
@@ -338,8 +337,6 @@ type SiteCopy = {
     info: readonly { label: string; value: string }[];
     form: {
       fields: readonly ContactFormField[];
-      teamSize: string;
-      teamSizePlaceholder: string;
       message: string;
       messagePlaceholder: string;
       slotLabel: string;
@@ -498,8 +495,6 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           { id: 'company', label: 'Company', placeholder: 'Acme Industries' },
           { id: 'email', label: 'Work Email', placeholder: 'jane@acme.com' },
         ],
-        teamSize: 'Team Size',
-        teamSizePlaceholder: 'Select team size',
         message: 'Message (Optional)',
         messagePlaceholder: 'What does your current pipeline look like?',
         slotLabel: 'Pick a Time',
@@ -660,8 +655,6 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           { id: 'company', label: '公司名称', placeholder: '示例科技有限公司' },
           { id: 'email', label: '工作邮箱', placeholder: 'zhang@company.com' },
         ],
-        teamSize: '团队规模',
-        teamSizePlaceholder: '请选择团队规模',
         message: '留言（可选）',
         messagePlaceholder: '您目前的销售管道是什么样的？',
         slotLabel: '选择时间',
@@ -821,8 +814,6 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
           { id: 'company', label: '公司名稱', placeholder: '示例科技有限公司' },
           { id: 'email', label: '工作電郵', placeholder: 'cheung@company.com' },
         ],
-        teamSize: '團隊規模',
-        teamSizePlaceholder: '請選擇團隊規模',
         message: '留言（可選）',
         messagePlaceholder: '您目前的銷售管道是怎樣的？',
         slotLabel: '選擇時間',
@@ -1914,130 +1905,6 @@ function Pricing({ currency, language }: { currency: CurrencyCode; language: Lan
 
 /* --------------------------------- contact --------------------------------- */
 
-const TEAM_SIZE_OPTIONS = ['1 to 5', '6 to 20', '21 to 100', '100+'] as const;
-
-function TeamSizeCombobox({ placeholder }: { placeholder: string }) {
-  const [open, setOpen] = useState(false);
-  const [value, setValue] = useState('');
-  const [activeIndex, setActiveIndex] = useState(0);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-
-    document.addEventListener('pointerdown', handlePointerDown);
-    return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [open]);
-
-  const openMenu = () => {
-    const selectedIndex = TEAM_SIZE_OPTIONS.findIndex((option) => option === value);
-    setActiveIndex(selectedIndex === -1 ? 0 : selectedIndex);
-    setOpen(true);
-  };
-
-  const selectOption = (option: (typeof TEAM_SIZE_OPTIONS)[number]) => {
-    setValue(option);
-    setOpen(false);
-    triggerRef.current?.focus();
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === 'Escape') {
-      setOpen(false);
-      return;
-    }
-
-    if (!open && ['Enter', ' ', 'ArrowDown'].includes(event.key)) {
-      event.preventDefault();
-      openMenu();
-      return;
-    }
-
-    if (!open) return;
-
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      setActiveIndex((index) =>
-        event.key === 'ArrowDown'
-          ? (index + 1) % TEAM_SIZE_OPTIONS.length
-          : (index - 1 + TEAM_SIZE_OPTIONS.length) % TEAM_SIZE_OPTIONS.length,
-      );
-    } else if (event.key === 'Home' || event.key === 'End') {
-      event.preventDefault();
-      setActiveIndex(event.key === 'Home' ? 0 : TEAM_SIZE_OPTIONS.length - 1);
-    } else if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      selectOption(TEAM_SIZE_OPTIONS[activeIndex]);
-    }
-  };
-
-  return (
-    <div ref={wrapperRef} className="relative mt-2">
-      <input type="hidden" name="teamSize" value={value} />
-      <button
-        ref={triggerRef}
-        type="button"
-        role="combobox"
-        aria-expanded={open}
-        aria-controls="team-size-options"
-        aria-haspopup="listbox"
-        aria-labelledby="team-size-label"
-        aria-activedescendant={open ? `team-size-option-${activeIndex}` : undefined}
-        onClick={() => (open ? setOpen(false) : openMenu())}
-        onKeyDown={handleKeyDown}
-        className={`flex w-full items-center justify-between border bg-white/60 px-4 py-3.5 text-left text-[14px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black ${
-          open ? 'border-black/35' : 'border-black/10 hover:border-black/30'
-        }`}
-      >
-        <span className={value ? 'text-black/75' : 'text-black/35'}>
-          {value || placeholder}
-        </span>
-        <ChevronDown
-          size={15}
-          strokeWidth={1.5}
-          className={`shrink-0 text-black/50 transition-transform ${open ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-      {open && (
-        <div
-          id="team-size-options"
-          role="listbox"
-          aria-label="Team size options"
-          className="absolute inset-x-0 top-full z-20 mt-2 border border-black/10 bg-white p-1 shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
-        >
-          {TEAM_SIZE_OPTIONS.map((option, index) => {
-            const selected = option === value;
-            const active = index === activeIndex;
-            return (
-              <button
-                key={option}
-                id={`team-size-option-${index}`}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => selectOption(option)}
-                className={`flex w-full items-center justify-between px-3 py-3 text-left text-[13px] transition-colors ${
-                  active ? 'bg-black text-white' : 'text-black/65 hover:bg-black/5 hover:text-black'
-                }`}
-              >
-                {option}
-                {selected && <Check size={13} strokeWidth={2.5} aria-hidden="true" />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 type ContactStatus = 'idle' | 'sending' | 'sent' | 'error';
 type SlotsStatus = 'loading' | 'ready' | 'unavailable';
 type BookingOutcome = { ok: boolean; code?: string };
@@ -2267,15 +2134,6 @@ function Contact({ language }: { language: LanguageCode }) {
                       />
                     </label>
                   ))}
-                  <div className="block">
-                    <span
-                      id="team-size-label"
-                      className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/30"
-                    >
-                      {copy.form.teamSize}
-                    </span>
-                    <TeamSizeCombobox placeholder={copy.form.teamSizePlaceholder} />
-                  </div>
                   {slotsStatus === 'unavailable' ? (
                     <div>
                       <label className="block">

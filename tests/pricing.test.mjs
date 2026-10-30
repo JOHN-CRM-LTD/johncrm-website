@@ -29,7 +29,7 @@ test('every supported currency prices all three plans', () => {
 });
 
 test('pricing cards have no buttons or billing toggle', () => {
-  const pricing = source.slice(source.indexOf('function Pricing('), source.indexOf('const TEAM_SIZE_OPTIONS'));
+  const pricing = source.slice(source.indexOf('function Pricing('), source.indexOf('type ContactStatus'));
   assert.doesNotMatch(pricing, /<a\b|<button\b|pricing-cta|billing-toggle/);
   assert.doesNotMatch(source, /ctaHref|annual/);
   assert.doesNotMatch(styles, /pricing-cta|billing-toggle/);

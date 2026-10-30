@@ -97,6 +97,10 @@ test('a failed slot lookup retries once, then offers Try again beside the text b
   }
 });
 
+test('the contact form no longer asks for team size', () => {
+  assert.doesNotMatch(source, /TeamSizeCombobox|TEAM_SIZE_OPTIONS|name="teamSize"|teamSizePlaceholder|Team size:/);
+});
+
 test('booking goes to the Apps Script backend, with Web3Forms as the fallback', () => {
   assert.match(source, /SALES_CONTACT_EMAIL = 'biz\.johncrm@gmail\.com'/);
   assert.match(source, /'Content-Type': 'text\/plain;charset=utf-8'/);

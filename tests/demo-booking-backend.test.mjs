@@ -16,7 +16,6 @@ const validInput = (overrides = {}) => ({
   name: 'Jane Analyst',
   company: 'Acme Industries',
   email: 'Jane@Acme.com',
-  teamSize: '6 to 20',
   message: 'Hello',
   language: 'EN',
   slot: '2026-11-03T02:00:00.000Z',

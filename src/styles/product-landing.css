@@ -78,8 +78,7 @@ html:has(.landing-site) { scroll-behavior: auto; }
   color: var(--header-ink);
 }
 .landing-site .site-header > div.absolute a { letter-spacing: 0; text-transform: none; font-size: 16px; }
-.landing-site .site-header [role='menu'],
-.landing-site #contact [role='listbox'] {
+.landing-site .site-header [role='menu'] {
   padding: 5px;
   border: 1px solid var(--landing-line);
   border-radius: 14px;
@@ -132,22 +131,16 @@ html:has(.landing-site) { scroll-behavior: auto; }
 .landing-site .contact-panel { padding: clamp(24px, 3.2vw, 44px); border: 1px solid #ffffff1a; border-radius: var(--radius-panel); background: #102a32; color: #f7f5f0; color-scheme: dark; }
 .landing-site .contact-panel form { gap: 22px; }
 .landing-site #contact label > span,
-.landing-site #contact #team-size-label,
 .landing-site #contact #demo-slot-label { color: #bed0d2; font-size: 12px; font-weight: 500; }
 .landing-site #contact input:not([type='hidden']):not([type='checkbox']),
 .landing-site #contact textarea,
-.landing-site #contact [role='combobox'],
 .landing-site #contact .demo-slot-trigger { border: 1px solid #ffffff29; border-radius: var(--radius-control); background: #ffffff0d; padding: 13px 15px; min-height: 48px; color: #f7f5f0; font-size: 14px; line-height: 1.5; transition: border-color 180ms ease, box-shadow 180ms ease; }
 .landing-site #contact input::placeholder,
 .landing-site #contact textarea::placeholder { color: #93a9ae; opacity: 1; }
 .landing-site #contact input:-webkit-autofill { -webkit-text-fill-color: #f7f5f0; box-shadow: 0 0 0 1000px #1c353d inset; }
-.landing-site #contact [role='combobox'] span { color: #f7f5f0; }
-.landing-site #contact [role='combobox'] span[class*='text-black/35'] { color: #93a9ae; }
-.landing-site #contact [role='combobox'] svg { color: #bed0d2; }
 .landing-site #contact textarea { display: block; min-height: 112px; max-height: 240px; overflow-y: auto; resize: none; }
-.landing-site #contact :is(input, textarea, [role='combobox'], .demo-slot-trigger):hover { border-color: #ffffff59; }
-.landing-site #contact :is(input, textarea, [role='combobox'], .demo-slot-trigger):focus-visible,
-.landing-site #contact [role='combobox'][aria-expanded='true'] { border-color: #8fc7d6; box-shadow: 0 0 0 3px #8fc7d62e; outline: none; }
+.landing-site #contact :is(input, textarea, .demo-slot-trigger):hover { border-color: #ffffff59; }
+.landing-site #contact :is(input, textarea, .demo-slot-trigger):focus-visible { border-color: #8fc7d6; box-shadow: 0 0 0 3px #8fc7d62e; outline: none; }
 .landing-site .contact-panel :is(a, button):focus-visible { outline-color: #8fc7d6; }
 .landing-site #contact button[type='submit'] { min-height: 50px; padding: 14px 20px; border-radius: var(--radius-control); background: #f7f5f0; color: #102a32; font-size: 13px; font-weight: 600; }
 .landing-site #contact form > p:last-child { color: #a9bcc0; font-size: 11px; line-height: 1.6; }
@@ -250,7 +243,7 @@ html:has(.demo-slot-dialog[open]) { overflow: hidden; scrollbar-gutter: stable; 
 }
 @media (prefers-reduced-motion: reduce) {
   .landing-site .site-header,
-  .landing-site #contact :is(input, textarea, [role='combobox'], .demo-slot-trigger) { transition: none; }
+  .landing-site #contact :is(input, textarea, .demo-slot-trigger) { transition: none; }
   .demo-slot-dialog[open],
   .demo-slot-dialog[open][data-closing],
   .demo-slot-dialog::backdrop,

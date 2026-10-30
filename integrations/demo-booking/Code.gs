@@ -154,7 +154,6 @@ function validateBooking(input, nowMs) {
   var name = cleanLine(input.name, 100);
   var company = cleanLine(input.company, 100);
   var email = cleanLine(input.email, 200).toLowerCase();
-  var teamSize = cleanLine(input.teamSize, 40);
   var message = typeof input.message === 'string' ? input.message.trim().slice(0, 2000) : '';
   var language = cleanLine(input.language, 10);
   var start = typeof input.slot === 'string' ? Date.parse(input.slot) : NaN;
@@ -167,7 +166,6 @@ function validateBooking(input, nowMs) {
     name: name,
     company: company,
     email: email,
-    teamSize: teamSize,
     message: message,
     language: language,
     start: start,
@@ -214,7 +212,6 @@ function bookSlot(booking) {
         'Name: ' + booking.name,
         'Company: ' + booking.company,
         'Email: ' + booking.email,
-        'Team size: ' + (booking.teamSize || 'Not given'),
         '',
         'Booked from johncrm.com',
       ].join('\n'),
@@ -248,7 +245,6 @@ function bookSlot(booking) {
         'Name: ' + booking.name,
         'Company: ' + booking.company,
         'Email: ' + booking.email,
-        'Team size: ' + (booking.teamSize || 'Not given'),
         'Language: ' + (booking.language || 'Not given'),
         '',
         'Message:',
