@@ -2372,7 +2372,7 @@ function PrivacyPolicyContent() {
           <li><strong className="text-black">{t("Google sign in:")}</strong>{' '}{t("if you sign in with Google, we receive your Google account email and basic profile identifiers.")}</li>
           <li><strong className="text-black">{t("Organization data:")}</strong>{' '}{t("organization name, legal/contact information, logo, membership and role records, and team assignments.")}</li>
           <li><strong className="text-black">{t("Billing data:")}</strong>{' '}{t("subscription and token purchase records, invoices, and adjustments. Payment card details are collected and processed by")}{' '}<strong className="text-black">Stripe</strong>{' '}{t("we never see or store full card numbers.")}</li>
-          <li><strong className="text-black">{t("Connected account credentials:")}</strong>{' '}{t("if you connect Telegram, Discord, WhatsApp, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).")}</li>
+          <li><strong className="text-black">{t("Connected account credentials:")}</strong>{' '}{t("if you connect Telegram, Discord, WeChat, WhatsApp, Facebook Messenger, Instagram, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).")}</li>
           <li><strong className="text-black">{t("Usage and activity records:")}</strong>{' '}{t("authenticated requests to the Service (endpoint, timestamp, status, IP address, active workspace) are logged for security and administration. Request bodies (message text, passwords, tokens) are")}{' '}<strong className="text-black">{t("never")}</strong>{' '}{t("stored in these logs. Activity records are retained for a short rolling window (currently 14 days) before deletion.")}</li>
           <li><strong className="text-black">{t("AI usage records:")}</strong>{' '}{t("model used, token counts, and billing attribution for AI features.")}</li>
           <li><strong className="text-black">{t("Support access records:")}</strong>{' '}{t("if John CRM staff access your workspace in view as mode (see section 6), the session is recorded in an append only audit log, and an access log is visible to your organization's administrators.")}</li>
@@ -2380,7 +2380,7 @@ function PrivacyPolicyContent() {
         <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.2 Customer Content (data about your clients, controlled by you)")}</h3>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
           <li><strong className="text-black">{t("Client profiles:")}</strong>{' '}{t("names, phone numbers, email addresses, dates of birth, addresses, timezones, tags, status, life stage, and notes.")}</li>
-          <li><strong className="text-black">{t("Messages and attachments:")}</strong>{' '}{t("conversations sent and received through connected channels (WhatsApp, Telegram, Discord, website chat widget), including images and files.")}</li>
+          <li><strong className="text-black">{t("Messages and attachments:")}</strong>{' '}{t("conversations sent and received through connected channels (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, website chat widget), including images and files.")}</li>
           <li><strong className="text-black">{t("Uploaded documents:")}</strong>{' '}{t("policy PDFs and knowledge base documents you upload, stored in private object storage and served only via short lived signed URLs after an ownership check.")}</li>
           <li><strong className="text-black">{t("Website chat visitor data:")}</strong>{' '}{t("if you embed our chat widget, visitors' pre chat form details (e.g. name, email) and messages are collected on your behalf.")}</li>
           <li><strong className="text-black">{t("Consent records:")}</strong>{' '}{t("opt in/opt out status for mass messaging, kept as a durable ledger so that contacts who decline are never messaged again.")}</li>
@@ -2458,7 +2458,7 @@ function PrivacyPolicyContent() {
             </tbody>
           </table>
         </div>
-        <p>{t("Messages you send and receive through third party channels (WhatsApp, Telegram, Discord) are also processed by those platforms under")}{' '}<strong className="text-black">{t("their own privacy policies")}</strong>{t("; we do not control them.")}</p>
+        <p>{t("Messages you send and receive through third party channels (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram) are also processed by those platforms under")}{' '}<strong className="text-black">{t("their own privacy policies")}</strong>{t("; we do not control them.")}</p>
         <p>{t("We may also disclose data where required by law, to protect the rights and safety of users, or in connection with a merger or acquisition (in which case this policy will continue to apply to previously collected data).")}</p>
       </LegalSection>
 
@@ -2533,7 +2533,7 @@ function TermsOfServiceContent() {
     <>
       <LegalSection id="the-service" title="1. The Service">
         <p>{t("These Terms of Service (\"")}<strong>{t("Terms")}</strong>{t("\") govern access to and use of the John CRM platform and related services (the \"")}<strong>{t("Service")}</strong>{t("\"), operated by")}{' '}{LEGAL_COMPANY}{t(' ("')}<strong>John CRM</strong>{t('", "')}<strong>{t("we")}</strong>{t('", "')}<strong>{t("us")}</strong>{t("\"). By creating an account, accepting an invitation, or using the Service, you agree to these Terms. If you use the Service on behalf of an organization, you represent that you have authority to bind that organization, and \"")}<strong>{t("Customer")}</strong>{t("\" or \"")}<strong>{t("you")}</strong>{t("\" refers to that organization.")}</p>
-        <p>{t("John CRM is a retail focused AI assistant chatbot that can help you close deals. It includes client management, multi channel messaging (WhatsApp, Telegram, Discord, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.")}</p>
+        <p>{t("John CRM is a retail focused AI assistant chatbot that can help you close deals. It includes client management, multi channel messaging (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.")}</p>
         <p>{t("We may improve, add, or remove features of the Service over time. We will not materially reduce the core functionality of the Service during a paid subscription term without notice.")}</p>
       </LegalSection>
 
@@ -2559,7 +2559,7 @@ function TermsOfServiceContent() {
         <p>{t("You agree not to:")}</p>
         <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
           <li>{t("Send spam or unsolicited bulk messages, or message any contact who has opted out. The Service maintains a consent ledger; circumventing it is a material breach of these Terms.")}</li>
-          <li>{t("Violate the terms of service of any connected third party platform (WhatsApp, Telegram, Discord, Google, etc.).")}</li>
+          <li>{t("Violate the terms of service of any connected third party platform (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, Google, etc.).")}</li>
           <li>{t("Upload or transmit unlawful content, malware, or content that infringes the rights of others.")}</li>
           <li>{t("Use the Service to provide, or hold out AI output as, regulated advice without the required license and human review.")}</li>
           <li>{t("Probe, scan, or test the vulnerability of the Service, attempt to access other customers' data, or interfere with the operation of the Service.")}</li>
@@ -2571,8 +2571,8 @@ function TermsOfServiceContent() {
 
       <LegalSection id="third-party-services" title="5. Third party channels and services">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">{t("Independent platforms.")}</strong>{' '}{t("Messaging channels and connected accounts (WhatsApp, Telegram, Discord, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.")}</li>
-          <li><strong className="text-black">{t("Unofficial integrations.")}</strong>{' '}{t("Certain channel integrations (including WhatsApp personal accounts) operate through connection methods that are not officially sanctioned by the platform operator.")}{' '}<strong className="text-black">{t("The platform operator may restrict, suspend, or ban accounts connected this way at any time.")}</strong>{' '}{t("The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.")}</li>
+          <li><strong className="text-black">{t("Independent platforms.")}</strong>{' '}{t("Messaging channels and connected accounts (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.")}</li>
+          <li><strong className="text-black">{t("Unofficial integrations.")}</strong>{' '}{t("Certain channel integrations (including WhatsApp and WeChat personal accounts) operate through connection methods that are not officially sanctioned by the platform operator.")}{' '}<strong className="text-black">{t("The platform operator may restrict, suspend, or ban accounts connected this way at any time.")}</strong>{' '}{t("The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.")}</li>
           <li><strong className="text-black">{t("Bring your own keys.")}</strong>{' '}{t("If you connect your own AI provider API keys, your use of those providers is governed by your agreement with them, and their charges are your responsibility.")}</li>
           <li><strong className="text-black">{t("Connector endpoints.")}</strong>{' '}{t("If you configure connectors to your own or third party HTTP APIs, you are responsible for having the right to call those APIs and for the data they return.")}</li>
         </ul>

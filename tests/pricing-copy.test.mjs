@@ -50,10 +50,20 @@ test('plan features carry the current wording in every language', () => {
   }
 });
 
-test('WeChat is gone from the site copy and legal pages', async () => {
+test('WeChat stays out of the marketing copy', () => {
+  const marketing = appSource.slice(0, appSource.indexOf('function PrivacyPolicyContent'));
+  assert.ok(marketing.length > 0);
+  assert.doesNotMatch(marketing, /wechat|微信/i);
+});
+
+// The product can still connect these channels, and its login and profile pages link to these pages.
+test('the legal pages disclose every channel the product can connect', async () => {
   const legalSource = await readFile(new URL('../src/app/translations/legal.ts', import.meta.url), 'utf8');
-  for (const source of [appSource, legalSource]) {
-    assert.doesNotMatch(source, /wechat|微信/i);
+  const legalPages = appSource.slice(appSource.indexOf('function PrivacyPolicyContent'));
+  for (const source of [legalPages, legalSource]) {
+    assert.ok(source.includes('if you connect Telegram, Discord, WeChat, WhatsApp, Facebook Messenger, Instagram, or an AI provider key'));
+    assert.ok(source.includes('(including WhatsApp and WeChat personal accounts)'));
+    assert.ok(!source.includes('(WhatsApp, Telegram, Discord'));
   }
 });
 
