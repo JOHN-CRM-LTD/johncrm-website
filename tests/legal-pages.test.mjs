@@ -53,7 +53,7 @@ test('the terms page ships finished copy, not the draft template', () => {
   );
   assert.match(termsPageSource, /operated by["')}\s]+\{' '\}\{LEGAL_COMPANY\}/);
   assert.match(source, /const LEGAL_COMPANY = 'BOSS SOFTWARE LTD'/);
-  assert.match(source, /Last updated: 4 August 2026/);
+  assert.match(source, /Last updated: 30 October 2026/);
 });
 
 test('both legal pages share one section primitive and one contact block', () => {
