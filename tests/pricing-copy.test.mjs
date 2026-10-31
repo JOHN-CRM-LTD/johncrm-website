@@ -35,6 +35,11 @@ test('plan features carry the current wording in every language', () => {
     'AI replies in any language', 'AI 可用任何语言回复', 'AI 可用任何語言回覆',
     'Connect your existing API Endpoints', '连接您现有的 API 端点', '連接您現有的 API 端點',
     'Internal staff AI assistant', '内部员工 AI 助手', '內部員工 AI 助手',
+    'Website AI chatbot', '网站 AI 聊天机器人', '網站 AI 聊天機械人',
+    'Basic automations, such as birthday reminders', '基础自动化，例如生日提醒', '基礎自動化，例如生日提醒',
+    'Advanced automations in plain language, simulated before going live', '高级自动化：用日常语言编写，上线前可模拟运行', '進階自動化：用日常語言編寫，上線前可模擬運行',
+    'Coupon campaigns: our team helps you set up and send coupons to your customers', '优惠券活动：我们的团队协助您设置并向客户发送优惠券', '優惠券活動：我們的團隊協助您設定並向客戶發送優惠券',
+    'Custom modules built around your business', '为您的业务量身定制模块', '為您的業務度身訂造模組',
   ];
   for (const feature of current) {
     assert.ok(appSource.includes(`'${feature}'`), feature);
@@ -44,6 +49,7 @@ test('plan features carry the current wording in every language', () => {
     'Bulk campaigns and templates', '批量营销与模板', '批量行銷與模板',
     'Price sheets and contract templates', '价格表与合同模板', '價格表與合約範本',
     'Staff calendar and appointments', '员工日历与预约管理', '員工日曆與預約管理',
+    'Website chat leads saved to client profiles', '网页聊天线索自动存入客户档案', '網頁聊天潛在客戶自動存入客戶檔案',
   ];
   for (const feature of removed) {
     assert.ok(!appSource.includes(feature), feature);
