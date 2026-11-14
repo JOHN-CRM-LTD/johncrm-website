@@ -52,7 +52,7 @@ test('the terms page ships finished copy, not the draft template', () => {
     'mojibake from the source markdown must be repaired',
   );
   assert.match(termsPageSource, /operated by["')}\s]+\{' '\}\{LEGAL_COMPANY\}/);
-  assert.match(source, /const LEGAL_COMPANY = 'BOSS SOFTWARE LTD'/);
+  assert.match(source, /const LEGAL_COMPANY = '2x4 Technology Limited'/);
   assert.match(source, /Last updated: 30 October 2026/);
 });
 

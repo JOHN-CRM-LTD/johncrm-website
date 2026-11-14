@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
+import { writeSearchMetadata } from './search-metadata.mjs';
 
 const projectRoot = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const distDirectory = resolve(projectRoot, 'dist');
@@ -103,3 +104,5 @@ try {
 } finally {
   await server.close();
 }
+
+await writeSearchMetadata(distDirectory);

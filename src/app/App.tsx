@@ -2281,7 +2281,7 @@ function Footer({ language = 'EN' }: { language?: LanguageCode }) {
           ))}
         </nav>
         <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/35">
-          &copy; 2026 BOSS SOFTWARE LTD
+          &copy; 2026 2x4 Technology Limited
         </div>
       </div>
     </footer>
@@ -2290,7 +2290,7 @@ function Footer({ language = 'EN' }: { language?: LanguageCode }) {
 
 /* ------------------------------- legal pages ------------------------------- */
 
-const LEGAL_COMPANY = 'BOSS SOFTWARE LTD';
+const LEGAL_COMPANY = '2x4 Technology Limited';
 const LEGAL_CONTACT_EMAIL = 'info@hkboss.com.hk';
 const LEGAL_PHONE = '(852) 2485 2033';
 const LEGAL_PHONE_HREF = 'tel:+85224852033';

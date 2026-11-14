@@ -16,7 +16,36 @@ test('production build emits a GitHub Pages fallback for deep links', async () =
   const indexHtml = await readFile(new URL('../dist/index.html', import.meta.url), 'utf8');
   const fallbackHtml = await readFile(new URL('../dist/404.html', import.meta.url), 'utf8');
 
-  assert.equal(fallbackHtml, indexHtml, '404.html should bootstrap the same SPA as index.html');
+  assert.equal(fallbackHtml.match(/<script type="module"[^>]*>/)?.[0], indexHtml.match(/<script type="module"[^>]*>/)?.[0],
+    '404.html should bootstrap the same SPA while keeping error pages out of search');
+  assert.match(fallbackHtml, /<meta name="robots" content="noindex, follow"/);
+  assert.doesNotMatch(fallbackHtml, /rel="canonical"/);
+  const sitemap = await readFile(new URL('../dist/sitemap.xml', import.meta.url), 'utf8');
+  const robots = await readFile(new URL('../dist/robots.txt', import.meta.url), 'utf8');
+  const urls = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map(([, url]) => url);
+  assert.equal(new Set(urls).size, urls.length, 'canonical pages should appear once');
+  assert.ok(urls.length >= 16, 'include the public product, industry, docs and legal pages');
+  for (const url of urls) {
+    const parsed = new URL(url);
+    assert.equal(parsed.origin, 'https://www.johncrm.com');
+    assert.ok(parsed.pathname.endsWith('/'));
+    const html = await readFile(new URL(`../dist${parsed.pathname}index.html`, import.meta.url), 'utf8');
+    assert.ok(html.includes(`<link rel="canonical" href="${url}"`));
+    assert.ok(html.includes(`<meta property="og:url" content="${url}"`));
+    assert.match(html, /<meta property="og:image" content="https:\/\/www\.johncrm\.com\/brand\/johncrm-social\.png"/);
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    assert.match(html, /<link rel="icon"/);
+    assert.equal((html.match(/rel="canonical"/g) ?? []).length, 1);
+    assert.doesNotMatch(html, /name="robots" content="noindex/);
+  }
+  assert.doesNotMatch(sitemap, /404|app\.johncrm|dev\.johncrm|ford\.johncrm/);
+  assert.match(robots, /Sitemap: https:\/\/www\.johncrm\.com\/sitemap.xml/);
+  const schema = JSON.parse(indexHtml.match(/<script type="application\/ld\+json">([\s\S]+?)<\/script>/)?.[1] ?? 'null');
+  assert.equal(schema['@type'], 'Organization');
+  assert.equal(schema.name, '2x4 Technology Limited');
+  assert.equal(schema.brand.name, 'JOHN CRM');
+  assert.equal(schema.email, 'info@hkboss.com.hk');
+  assert.equal(schema.telephone, '+85224852033');
 
   const manifest = JSON.parse(await readFile(new URL('../dist/.vite/manifest.json', import.meta.url), 'utf8'));
   const docsEntry = Object.values(manifest).find(entry => entry.src === 'src/app/docs/DocsPage.tsx');
@@ -66,7 +95,7 @@ test('production build emits a GitHub Pages fallback for deep links', async () =
       'the complete document must be readable without JavaScript');
     assert.match(html, /<script\b[^>]*type="module"[^>]*src="[^\"]+"/,
       'static documents must retain the script that enables smooth navigation');
-    assert.match(html, /BOSS SOFTWARE LTD/);
+    assert.match(html, /2x4 Technology Limited/);
     assert.match(html, /Unit 2, 3\/F, Block B, Hoi Luen Industrial Centre, 55 Hoi Yuen Road, Kwun Tong, Kowloon, Hong Kong/);
     assert.match(html, /href="tel:\+85224852033"/);
     assert.match(html, /\(852\) 2485 2033/);
