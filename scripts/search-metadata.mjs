@@ -17,6 +17,7 @@ const organization = {
   name: '2x4 Technology Limited',
   legalName: '2x4 Technology Limited',
   url: `${origin}/`,
+  sameAs: ['https://www.linkedin.com/company/johncrm/'],
   logo: `${origin}/brand/johncrm-logo-square.png`,
   description: 'The Hong Kong company behind JOHN CRM, an AI customer-conversation platform for WhatsApp, web chat and business automation.',
   brand: { '@type': 'Brand', name: 'JOHN CRM', url: `${origin}/`, logo: `${origin}/brand/johncrm-logo-square.png` },

@@ -2279,6 +2279,12 @@ function Footer({ language = 'EN' }: { language?: LanguageCode }) {
               {l.label}
             </a>
           ))}
+          <a
+            href="https://www.linkedin.com/company/johncrm/"
+            className="font-mono text-[9px] tracking-[0.25em] uppercase text-black/35 transition-colors hover:text-black"
+          >
+            LinkedIn
+          </a>
         </nav>
         <div className="font-mono text-[9px] tracking-[0.2em] uppercase text-black/35">
           &copy; 2026 2x4 Technology Limited
