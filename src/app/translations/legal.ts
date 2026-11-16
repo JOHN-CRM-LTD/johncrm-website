@@ -314,6 +314,8 @@ export const LEGAL_COPY: TranslationCatalog = {
   "AI inference (classification, drafting, verification)": ["AI 推论（分类、草拟、核实）","AI 推論（分類、草擬、核實）"],
   "Payment processing": ["付款处理","付款處理"],
   "United States / global": ["美国／全球","美國／全球"],
+  "Email delivery for account, sign in and notification messages, including verification codes for website chat visitors": ["发送账户、登入及通知电子邮件，包括网站聊天访客的验证码","發送帳戶、登入及通知電郵，包括網站聊天訪客的驗證碼"],
+  "Japan / United States": ["日本／美国","日本／美國"],
   "OAuth sign in": ["OAuth 登入","OAuth 登入"],
   "Global": ["全球","全球"],
   "Network security, content delivery and country lookup for website pricing": ["网络安全、内容传递及网站定价的国家查询","網絡安全、內容傳遞及網站定價的國家查詢"],

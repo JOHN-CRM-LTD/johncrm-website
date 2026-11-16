@@ -56,6 +56,11 @@ test('the terms page ships finished copy, not the draft template', () => {
   assert.match(source, /Last updated: 16 November 2026/);
 });
 
+test('the subprocessor list names Resend, which sends every application email', () => {
+  const privacySource = source.slice(source.indexOf('function PrivacyPolicyContent'), source.indexOf('const TERMS_NAV'));
+  assert.match(privacySource, /\['Resend', 'Email delivery for account, sign in and notification messages, including verification codes for website chat visitors', 'Japan \/ United States'\]/);
+});
+
 test('the privacy policy states where the Service is hosted', () => {
   const privacySource = source.slice(source.indexOf('function PrivacyPolicyContent'), source.indexOf('const TERMS_NAV'));
   assert.match(privacySource, /We run the Service, its databases and private file storage on our own servers in Hong Kong\./);

@@ -2460,6 +2460,7 @@ function PrivacyPolicyContent() {
                 ['Google Cloud (Document AI, Vertex AI, Cloud Storage)', 'Document OCR, embeddings for search (transient staging)', 'United States'],
                 ['OpenRouter / DeepSeek / Anthropic / Google', 'AI inference (classification, drafting, verification)', 'United States'],
                 ['Stripe', 'Payment processing', 'United States / global'],
+                ['Resend', 'Email delivery for account, sign in and notification messages, including verification codes for website chat visitors', 'Japan / United States'],
                 ['Google', 'OAuth sign in', 'Global'],
                 ['Google (website bookings)', 'Calendar and email for demo bookings made on our website', 'Global'],
                 ['Cloudflare', 'Network security, content delivery and country lookup for website pricing', 'Global'],
