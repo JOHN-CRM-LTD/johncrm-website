@@ -379,7 +379,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     hero: {
       title: ['THE', 'Assistant', 'That Never', 'Sleeps'],
       description:
-        '#1 AI Agent Platform for Automating messages. Manage your site, WhatsApp, Telegram and more in one place.',
+        '#1 AI Agent Platform for Automating messages. Manage your site, WhatsApp, Messenger and more in one place.',
       primaryAction: 'Get Started',
       secondaryAction: 'Watch Demo',
       supportNote: 'Contact sales for setup and monthly pricing',
@@ -406,7 +406,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         },
         {
           title: 'Multi Channel Reach',
-          body: 'WhatsApp, WhatsApp Business, Telegram, Messenger and web chat, with Instagram and Discord on request, every conversation in one workspace, answered in the client’s language, including English, Cantonese, and Mandarin.',
+          body: 'WhatsApp, WhatsApp Business, Messenger and web chat, with Instagram on request, every conversation in one workspace, answered in the client’s language, including English, Cantonese, and Mandarin.',
         },
         {
           title: 'Automations',
@@ -430,7 +430,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       fromBefore: 'From',
       fromAfter: '',
       enterpriseNote: 'Scoped by project requirements, milestone-based acceptance',
-      channelNote: 'Instagram and Discord can be added on request.',
+      channelNote: 'Instagram can be added on request.',
       plans: [
         {
           name: 'PLUS',
@@ -542,7 +542,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     actions: { contactSales: '联系销售', login: '登录' },
     hero: {
       title: ['永不休眠的', '智能助手'],
-      description: '领先的 AI 智能助手平台，自动处理消息。在一个地方管理您的网站、WhatsApp、Telegram 等渠道。',
+      description: '领先的 AI 智能助手平台，自动处理消息。在一个地方管理您的网站、WhatsApp、Messenger 等渠道。',
       primaryAction: '立即开始',
       secondaryAction: '观看演示',
       supportNote: '联系销售，了解设置费与月费',
@@ -569,7 +569,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         },
         {
           title: '全渠道触达',
-          body: 'WhatsApp、WhatsApp Business、Telegram、Messenger 与网页聊天（Instagram 和 Discord 可按需开通），所有对话汇聚于同一个工作空间，并以客户的语言（包括英语、粤语和普通话）回复。',
+          body: 'WhatsApp、WhatsApp Business、Messenger 与网页聊天（Instagram 可按需开通），所有对话汇聚于同一个工作空间，并以客户的语言（包括英语、粤语和普通话）回复。',
         },
         {
           title: '自动化流程',
@@ -593,7 +593,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       fromBefore: '',
       fromAfter: '起',
       enterpriseNote: '按项目需求报价，按里程碑验收',
-      channelNote: 'Instagram 和 Discord 可按需开通。',
+      channelNote: 'Instagram 可按需开通。',
       plans: [
         {
           name: 'PLUS',
@@ -704,7 +704,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
     actions: { contactSales: '聯絡銷售', login: '登入' },
     hero: {
       title: ['永不休眠的', '智慧助手'],
-      description: '領先的 AI 智慧助手平台，自動處理訊息。在一個地方管理您的網站、WhatsApp、Telegram 等渠道。',
+      description: '領先的 AI 智慧助手平台，自動處理訊息。在一個地方管理您的網站、WhatsApp、Messenger 等渠道。',
       primaryAction: '立即開始',
       secondaryAction: '觀看示範',
       supportNote: '聯絡銷售，了解設定費與月費',
@@ -731,7 +731,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
         },
         {
           title: '全渠道觸達',
-          body: 'WhatsApp、WhatsApp Business、Telegram、Messenger 與網頁聊天（Instagram 和 Discord 可按需開通），所有對話匯聚於同一個工作空間，並以客戶的語言（包括英語、粵語和普通話）回覆。',
+          body: 'WhatsApp、WhatsApp Business、Messenger 與網頁聊天（Instagram 可按需開通），所有對話匯聚於同一個工作空間，並以客戶的語言（包括英語、粵語和普通話）回覆。',
         },
         {
           title: '自動化流程',
@@ -755,7 +755,7 @@ const SITE_COPY: Record<LanguageCode, SiteCopy> = {
       fromBefore: '',
       fromAfter: '起',
       enterpriseNote: '按項目需求報價，按里程碑驗收',
-      channelNote: 'Instagram 和 Discord 可按需開通。',
+      channelNote: 'Instagram 可按需開通。',
       plans: [
         {
           name: 'PLUS',
@@ -1577,7 +1577,7 @@ const SCREENS: Screen[] = [
   {
     key: 'inbox',
     name: 'AI Inbox',
-    sub: 'WhatsApp, Telegram, and web chat in one workspace, AI replies on standby.',
+    sub: 'WhatsApp, Messenger, and web chat in one workspace, AI replies on standby.',
     path: 'app.johncrm.io/chat',
     icon: MessageCircle,
     shot: shotChat,
@@ -2387,7 +2387,7 @@ function PrivacyPolicyContent() {
           <li><strong className="text-black">{t("Google sign in:")}</strong>{' '}{t("if you sign in with Google, we receive your Google account email and basic profile identifiers.")}</li>
           <li><strong className="text-black">{t("Organization data:")}</strong>{' '}{t("organization name, legal/contact information, logo, membership and role records, and team assignments.")}</li>
           <li><strong className="text-black">{t("Billing data:")}</strong>{' '}{t("subscription and token purchase records, invoices, and adjustments. Payment card details are collected and processed by")}{' '}<strong className="text-black">Stripe</strong>{' '}{t("we never see or store full card numbers.")}</li>
-          <li><strong className="text-black">{t("Connected account credentials:")}</strong>{' '}{t("if you connect Telegram, Discord, WeChat, WhatsApp, Facebook Messenger, Instagram, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).")}</li>
+          <li><strong className="text-black">{t("Connected account credentials:")}</strong>{' '}{t("if you connect WhatsApp, Facebook Messenger, Instagram, or an AI provider key, we store the tokens/keys needed to operate that connection. These credentials are encrypted at rest (AES 256 GCM).")}</li>
           <li><strong className="text-black">{t("Usage and activity records:")}</strong>{' '}{t("authenticated requests to the Service (endpoint, timestamp, status, IP address, active workspace) are logged for security and administration. Request bodies (message text, passwords, tokens) are")}{' '}<strong className="text-black">{t("never")}</strong>{' '}{t("stored in these logs. Activity records are retained for a short rolling window (currently 14 days) before deletion.")}</li>
           <li><strong className="text-black">{t("AI usage records:")}</strong>{' '}{t("model used, token counts, and billing attribution for AI features.")}</li>
           <li><strong className="text-black">{t("Support access records:")}</strong>{' '}{t("if John CRM staff access your workspace in view as mode (see section 6), the session is recorded in an append only audit log, and an access log is visible to your organization's administrators.")}</li>
@@ -2395,7 +2395,7 @@ function PrivacyPolicyContent() {
         <h3 className="pt-4 font-display text-2xl font-bold uppercase leading-none text-black">{t("3.2 Customer Content (data about your clients, controlled by you)")}</h3>
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
           <li><strong className="text-black">{t("Client profiles:")}</strong>{' '}{t("names, phone numbers, email addresses, dates of birth, addresses, timezones, tags, status, life stage, and notes.")}</li>
-          <li><strong className="text-black">{t("Messages and attachments:")}</strong>{' '}{t("conversations sent and received through connected channels (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, website chat widget), including images and files.")}</li>
+          <li><strong className="text-black">{t("Messages and attachments:")}</strong>{' '}{t("conversations sent and received through connected channels (WhatsApp, Facebook Messenger, Instagram, website chat widget), including images and files.")}</li>
           <li><strong className="text-black">{t("Uploaded documents:")}</strong>{' '}{t("policy PDFs and knowledge base documents you upload, stored in private object storage and served only via short lived signed URLs after an ownership check.")}</li>
           <li><strong className="text-black">{t("Website chat visitor data:")}</strong>{' '}{t("if you embed our chat widget, visitors' pre chat form details (e.g. name, email) and messages are collected on your behalf.")}</li>
           <li><strong className="text-black">{t("Consent records:")}</strong>{' '}{t("opt in/opt out status for mass messaging, kept as a durable ledger so that contacts who decline are never messaged again.")}</li>
@@ -2427,6 +2427,7 @@ function PrivacyPolicyContent() {
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
           <li><strong className="text-black">{t("Message classification and auto replies:")}</strong>{' '}{t("inbound client messages may be sent to third party AI model providers to classify the message topic and, where enabled by you, to draft or send a reply. Replies can be reviewed, edited, held, or disabled per conversation by your agents.")}</li>
           <li><strong className="text-black">{t("Document processing (OCR and retrieval):")}</strong>{' '}{t("uploaded policy and knowledge base documents may be processed by Google Cloud Document AI (OCR) and Google Vertex AI (embeddings) so their content can be retrieved to answer questions. Documents transiting Google Cloud Storage for OCR are deleted after processing, with a 1 day automatic deletion backstop.")}</li>
+          <li><strong className="text-black">{t("Automations (scheduled and triggered AI runs):")}</strong>{' '}{t("where a manager in your organization sets up an Automation, the Service reads client records and conversation content on a schedule or when a trigger fires, sends that content to the AI model providers listed below to carry out the task, and may call API endpoints your organization has connected. Run history, including the AI's working transcript and output, is retained for 90 days (see section 9).")}</li>
           <li><strong className="text-black">{t("Model providers:")}</strong>{' '}{t("depending on configuration, AI requests are routed to providers including OpenRouter, DeepSeek, Anthropic, and Google. If you supply your own API key (\"bring your own key\"), requests for that provider are made directly with your key.")}</li>
           <li><strong className="text-black">{t("No training:")}</strong>{' '}{t("we do not use your data to train AI models. Our arrangements with AI providers are limited to inference (generating a response).")}</li>
         </ul>
@@ -2443,6 +2444,7 @@ function PrivacyPolicyContent() {
       </LegalSection>
 
       <LegalSection id="subprocessors" title="7. Who we share data with (subprocessors)">
+        <p>{t("We run the Service, its databases and private file storage on our own servers in Hong Kong.")}</p>
         <p>{t("We share data only with service providers who help us operate the Service, under contracts restricting their use of the data:")}</p>
         <div className="overflow-x-auto border-y border-black/10">
           <table className="w-full min-w-[38rem] border-collapse text-left text-[13px] leading-6">
@@ -2455,8 +2457,6 @@ function PrivacyPolicyContent() {
             </thead>
             <tbody className="text-black/65">
               {[
-                ['DigitalOcean', 'Application hosting and managed database', 'Singapore'],
-                ['DigitalOcean Spaces', 'Object storage for documents and attachments (private bucket)', 'Singapore'],
                 ['Google Cloud (Document AI, Vertex AI, Cloud Storage)', 'Document OCR, embeddings for search (transient staging)', 'United States'],
                 ['OpenRouter / DeepSeek / Anthropic / Google', 'AI inference (classification, drafting, verification)', 'United States'],
                 ['Stripe', 'Payment processing', 'United States / global'],
@@ -2473,12 +2473,12 @@ function PrivacyPolicyContent() {
             </tbody>
           </table>
         </div>
-        <p>{t("Messages you send and receive through third party channels (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram) are also processed by those platforms under")}{' '}<strong className="text-black">{t("their own privacy policies")}</strong>{t("; we do not control them.")}</p>
+        <p>{t("Messages you send and receive through third party channels (WhatsApp, Facebook Messenger, Instagram) are also processed by those platforms under")}{' '}<strong className="text-black">{t("their own privacy policies")}</strong>{t("; we do not control them.")}</p>
         <p>{t("We may also disclose data where required by law, to protect the rights and safety of users, or in connection with a merger or acquisition (in which case this policy will continue to apply to previously collected data).")}</p>
       </LegalSection>
 
       <LegalSection id="international-transfers" title="8. International transfers">
-        <p>{t("Our primary infrastructure is in Singapore. AI and document processing involves transfers to providers in the United States as listed above. Where required by applicable law, we rely on appropriate safeguards (such as contractual data protection commitments with our subprocessors) for these transfers.")}</p>
+        <p>{t("Our primary infrastructure is in Hong Kong, on servers we operate ourselves. AI and document processing involves transfers to providers in the United States as listed above. Where required by applicable law, we rely on appropriate safeguards (such as contractual data protection commitments with our subprocessors) for these transfers.")}</p>
       </LegalSection>
 
       <LegalSection id="retention" title="9. Retention">
@@ -2486,6 +2486,7 @@ function PrivacyPolicyContent() {
           <li><strong className="text-black">{t("Account Data:")}</strong>{' '}{t("retained while your account is active and for a reasonable period afterwards for record keeping, then deleted or anonymized.")}</li>
           <li><strong className="text-black">{t("Customer Content:")}</strong>{' '}{t("retained under your organization's control while your subscription is active. On verified account/organization deletion, Customer Content is deleted, subject to the exceptions below.")}</li>
           <li><strong className="text-black">{t("Activity logs:")}</strong>{' '}{t("rolling 14 day retention.")}</li>
+          <li><strong className="text-black">{t("Automation run history:")}</strong>{' '}{t("rolling 90 day retention.")}</li>
           <li><strong className="text-black">{t("Billing and audit records:")}</strong>{' '}{t("retained as required for accounting, tax, and dispute resolution obligations.")}</li>
           <li><strong className="text-black">{t("Executed contracts")}</strong>{' '}{t("(where the contract feature is used): retained for at least 7 years after termination, in line with record keeping obligations.")}</li>
           <li><strong className="text-black">{t("OCR staging data:")}</strong>{' '}{t("deleted after processing (1 day automatic backstop).")}</li>
@@ -2548,7 +2549,7 @@ function TermsOfServiceContent() {
     <>
       <LegalSection id="the-service" title="1. The Service">
         <p>{t("These Terms of Service (\"")}<strong>{t("Terms")}</strong>{t("\") govern access to and use of the John CRM platform and related services (the \"")}<strong>{t("Service")}</strong>{t("\"), operated by")}{' '}{LEGAL_COMPANY}{t(' ("')}<strong>John CRM</strong>{t('", "')}<strong>{t("we")}</strong>{t('", "')}<strong>{t("us")}</strong>{t("\"). By creating an account, accepting an invitation, or using the Service, you agree to these Terms. If you use the Service on behalf of an organization, you represent that you have authority to bind that organization, and \"")}<strong>{t("Customer")}</strong>{t("\" or \"")}<strong>{t("you")}</strong>{t("\" refers to that organization.")}</p>
-        <p>{t("John CRM is a retail focused AI assistant chatbot that can help you close deals. It includes client management, multi channel messaging (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.")}</p>
+        <p>{t("John CRM is a retail focused AI assistant chatbot that can help you close deals. It includes client management, multi channel messaging (WhatsApp, Facebook Messenger, Instagram, and an embeddable website chat widget), AI assisted message classification and reply drafting, document storage and AI powered document retrieval, meeting scheduling, and reporting.")}</p>
         <p>{t("We may improve, add, or remove features of the Service over time. We will not materially reduce the core functionality of the Service during a paid subscription term without notice.")}</p>
       </LegalSection>
 
@@ -2574,7 +2575,7 @@ function TermsOfServiceContent() {
         <p>{t("You agree not to:")}</p>
         <ol className="list-decimal space-y-3 pl-5 marker:font-mono marker:text-[12px] marker:text-black/45">
           <li>{t("Send spam or unsolicited bulk messages, or message any contact who has opted out. The Service maintains a consent ledger; circumventing it is a material breach of these Terms.")}</li>
-          <li>{t("Violate the terms of service of any connected third party platform (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, Google, etc.).")}</li>
+          <li>{t("Violate the terms of service of any connected third party platform (WhatsApp, Facebook Messenger, Instagram, Google, etc.).")}</li>
           <li>{t("Upload or transmit unlawful content, malware, or content that infringes the rights of others.")}</li>
           <li>{t("Use the Service to provide, or hold out AI output as, regulated advice without the required license and human review.")}</li>
           <li>{t("Probe, scan, or test the vulnerability of the Service, attempt to access other customers' data, or interfere with the operation of the Service.")}</li>
@@ -2586,8 +2587,8 @@ function TermsOfServiceContent() {
 
       <LegalSection id="third-party-services" title="5. Third party channels and services">
         <ul className="list-disc space-y-3 pl-5 marker:text-black/35">
-          <li><strong className="text-black">{t("Independent platforms.")}</strong>{' '}{t("Messaging channels and connected accounts (WhatsApp, Telegram, WeChat, Discord, Facebook Messenger, Instagram, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.")}</li>
-          <li><strong className="text-black">{t("Unofficial integrations.")}</strong>{' '}{t("Certain channel integrations (including WhatsApp and WeChat personal accounts) operate through connection methods that are not officially sanctioned by the platform operator.")}{' '}<strong className="text-black">{t("The platform operator may restrict, suspend, or ban accounts connected this way at any time.")}</strong>{' '}{t("The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.")}</li>
+          <li><strong className="text-black">{t("Independent platforms.")}</strong>{' '}{t("Messaging channels and connected accounts (WhatsApp, Facebook Messenger, Instagram, etc.) are third party services with their own terms. We do not control them, and your use of them through the Service is at your own risk.")}</li>
+          <li><strong className="text-black">{t("Unofficial integrations.")}</strong>{' '}{t("Certain channel integrations (including WhatsApp personal accounts) operate through connection methods that are not officially sanctioned by the platform operator.")}{' '}<strong className="text-black">{t("The platform operator may restrict, suspend, or ban accounts connected this way at any time.")}</strong>{' '}{t("The Service is designed to reduce this risk (for example by respecting opt outs and avoiding automated bulk behavior), but we cannot eliminate it and are not liable for actions taken by third party platforms against your accounts.")}</li>
           <li><strong className="text-black">{t("Bring your own keys.")}</strong>{' '}{t("If you connect your own AI provider API keys, your use of those providers is governed by your agreement with them, and their charges are your responsibility.")}</li>
           <li><strong className="text-black">{t("Connector endpoints.")}</strong>{' '}{t("If you configure connectors to your own or third party HTTP APIs, you are responsible for having the right to call those APIs and for the data they return.")}</li>
         </ul>
@@ -2714,7 +2715,7 @@ function LegalDocumentsPage({ initialPage }: { initialPage: LegalPage }) {
       languageControl={<HeaderSelector id="legal-language" label={SITE_COPY[language].selectors.language} ariaLabel={SITE_COPY[language].selectors.language} options={LANGUAGE_OPTIONS} value={language} onChange={handleLanguageChange} />}
       page={page}
       title={title}
-      updated={t('Last updated: 30 October 2026')}
+      updated={t('Last updated: 16 November 2026')}
       sections={isPrivacy ? PRIVACY_NAV : TERMS_NAV}
       footer={<Footer language={language} />}
       onNavigate={navigate}

@@ -62,26 +62,33 @@ test('WeChat stays out of the marketing copy', () => {
   assert.doesNotMatch(marketing, /wechat|微信/i);
 });
 
-// The product can still connect these channels, and its login and profile pages link to these pages.
+// The product's login and profile pages link to these pages, so they list exactly the channels it can connect.
 test('the legal pages disclose every channel the product can connect', async () => {
   const legalSource = await readFile(new URL('../src/app/translations/legal.ts', import.meta.url), 'utf8');
   const legalPages = appSource.slice(appSource.indexOf('function PrivacyPolicyContent'));
   for (const source of [legalPages, legalSource]) {
-    assert.ok(source.includes('if you connect Telegram, Discord, WeChat, WhatsApp, Facebook Messenger, Instagram, or an AI provider key'));
-    assert.ok(source.includes('(including WhatsApp and WeChat personal accounts)'));
-    assert.ok(!source.includes('(WhatsApp, Telegram, Discord'));
+    assert.ok(source.includes('if you connect WhatsApp, Facebook Messenger, Instagram, or an AI provider key'));
+    assert.ok(source.includes('(including WhatsApp personal accounts)'));
   }
 });
 
-test('Instagram and Discord are on request in every language', () => {
+// John CRM retired Telegram, Discord and WeChat on 16 November 2026.
+test('no page offers or discloses the retired channels, in any language', async () => {
+  const legalSource = await readFile(new URL('../src/app/translations/legal.ts', import.meta.url), 'utf8');
+  for (const source of [appSource, legalSource]) {
+    assert.doesNotMatch(source, /telegram|discord|wechat|微信/i);
+  }
+});
+
+test('Instagram is on request in every language', () => {
   for (const note of [
-    'Instagram and Discord can be added on request.',
-    'Instagram 和 Discord 可按需开通。',
-    'Instagram 和 Discord 可按需開通。',
+    'Instagram can be added on request.',
+    'Instagram 可按需开通。',
+    'Instagram 可按需開通。',
   ]) {
     assert.ok(appSource.includes(`channelNote: '${note}'`), note);
   }
-  assert.ok(appSource.includes('with Instagram and Discord on request'));
+  assert.ok(appSource.includes('with Instagram on request'));
   assert.match(appSource, /\{copy\.channelNote\}/);
 });
 

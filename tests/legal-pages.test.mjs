@@ -53,7 +53,21 @@ test('the terms page ships finished copy, not the draft template', () => {
   );
   assert.match(termsPageSource, /operated by["')}\s]+\{' '\}\{LEGAL_COMPANY\}/);
   assert.match(source, /const LEGAL_COMPANY = '2x4 Technology Limited'/);
-  assert.match(source, /Last updated: 30 October 2026/);
+  assert.match(source, /Last updated: 16 November 2026/);
+});
+
+test('the privacy policy states where the Service is hosted', () => {
+  const privacySource = source.slice(source.indexOf('function PrivacyPolicyContent'), source.indexOf('const TERMS_NAV'));
+  assert.match(privacySource, /We run the Service, its databases and private file storage on our own servers in Hong Kong\./);
+  assert.match(privacySource, /Our primary infrastructure is in Hong Kong, on servers we operate ourselves\./);
+  assert.doesNotMatch(privacySource, /DigitalOcean|Singapore/);
+});
+
+test('the privacy policy discloses Automations and their 90 day run history', () => {
+  const privacySource = source.slice(source.indexOf('function PrivacyPolicyContent'), source.indexOf('const TERMS_NAV'));
+  assert.match(privacySource, /Automations \(scheduled and triggered AI runs\):/);
+  assert.match(privacySource, /is retained for 90 days \(see section 9\)/);
+  assert.match(privacySource, /t\("Automation run history:"\)[\s\S]*?t\("rolling 90 day retention\."\)/);
 });
 
 test('both legal pages share one section primitive and one contact block', () => {
